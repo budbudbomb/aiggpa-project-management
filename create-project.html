@@ -7,6 +7,11 @@
   <title>AIGGPA - Create &amp; Sanction Research Project</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="stylesheet" href="css/dashboard.css">
+  <script>
+    if (localStorage.getItem('aiggpa_sidebar_collapsed') === 'true') {
+      document.documentElement.classList.add('sidebar-collapsed');
+    }
+  </script>
   <style>
     /* Tab Strip Styling */
     .prj-tab-strip {
@@ -443,7 +448,7 @@
     <aside class="sidebar" id="mainSidebar">
       <div class="sidebar-header">
         <div class="company-logo-box">
-          <div class="aiggpa-brand-icon">
+          <div class="aiggpa-brand-icon" id="sidebarBrandIcon" title="Toggle Sidebar" style="cursor: pointer;">
             <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M20 7L29 12V21C29 26.5 25.2 31.6 20 33C14.8 31.6 11 26.5 11 21V12L20 7Z" stroke="#ffffff"
                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.15)" />
@@ -455,26 +460,29 @@
             <span class="brand-title">AIGGPA</span>
             <span class="brand-sub">Project Governance</span>
           </div>
+          <button type="button" class="sidebar-collapse-trigger" id="sidebarCollapseTrigger" title="Collapse Sidebar">
+            <i class="pi pi-chevron-left"></i>
+          </button>
         </div>
       </div>
 
       <nav class="sidebar-menu">
 
-        <a href="create-project.html" class="menu-item active" style="text-decoration: none;">
+        <a href="create-project.html" class="menu-item active" data-tooltip="Create Project" style="text-decoration: none;">
           <div class="menu-item-left">
             <i class="pi pi-plus-circle" style="color: #1837d4;"></i>
             <span>Create Project</span>
           </div>
         </a>
 
-        <a href="activities.html" class="menu-item" style="text-decoration: none;">
+        <a href="activities.html" class="menu-item" data-tooltip="Tasks & Activities" style="text-decoration: none;">
           <div class="menu-item-left">
             <i class="pi pi-check-square"></i>
             <span>Tasks</span>
           </div>
         </a>
 
-        <a href="create-survey.html" class="menu-item" style="text-decoration: none;">
+        <a href="create-survey.html" class="menu-item" data-tooltip="Surveys" style="text-decoration: none;">
           <div class="menu-item-left">
             <i class="pi pi-file-edit"></i>
             <span>Surveys</span>
@@ -486,7 +494,10 @@
       <div class="sidebar-footer">
         <div class="user-profile-pill">
           <div class="profile-left">
-            <div class="profile-avatar">AI</div>
+            <div class="profile-avatar-wrap" data-tooltip="AIGGPA — Center Head">
+              <div class="profile-avatar">AI</div>
+              <div class="profile-status-dot"></div>
+            </div>
             <div class="profile-info">
               <h4>AIGGPA</h4>
               <p>Center Head</p>
@@ -501,7 +512,7 @@
       <!-- TOPBAR -->
       <header class="topbar">
         <div class="topbar-left">
-          <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+          <button class="sidebar-toggle-btn" id="sidebarToggleBtn" title="Toggle Sidebar">
             <i class="pi pi-bars"></i>
           </button>
           <div class="search-box">

@@ -4,11 +4,42 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ── Sidebar toggle ──
+  // ── Sidebar collapse toggle ──
   const sidebar = document.getElementById('mainSidebar');
   const toggleBtn = document.getElementById('sidebarToggleBtn');
-  if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+  const collapseTrigger = document.getElementById('sidebarCollapseTrigger');
+  const brandIcon = document.getElementById('sidebarBrandIcon');
+
+  function doSidebarToggle() {
+    if (typeof window.toggleAiggpaSidebar === 'function') {
+      window.toggleAiggpaSidebar();
+    } else {
+      const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+      document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
+      if (sidebar) sidebar.classList.toggle('collapsed', isCollapsed);
+    }
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      doSidebarToggle();
+    });
+  }
+  if (collapseTrigger) {
+    collapseTrigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      doSidebarToggle();
+    });
+  }
+  if (brandIcon) {
+    brandIcon.addEventListener('click', (e) => {
+      if (document.documentElement.classList.contains('sidebar-collapsed') ||
+          document.body?.classList.contains('sidebar-collapsed')) {
+        e.preventDefault();
+        doSidebarToggle();
+      }
+    });
   }
 
   // ── Top User Dropdown ──
@@ -221,6 +252,10 @@ document.addEventListener('DOMContentLoaded', () => {
         menu.style.display = 'none';
       }
     }
+    const subPop = document.getElementById('subtaskAssigneePopover');
+    if (subPop && !subPop.contains(e.target) && !e.target.closest('.subtask-add-assignee-btn') && !e.target.closest('.assignee-avatar-circle') && !e.target.closest('.assignee-avatar-group')) {
+      subPop.remove();
+    }
   });
 
   // ── Date formatting helpers (dd/MM/yyyy) ──
@@ -260,79 +295,107 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderAssigneeBadge(t) {
     let names = [];
     if (t.assignees && t.assignees.length > 0) {
-      names = t.assignees.map(a => typeof a === 'string' ? a : a.name);
+      names = t.assignees.map(a => typeof a === 'string' ? a : a.name).filter(Boolean);
     } else if (t.assignee) {
       names = t.assignee.split(',').map(s => s.trim()).filter(Boolean);
     }
-    if (names.length === 0) names = ['Unassigned'];
 
     return `
-      <div style="display:inline-flex;align-items:center;cursor:pointer;" onclick="window.openTaskReceipts('${t.id}', 'all')" title="Click to view read receipts (${names.join(', ')})">
-        ${buildAvatarStackHtml(names)}
+      <div style="display:inline-flex;align-items:center;gap:6px;">
+        ${names.length > 0 ? `
+          <div class="assignee-avatar-group" style="padding:0;cursor:pointer;" 
+            onclick="window.openTaskReceipts('${t.id}', 'all'); event.stopPropagation();"
+            title="${escapeHtml(names.join(', '))}">
+            ${names.slice(0, 4).map((name, idx) => `
+              <div class="assignee-avatar-circle" 
+                style="width:24px;height:24px;font-size:0.62rem;background:${getAvatarColor(name)};border:2px solid #ffffff;margin-left:${idx > 0 ? '-6px' : '0'};box-shadow:0 1px 2px rgba(0,0,0,0.1);">
+                ${getAvatarInitials(name)}
+              </div>
+            `).join('')}
+            ${names.length > 4 ? `<div class="assignee-avatar-more" style="width:24px;height:24px;font-size:0.58rem;">+${names.length - 4}</div>` : ''}
+            <span style="margin-left:5px;font-size:0.74rem;font-weight:800;color:#1e293b;">${names.length}</span>
+          </div>
+        ` : ''}
+        <button type="button" class="subtask-add-assignee-btn" 
+          onclick="window.openTaskReceipts('${t.id}', 'all'); event.stopPropagation();"
+          title="${names.length > 0 ? 'Change / View Assignees' : 'Add Assignee'}"
+          style="width:24px;height:24px;border-radius:50%;border:1.5px dashed #94a3b8;background:#f8fafc;color:#64748b;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:all 0.15s ease;box-sizing:border-box;"
+          onmouseover="this.style.borderColor='#2563eb';this.style.color='#2563eb';this.style.background='#eff6ff';"
+          onmouseout="this.style.borderColor='#94a3b8';this.style.color='#64748b';this.style.background='#f8fafc';">
+          <i class="pi pi-user-plus" style="font-size:9px;"></i>
+        </button>
       </div>
     `;
   }
 
-  function renderPriorityBadge(priority, taskId = null) {
+  function renderPriorityBadge(priority, taskId = null, subtaskId = null) {
     const p = (priority || 'Medium').trim();
-    let bg = '#fffbeb', color = '#d97706', border = '#fde68a', dot = '#f59e0b';
+    let bg = '#fffbeb', color = '#b45309', border = '#fde68a', dot = '#f59e0b';
     if (p === 'High') {
       bg = '#fef2f2'; color = '#dc2626'; border = '#fecaca'; dot = '#ef4444';
     } else if (p === 'Low') {
-      bg = '#f0fdf4'; color = '#16a34a'; border = '#bbf7d0'; dot = '#10b981';
+      bg = '#f0fdf4'; color = '#15803d'; border = '#bbf7d0'; dot = '#10b981';
     }
 
     if (!taskId) {
       return `
-        <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:18px;background:${bg};color:${color};border:1px solid ${border};font-size:0.72rem;font-weight:700;white-space:nowrap;">
+        <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:9999px;background:${bg};color:${color};border:1px solid ${border};font-size:0.70rem;font-weight:700;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
           <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:${dot};"></span>
           <span>${p}</span>
         </span>
       `;
     }
 
+    const onchangeCall = subtaskId
+      ? `window.updateGridSubtaskField('${taskId}', '${subtaskId}', 'priority', this.value); event.stopPropagation();`
+      : `window.updateGridTaskField('${taskId}', 'priority', this.value); event.stopPropagation();`;
+
     return `
       <div style="position:relative;display:inline-block;white-space:nowrap;" onclick="event.stopPropagation();" title="Click to change priority">
-        <select onchange="window.updateGridTaskField('${taskId}', 'priority', this.value); event.stopPropagation();" onclick="event.stopPropagation();"
-          style="appearance:none;-webkit-appearance:none;background:${bg};color:${color};border:1.5px solid ${border};border-radius:18px;font-size:0.72rem;font-weight:700;padding:4px 22px 4px 10px;cursor:pointer;outline:none;font-family:inherit;white-space:nowrap;transition:all 0.15s ease;">
+        <select onchange="${onchangeCall}" onclick="event.stopPropagation();"
+          style="appearance:none;-webkit-appearance:none;background:${bg};color:${color};border:1px solid ${border};border-radius:9999px;font-size:0.70rem;font-weight:700;padding:3px 18px 3px 8px;cursor:pointer;outline:none;font-family:inherit;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.03);transition:all 0.15s ease;">
           <option value="High" ${p === 'High' ? 'selected' : ''} style="color:#dc2626;background:#fff;">• High</option>
-          <option value="Medium" ${p === 'Medium' ? 'selected' : ''} style="color:#d97706;background:#fff;">• Medium</option>
-          <option value="Low" ${p === 'Low' ? 'selected' : ''} style="color:#16a34a;background:#fff;">• Low</option>
+          <option value="Medium" ${p === 'Medium' ? 'selected' : ''} style="color:#b45309;background:#fff;">• Medium</option>
+          <option value="Low" ${p === 'Low' ? 'selected' : ''} style="color:#15803d;background:#fff;">• Low</option>
         </select>
-        <i class="pi pi-chevron-down" style="position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:7px;color:${color};pointer-events:none;"></i>
+        <i class="pi pi-chevron-down" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:7px;color:${color};pointer-events:none;"></i>
       </div>
     `;
   }
 
-  function renderStatusBadge(status, taskId = null) {
+  function renderStatusBadge(status, taskId = null, subtaskId = null) {
     const s = (status || 'In Progress').trim();
-    let bg = '#f0f9ff', color = '#0284c7', border = '#bae6fd';
+    let bg = '#eff6ff', color = '#2563eb', border = '#bfdbfe';
     if (s === 'Completed') {
-      bg = '#f0fdf4'; color = '#16a34a'; border = '#bbf7d0';
+      bg = '#f0fdf4'; color = '#15803d'; border = '#bbf7d0';
     } else if (s === 'Pending') {
-      bg = '#fffbeb'; color = '#d97706'; border = '#fde68a';
+      bg = '#fffbeb'; color = '#b45309'; border = '#fde68a';
     } else if (s === 'Overdue') {
       bg = '#fef2f2'; color = '#dc2626'; border = '#fecaca';
     }
 
     if (!taskId) {
       return `
-        <span style="display:inline-flex;align-items:center;justify-content:center;padding:3px 12px;border-radius:18px;background:${bg};color:${color};border:1px solid ${border};font-size:0.72rem;font-weight:700;white-space:nowrap;">
+        <span style="display:inline-flex;align-items:center;justify-content:center;padding:3px 10px;border-radius:9999px;background:${bg};color:${color};border:1px solid ${border};font-size:0.70rem;font-weight:700;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
           ${s}
         </span>
       `;
     }
 
+    const onchangeCall = subtaskId
+      ? `window.updateGridSubtaskField('${taskId}', '${subtaskId}', 'status', this.value); event.stopPropagation();`
+      : `window.updateGridTaskField('${taskId}', 'status', this.value); event.stopPropagation();`;
+
     return `
       <div style="position:relative;display:inline-block;white-space:nowrap;" onclick="event.stopPropagation();" title="Click to change status">
-        <select onchange="window.updateGridTaskField('${taskId}', 'status', this.value); event.stopPropagation();" onclick="event.stopPropagation();"
-          style="appearance:none;-webkit-appearance:none;background:${bg};color:${color};border:1.5px solid ${border};border-radius:18px;font-size:0.72rem;font-weight:700;padding:4px 22px 4px 10px;cursor:pointer;outline:none;font-family:inherit;text-align:center;white-space:nowrap;transition:all 0.15s ease;">
-          <option value="In Progress" ${s === 'In Progress' ? 'selected' : ''} style="color:#0284c7;background:#fff;">In Progress</option>
-          <option value="Pending" ${s === 'Pending' ? 'selected' : ''} style="color:#d97706;background:#fff;">Pending</option>
-          <option value="Completed" ${s === 'Completed' ? 'selected' : ''} style="color:#16a34a;background:#fff;">Completed</option>
+        <select onchange="${onchangeCall}" onclick="event.stopPropagation();"
+          style="appearance:none;-webkit-appearance:none;background:${bg};color:${color};border:1px solid ${border};border-radius:9999px;font-size:0.70rem;font-weight:700;padding:3px 18px 3px 8px;cursor:pointer;outline:none;font-family:inherit;text-align:center;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.03);transition:all 0.15s ease;">
+          <option value="In Progress" ${s === 'In Progress' ? 'selected' : ''} style="color:#2563eb;background:#fff;">In Progress</option>
+          <option value="Pending" ${s === 'Pending' ? 'selected' : ''} style="color:#b45309;background:#fff;">Pending</option>
+          <option value="Completed" ${s === 'Completed' ? 'selected' : ''} style="color:#15803d;background:#fff;">Completed</option>
           <option value="Overdue" ${s === 'Overdue' ? 'selected' : ''} style="color:#dc2626;background:#fff;">Overdue</option>
         </select>
-        <i class="pi pi-chevron-down" style="position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:7px;color:${color};pointer-events:none;"></i>
+        <i class="pi pi-chevron-down" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:7px;color:${color};pointer-events:none;"></i>
       </div>
     `;
   }
@@ -376,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const pageSize = 10;
   let hasSearched = true;
   let expandedTaskIds = new Set(['TSK-01']);
+  let kpiStatusFilter = 'all';
 
   // Check URL params for initial tab
   const urlParams = new URLSearchParams(window.location.search);
@@ -421,6 +485,292 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(`Task ${field} updated to "${value}"`);
     }
     renderTable();
+  };
+
+  // ── Dynamic In-Grid Subtask Field Update ──
+  window.updateGridSubtaskField = function (taskId, subtaskId, field, value) {
+    Store.updateSubtaskField(taskId, subtaskId, field, value);
+    if (typeof showToast === 'function') {
+      showToast(`Subtask ${field} updated to "${value}"`);
+    }
+    renderTable();
+  };
+
+  // ── Multi-check Subtask Assignee Popover ──
+  window.openSubtaskAssigneePicker = function (taskId, subtaskId, triggerEl, e) {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const existing = document.getElementById('subtaskAssigneePopover');
+    if (existing) {
+      const isSame = existing.dataset.taskId === taskId && existing.dataset.subtaskId === subtaskId;
+      existing.remove();
+      if (isSame) return;
+    }
+
+    const popover = document.createElement('div');
+    popover.id = 'subtaskAssigneePopover';
+    popover.dataset.taskId = taskId;
+    popover.dataset.subtaskId = subtaskId;
+    popover.className = 'grid-assignee-dropdown';
+    popover.style.cssText = 'position:fixed;z-index:99999;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:8px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.18), 0 8px 10px -6px rgba(0,0,0,0.1);width:230px;overflow:hidden;font-family:inherit;display:block;';
+
+    const rect = triggerEl.getBoundingClientRect();
+    let top = rect.bottom + 4;
+    let left = rect.left;
+    if (left + 230 > window.innerWidth) {
+      left = Math.max(10, window.innerWidth - 240);
+    }
+    if (top + 280 > window.innerHeight) {
+      top = Math.max(10, rect.top - 280);
+    }
+    popover.style.top = `${top}px`;
+    popover.style.left = `${left}px`;
+
+    window.renderSubtaskAssigneePopoverContent(taskId, subtaskId, popover);
+    document.body.appendChild(popover);
+  };
+
+  window.renderSubtaskAssigneePopoverContent = function (taskId, subtaskId, popover) {
+    const t = Store.getTasks().find(x => x.id === taskId);
+    const st = t && Array.isArray(t.subtasks) ? t.subtasks.find(s => s.id === subtaskId) : null;
+    const rawAssignees = st ? (st.assignees || (st.assignee ? st.assignee.split(',').map(s => s.trim()).filter(Boolean) : [])) : [];
+    const currentAssignees = Array.isArray(rawAssignees) ? rawAssignees.map(a => typeof a === 'string' ? a : a.name).filter(Boolean) : [];
+
+    const itemsHtml = GRID_AVAILABLE_MEMBERS.map(m => {
+      const isChecked = currentAssignees.includes(m.name);
+      const initials = getAvatarInitials(m.name);
+      const bg = getAvatarColor(m.name);
+      return `
+        <label style="display:flex;align-items:center;gap:9px;padding:6px 12px;cursor:pointer;transition:background 0.12s;user-select:none;${isChecked ? 'background:#f8fafc;' : ''}"
+          onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${isChecked ? '#f8fafc' : 'transparent'}'"
+          onclick="window.toggleSubtaskMember('${taskId}', '${subtaskId}', '${escapeHtml(m.name)}', event)">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); window.toggleSubtaskMember('${taskId}', '${subtaskId}', '${escapeHtml(m.name)}', event)"
+            style="width:15px;height:15px;cursor:pointer;accent-color:#2563eb;margin:0;">
+          <div class="assignee-avatar-circle" style="width:24px;height:24px;font-size:0.62rem;background:${bg};border:none;margin-left:0;box-shadow:none;flex-shrink:0;">${initials}</div>
+          <div style="flex:1;min-width:0;line-height:1.2;">
+            <div style="font-size:0.80rem;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.name)}</div>
+            <div style="font-size:0.69rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.role)}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+
+    popover.innerHTML = `
+      <div style="padding:6px 12px 8px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
+        <span style="font-size:0.70rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.04em;">Assign Team</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button type="button" onclick="window.setAllSubtaskAssignees('${taskId}', '${subtaskId}', true, event)" style="background:none;border:none;color:#2563eb;font-size:0.70rem;font-weight:700;cursor:pointer;padding:2px 4px;">All</button>
+          <span style="color:#cbd5e1;font-size:0.70rem;">|</span>
+          <button type="button" onclick="window.setAllSubtaskAssignees('${taskId}', '${subtaskId}', false, event)" style="background:none;border:none;color:#64748b;font-size:0.70rem;font-weight:700;cursor:pointer;padding:2px 4px;">Clear</button>
+        </div>
+      </div>
+      <div style="max-height:220px;overflow-y:auto;padding:4px 0;">
+        ${itemsHtml}
+      </div>
+    `;
+  };
+
+  window.toggleSubtaskMember = function (taskId, subtaskId, memberName, e) {
+    if (e) e.stopPropagation();
+    const t = Store.getTasks().find(x => x.id === taskId);
+    const st = t && Array.isArray(t.subtasks) ? t.subtasks.find(s => s.id === subtaskId) : null;
+    if (!st) return;
+
+    let list = Array.isArray(st.assignees) ? [...st.assignees] : (st.assignee ? st.assignee.split(',').map(s => s.trim()).filter(Boolean) : []);
+    const idx = list.indexOf(memberName);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+    } else {
+      list.push(memberName);
+    }
+    Store.updateSubtaskField(taskId, subtaskId, 'assignees', list);
+
+    const popover = document.getElementById('subtaskAssigneePopover');
+    if (popover && popover.dataset.subtaskId === subtaskId) {
+      window.renderSubtaskAssigneePopoverContent(taskId, subtaskId, popover);
+    }
+    renderTable();
+  };
+
+  window.setAllSubtaskAssignees = function (taskId, subtaskId, selectAll, e) {
+    if (e) e.stopPropagation();
+    const list = selectAll ? GRID_AVAILABLE_MEMBERS.map(m => m.name) : [];
+    Store.updateSubtaskField(taskId, subtaskId, 'assignees', list);
+
+    const popover = document.getElementById('subtaskAssigneePopover');
+    if (popover && popover.dataset.subtaskId === subtaskId) {
+      window.renderSubtaskAssigneePopoverContent(taskId, subtaskId, popover);
+    }
+    renderTable();
+  };
+
+  // ── Quick Subtask Inline Multi-check Assignee Picker ──
+  let quickSubtaskAssigneesMap = {};
+
+  window.openQuickSubtaskAssigneePicker = function (taskId, triggerEl, e) {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const existing = document.getElementById('subtaskAssigneePopover');
+    if (existing) {
+      const isSame = existing.dataset.taskId === taskId && existing.dataset.isQuickAdd === 'true';
+      existing.remove();
+      if (isSame) return;
+    }
+
+    const popover = document.createElement('div');
+    popover.id = 'subtaskAssigneePopover';
+    popover.dataset.taskId = taskId;
+    popover.dataset.isQuickAdd = 'true';
+    popover.className = 'grid-assignee-dropdown';
+    popover.style.cssText = 'position:fixed;z-index:99999;background:#ffffff;border:1.5px solid #cbd5e1;border-radius:8px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.18), 0 8px 10px -6px rgba(0,0,0,0.1);width:230px;overflow:hidden;font-family:inherit;display:block;';
+
+    const rect = triggerEl.getBoundingClientRect();
+    let top = rect.bottom + 4;
+    let left = rect.left;
+    if (left + 230 > window.innerWidth) {
+      left = Math.max(10, window.innerWidth - 240);
+    }
+    if (top + 280 > window.innerHeight) {
+      top = Math.max(10, rect.top - 280);
+    }
+    popover.style.top = `${top}px`;
+    popover.style.left = `${left}px`;
+
+    window.renderQuickSubtaskAssigneePopoverContent(taskId, popover);
+    document.body.appendChild(popover);
+  };
+
+  window.renderQuickSubtaskAssigneePopoverContent = function (taskId, popover) {
+    if (!Array.isArray(quickSubtaskAssigneesMap[taskId])) {
+      const val = document.getElementById('quickSubtaskAssignee-' + taskId)?.value || '';
+      quickSubtaskAssigneesMap[taskId] = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+    }
+    const currentAssignees = quickSubtaskAssigneesMap[taskId];
+
+    const itemsHtml = GRID_AVAILABLE_MEMBERS.map(m => {
+      const isChecked = currentAssignees.includes(m.name);
+      const initials = getAvatarInitials(m.name);
+      const bg = getAvatarColor(m.name);
+      return `
+        <label style="display:flex;align-items:center;gap:9px;padding:6px 12px;cursor:pointer;transition:background 0.12s;user-select:none;${isChecked ? 'background:#f8fafc;' : ''}"
+          onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${isChecked ? '#f8fafc' : 'transparent'}'"
+          onclick="window.toggleQuickSubtaskMember('${taskId}', '${escapeHtml(m.name)}', event)">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); window.toggleQuickSubtaskMember('${taskId}', '${escapeHtml(m.name)}', event)"
+            style="width:15px;height:15px;cursor:pointer;accent-color:#2563eb;margin:0;">
+          <div class="assignee-avatar-circle" style="width:24px;height:24px;font-size:0.62rem;background:${bg};border:none;margin-left:0;box-shadow:none;flex-shrink:0;">${initials}</div>
+          <div style="flex:1;min-width:0;line-height:1.2;">
+            <div style="font-size:0.80rem;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.name)}</div>
+            <div style="font-size:0.69rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.role)}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+
+    popover.innerHTML = `
+      <div style="padding:6px 12px 8px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
+        <span style="font-size:0.70rem;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:0.04em;">Assign Team</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button type="button" onclick="window.setAllQuickSubtaskAssignees('${taskId}', true, event)" style="background:none;border:none;color:#2563eb;font-size:0.70rem;font-weight:700;cursor:pointer;padding:2px 4px;">All</button>
+          <span style="color:#cbd5e1;font-size:0.70rem;">|</span>
+          <button type="button" onclick="window.setAllQuickSubtaskAssignees('${taskId}', false, event)" style="background:none;border:none;color:#64748b;font-size:0.70rem;font-weight:700;cursor:pointer;padding:2px 4px;">Clear</button>
+        </div>
+      </div>
+      <div style="max-height:220px;overflow-y:auto;padding:4px 0;">
+        ${itemsHtml}
+      </div>
+    `;
+  };
+
+  window.toggleQuickSubtaskMember = function (taskId, memberName, e) {
+    if (e) e.stopPropagation();
+    if (!Array.isArray(quickSubtaskAssigneesMap[taskId])) {
+      quickSubtaskAssigneesMap[taskId] = [];
+    }
+    const list = quickSubtaskAssigneesMap[taskId];
+    const idx = list.indexOf(memberName);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+    } else {
+      list.push(memberName);
+    }
+    window.syncQuickSubtaskAssigneeDisplay(taskId);
+    const popover = document.getElementById('subtaskAssigneePopover');
+    if (popover && popover.dataset.taskId === taskId && popover.dataset.isQuickAdd === 'true') {
+      window.renderQuickSubtaskAssigneePopoverContent(taskId, popover);
+    }
+  };
+
+  window.setAllQuickSubtaskAssignees = function (taskId, selectAll, e) {
+    if (e) e.stopPropagation();
+    quickSubtaskAssigneesMap[taskId] = selectAll ? GRID_AVAILABLE_MEMBERS.map(m => m.name) : [];
+    window.syncQuickSubtaskAssigneeDisplay(taskId);
+    const popover = document.getElementById('subtaskAssigneePopover');
+    if (popover && popover.dataset.taskId === taskId && popover.dataset.isQuickAdd === 'true') {
+      window.renderQuickSubtaskAssigneePopoverContent(taskId, popover);
+    }
+  };
+
+  window.syncQuickSubtaskAssigneeDisplay = function (taskId) {
+    const list = quickSubtaskAssigneesMap[taskId] || [];
+    const hiddenIn = document.getElementById('quickSubtaskAssignee-' + taskId);
+    if (hiddenIn) hiddenIn.value = list.join(', ');
+
+    const avatarBox = document.getElementById('quickSubtaskAvatarContainer-' + taskId);
+    if (avatarBox) {
+      if (list.length > 0) {
+        avatarBox.innerHTML = `
+          <div class="assignee-avatar-group" style="padding:0;margin-right:4px;cursor:pointer;" 
+            onclick="const btn = document.getElementById('quickSubtaskAssigneeBtn-${taskId}'); if(btn) window.openQuickSubtaskAssigneePicker('${taskId}', btn, event)"
+            title="${escapeHtml(list.join(', '))}">
+            ${list.slice(0, 4).map((name, i) => `
+              <div class="assignee-avatar-circle" style="width:22px;height:22px;font-size:0.60rem;background:${getAvatarColor(name)};border:none;margin-left:${i > 0 ? '-5px' : '0'};box-shadow:none;">${getAvatarInitials(name)}</div>
+            `).join('')}
+            ${list.length > 4 ? `<div class="assignee-avatar-more" style="width:22px;height:22px;font-size:0.55rem;">+${list.length - 4}</div>` : ''}
+            <span style="margin-left:5px;font-size:0.74rem;font-weight:800;color:#1e293b;">${list.length}</span>
+          </div>
+        `;
+      } else {
+        avatarBox.innerHTML = '';
+      }
+    }
+  };
+
+  window.updateQuickSubtaskPriorityStyle = function (selectEl) {
+    if (!selectEl) return;
+    const p = selectEl.value;
+    let bg = '#fffbeb', color = '#d97706', border = '#fde68a';
+    if (p === 'High') {
+      bg = '#fef2f2'; color = '#dc2626'; border = '#fecaca';
+    } else if (p === 'Low') {
+      bg = '#f0fdf4'; color = '#16a34a'; border = '#bbf7d0';
+    }
+    selectEl.style.background = bg;
+    selectEl.style.color = color;
+    selectEl.style.borderColor = border;
+    const chevron = selectEl.nextElementSibling;
+    if (chevron) chevron.style.color = color;
+  };
+
+  window.updateQuickSubtaskStatusStyle = function (selectEl) {
+    if (!selectEl) return;
+    const s = selectEl.value;
+    let bg = '#f0f9ff', color = '#0284c7', border = '#bae6fd';
+    if (s === 'Completed') {
+      bg = '#f0fdf4'; color = '#16a34a'; border = '#bbf7d0';
+    } else if (s === 'Pending') {
+      bg = '#fffbeb'; color = '#d97706'; border = '#fde68a';
+    } else if (s === 'Overdue') {
+      bg = '#fef2f2'; color = '#dc2626'; border = '#fecaca';
+    }
+    selectEl.style.background = bg;
+    selectEl.style.color = color;
+    selectEl.style.borderColor = border;
+    const chevron = selectEl.nextElementSibling;
+    if (chevron) chevron.style.color = color;
   };
 
   // ── Grid Meeting Details State & Modal ──
@@ -479,7 +829,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const pills = [
       { id: 'pillTypeStandard', type: 'standard', cls: 'active' },
       { id: 'pillTypeSurvey', type: 'survey', cls: 'active pill-survey' },
-      { id: 'pillTypeMeeting', type: 'meeting', cls: 'active pill-meeting' }
+      { id: 'pillTypeMeeting', type: 'meeting', cls: 'active pill-meeting' },
+      { id: 'pillTypeMilestone', type: 'milestone', cls: 'active pill-milestone' }
     ];
 
     pills.forEach(p => {
@@ -528,6 +879,19 @@ document.addEventListener('DOMContentLoaded', () => {
         badgeIcon.style.background = '#eff6ff';
         badgeIcon.style.color = '#2563eb';
       }
+    } else if (type === 'milestone') {
+      if (titleEl) {
+        titleEl.style.display = 'block';
+        titleEl.placeholder = '◆ Enter milestone name (e.g. Field Survey Complete) & press Enter...';
+        titleEl.focus();
+      }
+      if (surveySelect) surveySelect.style.display = 'none';
+      if (pencilBtn) pencilBtn.style.display = 'none';
+      if (badgeIcon) {
+        badgeIcon.innerHTML = '◆';
+        badgeIcon.style.background = '#fef3c7';
+        badgeIcon.style.color = '#d97706';
+      }
     } else {
       if (titleEl) {
         titleEl.style.display = 'block';
@@ -562,15 +926,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const surveys = Store.getSurveys();
 
     return `
-      <tr id="gridQuickAddRow" class="grid-quick-add-row" style="background:#f8fafc;border-bottom:2px solid #e2e8f0;transition:all 0.25s ease;">
+      <tr id="gridQuickAddRow" class="grid-quick-add-row" style="background:#f8fafc;border-bottom:1.5px solid #e2e8f0;transition:all 0.25s ease;">
         <!-- 1. TASK SELECTOR ON TOP & TEXT FIELD / DROPDOWN BELOW IT -->
         <td style="padding:8px 10px;vertical-align:middle;">
           <div style="display:flex;flex-direction:column;gap:6px;">
             <!-- TOP ROW: TYPE SELECTOR -->
             <div style="display:flex;align-items:center;gap:6px;">
               <div style="display:inline-flex;align-items:center;gap:5px;">
-                <span style="color:#64748b;font-weight:700;font-size:0.70rem;">Type:</span>
-                <div id="gridTaskSelectorBox" style="display:inline-flex;align-items:center;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:16px;padding:2px;gap:2px;">
+                <span style="color:#64748b;font-weight:700;font-size:0.69rem;text-transform:uppercase;letter-spacing:0.04em;">Type:</span>
+                <div id="gridTaskSelectorBox" style="display:inline-flex;align-items:center;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:9px;padding:2px;gap:2px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
                   <button type="button" class="grid-type-pill active" id="pillTypeStandard" onclick="window.selectGridTaskType('standard')" title="Standard Deliverable Task">
                     📌 Standard task
                   </button>
@@ -580,6 +944,9 @@ document.addEventListener('DOMContentLoaded', () => {
                   <button type="button" class="grid-type-pill" id="pillTypeMeeting" onclick="window.selectGridTaskType('meeting')" title="Review / Sync Meeting Task">
                     📅 Meeting task
                   </button>
+                  <button type="button" class="grid-type-pill" id="pillTypeMilestone" onclick="window.selectGridTaskType('milestone')" title="Project Milestone">
+                    ◆ Milestone
+                  </button>
                 </div>
                 <input type="hidden" id="gridNewTaskType" value="standard">
               </div>
@@ -587,28 +954,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             <!-- BOTTOM ROW: TEXT FIELD (OR DROPDOWN FOR SURVEY) & PENCIL ICON ON RIGHT -->
             <div style="display:flex;align-items:center;gap:6px;">
-              <span id="gridTypeBadgeIcon" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:5px;background:#e0e7ff;color:#1837d4;font-size:11px;font-weight:800;flex-shrink:0;">+</span>
+              <span id="gridTypeBadgeIcon" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg, #2563eb, #1d4ed8);color:#ffffff;font-size:13px;font-weight:800;flex-shrink:0;box-shadow:0 2px 5px rgba(37,99,235,0.25);">+</span>
               
               <!-- Standard / Meeting Text Input -->
               <input type="text" id="gridNewTaskTitle" placeholder="Write standard task name &amp; press Enter to add..." 
                 onkeydown="if(event.key === 'Enter') { event.preventDefault(); window.createTaskFromGrid(); }"
-                style="flex:1;min-width:0;border:1.5px solid #cbd5e1;background:#ffffff;border-radius:6px;padding:5px 9px;font-size:0.80rem;font-weight:600;color:#1e293b;outline:none;font-family:inherit;transition:all 0.15s ease;"
-                onfocus="this.style.borderColor='#1837d4';this.style.boxShadow='0 0 0 2px rgba(24,55,212,0.12)';"
-                onblur="this.style.borderColor='#cbd5e1';this.style.boxShadow='none';">
+                style="flex:1;min-width:0;border:1px solid #cbd5e1;background:#ffffff;border-radius:7px;padding:5px 10px;font-size:0.80rem;font-weight:600;color:#0f172a;outline:none;font-family:inherit;box-shadow:0 1px 2px rgba(0,0,0,0.03);transition:all 0.18s ease;"
+                onfocus="this.style.borderColor='#3b82f6';this.style.boxShadow='0 0 0 3px rgba(59,130,246,0.12)';"
+                onblur="this.style.borderColor='#cbd5e1';this.style.boxShadow='0 1px 2px rgba(0,0,0,0.03)';">
 
               <!-- Survey Dropdown (shown when survey task is selected - width matched to task selector) -->
               <select id="gridNewTaskSurveySelect" 
                 onkeydown="if(event.key === 'Enter') { event.preventDefault(); window.createTaskFromGrid(); }"
-                style="display:none;width:280px;max-width:280px;flex:none;border:1.5px solid #cbd5e1;background:#ffffff;border-radius:6px;padding:5px 9px;font-size:0.80rem;font-weight:600;color:#1e293b;outline:none;cursor:pointer;font-family:inherit;transition:all 0.15s ease;"
-                onfocus="this.style.borderColor='#9333ea';this.style.boxShadow='0 0 0 2px rgba(147,51,234,0.12)';"
-                onblur="this.style.borderColor='#cbd5e1';this.style.boxShadow='none';">
+                style="display:none;width:280px;max-width:280px;flex:none;border:1px solid #cbd5e1;background:#ffffff;border-radius:7px;padding:5px 9px;font-size:0.80rem;font-weight:600;color:#0f172a;outline:none;cursor:pointer;font-family:inherit;box-shadow:0 1px 2px rgba(0,0,0,0.03);transition:all 0.18s ease;"
+                onfocus="this.style.borderColor='#7c3aed';this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.12)';"
+                onblur="this.style.borderColor='#cbd5e1';this.style.boxShadow='0 1px 2px rgba(0,0,0,0.03)';">
                 <option value="">-- Select a Survey --</option>
                 ${surveys.map(s => `<option value="${escapeHtml(s.name)}" data-project="${escapeHtml(s.project || '')}">📋 ${escapeHtml(s.name)} (${escapeHtml(s.id)})</option>`).join('')}
               </select>
 
               <!-- Pencil Icon for Meeting Details -->
               <button type="button" id="gridMeetingPencilBtn" onclick="window.openGridMeetingDetailsModal()" 
-                style="display:none;align-items:center;gap:4px;border:1.5px solid #bfdbfe;background:#eff6ff;color:#2563eb;font-size:0.70rem;font-weight:700;padding:4px 8px;border-radius:6px;cursor:pointer;flex-shrink:0;transition:all 0.15s ease;"
+                style="display:none;align-items:center;gap:4px;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;font-size:0.70rem;font-weight:700;padding:4px 8px;border-radius:7px;cursor:pointer;flex-shrink:0;transition:all 0.15s ease;"
                 title="Add Meeting URL, Duration & Description"
                 onmouseover="this.style.background='#dbeafe';this.style.borderColor='#93c5fd';"
                 onmouseout="if(!window.gridMeetingDetails || (!window.gridMeetingDetails.url && !window.gridMeetingDetails.description)){this.style.background='#eff6ff';this.style.borderColor='#bfdbfe';}">
@@ -649,41 +1016,41 @@ document.addEventListener('DOMContentLoaded', () => {
         <!-- 3. DUE DATE -->
         <td style="padding:8px 8px;vertical-align:middle;">
           <input type="date" id="gridNewTaskDueDate" value="${defaultDueDate}"
-            style="width:100%;border:1.5px solid #cbd5e1;background:#ffffff;border-radius:6px;padding:4px 6px;font-size:0.74rem;font-weight:600;color:#334155;outline:none;cursor:pointer;font-family:inherit;">
+            style="width:100%;border:1px solid #cbd5e1;background:#ffffff;border-radius:7px;padding:4px 6px;font-size:0.74rem;font-weight:600;color:#0f172a;outline:none;cursor:pointer;font-family:inherit;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
         </td>
 
         <!-- 4. PRIORITY -->
-        <td style="padding:8px 6px;vertical-align:middle;min-width:96px;white-space:nowrap;">
+        <td style="padding:8px 6px;vertical-align:middle;white-space:nowrap;">
           <div style="position:relative;display:inline-block;width:100%;white-space:nowrap;">
-            <select id="gridNewTaskPriority" style="width:100%;appearance:none;-webkit-appearance:none;border:1.5px solid #fde68a;background:#fffbeb;color:#d97706;border-radius:18px;padding:4px 22px 4px 10px;font-size:0.72rem;font-weight:700;outline:none;cursor:pointer;font-family:inherit;white-space:nowrap;">
+            <select id="gridNewTaskPriority" style="width:100%;appearance:none;-webkit-appearance:none;border:1px solid #fde68a;background:#fffbeb;color:#b45309;border-radius:9999px;padding:4px 18px 4px 8px;font-size:0.70rem;font-weight:700;outline:none;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
               <option value="High" style="color:#dc2626;background:#fff;">• High</option>
-              <option value="Medium" selected style="color:#d97706;background:#fff;">• Medium</option>
-              <option value="Low" style="color:#16a34a;background:#fff;">• Low</option>
+              <option value="Medium" selected style="color:#b45309;background:#fff;">• Medium</option>
+              <option value="Low" style="color:#15803d;background:#fff;">• Low</option>
             </select>
-            <i class="pi pi-chevron-down" style="position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:7px;color:#d97706;pointer-events:none;"></i>
+            <i class="pi pi-chevron-down" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:7px;color:#b45309;pointer-events:none;"></i>
           </div>
         </td>
 
         <!-- 5. STATUS -->
-        <td style="padding:8px 6px;vertical-align:middle;min-width:115px;white-space:nowrap;">
+        <td style="padding:8px 6px;vertical-align:middle;white-space:nowrap;">
           <div style="position:relative;display:inline-block;width:100%;white-space:nowrap;">
-            <select id="gridNewTaskStatus" style="width:100%;appearance:none;-webkit-appearance:none;border:1.5px solid #bae6fd;background:#f0f9ff;color:#0284c7;border-radius:18px;padding:4px 22px 4px 10px;font-size:0.72rem;font-weight:700;outline:none;cursor:pointer;font-family:inherit;white-space:nowrap;">
-              <option value="In Progress" selected style="color:#0284c7;background:#fff;">In Progress</option>
-              <option value="Pending" style="color:#d97706;background:#fff;">Pending</option>
-              <option value="Completed" style="color:#16a34a;background:#fff;">Completed</option>
+            <select id="gridNewTaskStatus" style="width:100%;appearance:none;-webkit-appearance:none;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;border-radius:9999px;padding:4px 18px 4px 8px;font-size:0.70rem;font-weight:700;outline:none;cursor:pointer;font-family:inherit;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.03);">
+              <option value="In Progress" selected style="color:#2563eb;background:#fff;">In Progress</option>
+              <option value="Pending" style="color:#b45309;background:#fff;">Pending</option>
+              <option value="Completed" style="color:#15803d;background:#fff;">Completed</option>
             </select>
-            <i class="pi pi-chevron-down" style="position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:7px;color:#0284c7;pointer-events:none;"></i>
+            <i class="pi pi-chevron-down" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:7px;color:#2563eb;pointer-events:none;"></i>
           </div>
         </td>
 
-        <!-- 6. ACTIONS (ADD BUTTON) -->
+        <!-- 6. ACTIONS (CIRCULAR ADD BUTTON) -->
         <td style="padding:8px 8px;vertical-align:middle;text-align:center;">
           <button type="button" onclick="window.createTaskFromGrid()" 
-            style="border:none;background:#1837d4;color:#ffffff;font-size:0.72rem;font-weight:700;padding:5px 11px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;box-shadow:0 2px 4px rgba(24,55,212,0.25);transition:all 0.15s ease;"
-            onmouseover="this.style.background='#142ab3'" onmouseout="this.style.background='#1837d4'"
+            style="width:28px;height:28px;border-radius:50%;border:none;background:linear-gradient(135deg, #2563eb, #1d4ed8);color:#ffffff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(37,99,235,0.3);transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1);padding:0;"
+            onmouseover="this.style.transform='scale(1.1) translateY(-1px)';this.style.boxShadow='0 4px 12px rgba(37,99,235,0.4)';" 
+            onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 6px rgba(37,99,235,0.3)';"
             title="Create task immediately (Enter)">
-            <i class="pi pi-plus" style="font-size:10px;"></i>
-            <span>Add</span>
+            <i class="pi pi-plus" style="font-size:11px;font-weight:700;"></i>
           </button>
         </td>
       </tr>
@@ -760,8 +1127,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let category = 'task';
     let meetingUrl = '';
     let meetingDuration = '';
+    let isMilestone = false;
+    let projectId = '';
 
-    if (taskType === 'survey') {
+    if (taskType === 'milestone') {
+      description = `Milestone checkpoint for ${projectVal}.`;
+      tag = 'Milestone';
+      category = 'milestone';
+      isMilestone = true;
+      // Resolve projectId for milestone store indexing
+      const matchedProject = Store.getProjects().find(p =>
+        (p.name || '').toLowerCase() === projectVal.toLowerCase()
+      );
+      projectId = matchedProject ? matchedProject.id : '';
+    } else if (taskType === 'survey') {
       description = `Field survey and data collection deliverable for ${projectVal}.`;
       tag = 'Survey';
       category = 'survey';
@@ -800,6 +1179,8 @@ document.addEventListener('DOMContentLoaded', () => {
       title,
       description,
       project: projectVal,
+      projectId,
+      projectName: projectVal,
       assignee: assigneesList.map(a => a.name).join(', '),
       assignees: assigneesList,
       progress: statusVal === 'Completed' ? 100 : (statusVal === 'Pending' ? 0 : 40),
@@ -809,25 +1190,37 @@ document.addEventListener('DOMContentLoaded', () => {
       tag,
       type: taskType,
       category,
+      isMilestone,
       meetingUrl,
       meetingDuration,
       subtasks: []
     };
 
     Store.addTask(newTask);
+
+    // Also register manually created milestones in the milestones index store
+    if (isMilestone && Store.saveMilestones) {
+      const allMilestones = Store.getMilestones ? Store.getMilestones() : [];
+      allMilestones.unshift({ ...newTask });
+      Store.saveMilestones(allMilestones);
+    }
+
     expandedTaskIds.add(newTask.id);
 
-    // Adjust date filter if needed so newly created task is visible right away
-    const toDateEl = document.getElementById('actToDate');
-    const fromDateEl = document.getElementById('actFromDate');
-    if (toDateEl && toDateEl.value && toDateEl.value < dueDateVal) {
-      toDateEl.value = dueDateVal;
-    }
-    if (fromDateEl && fromDateEl.value && fromDateEl.value > dueDateVal) {
-      fromDateEl.value = dueDateVal;
+    // Milestones bypass the date filter so no need to adjust date range
+    if (!isMilestone) {
+      // Adjust date filter if needed so newly created task is visible right away
+      const toDateEl = document.getElementById('actToDate');
+      const fromDateEl = document.getElementById('actFromDate');
+      if (toDateEl && toDateEl.value && toDateEl.value < dueDateVal) {
+        toDateEl.value = dueDateVal;
+      }
+      if (fromDateEl && fromDateEl.value && fromDateEl.value > dueDateVal) {
+        fromDateEl.value = dueDateVal;
+      }
     }
 
-    const typeLabel = taskType === 'survey' ? 'Survey task' : (taskType === 'meeting' ? 'Meeting task' : 'Standard task');
+    const typeLabel = taskType === 'milestone' ? '◆ Milestone' : (taskType === 'survey' ? 'Survey task' : (taskType === 'meeting' ? 'Meeting task' : 'Standard task'));
     if (typeof showToast === 'function') {
       showToast(`${typeLabel} "${title}" added to grid!`);
     }
@@ -862,29 +1255,88 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 50);
   };
 
-  // ── Action button ──
+  // ── Action button (+ Task) ──
+  const btnOpenTaskModal = document.getElementById('btnOpenTaskModal');
+  if (btnOpenTaskModal) {
+    btnOpenTaskModal.addEventListener('click', () => {
+      populateProjects();
+      openModal('modalNewTask');
+    });
+  }
+
   const btnNew = document.getElementById('btnDynamicNewActivity');
   if (btnNew) {
     btnNew.addEventListener('click', () => {
       if (currentTab === 'task') {
-        const titleIn = document.getElementById('gridNewTaskTitle');
-        if (titleIn) {
-          titleIn.focus();
-          const row = document.getElementById('gridQuickAddRow');
-          if (row) {
-            row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            row.classList.add('grid-row-highlight');
-            setTimeout(() => { if (row) row.classList.remove('grid-row-highlight'); }, 1400);
-          }
-        } else {
-          populateProjects();
-          openModal('modalNewTask');
-        }
+        populateProjects();
+        openModal('modalNewTask');
       }
       else if (currentTab === 'meeting') {
         populateProjects();
         openModal('modalNewMeeting');
       }
+    });
+  }
+
+  // ── KPI Summary Cards Click Listeners ──
+  document.querySelectorAll('.kpi-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      kpiStatusFilter = card.dataset.filter || 'all';
+      currentPage = 1;
+      renderTable();
+    });
+  });
+
+  // ── Search & Filter Input Listeners ──
+  const actTableFilter = document.getElementById('actTableFilter');
+  if (actTableFilter) {
+    actTableFilter.addEventListener('input', () => {
+      currentPage = 1;
+      renderTable();
+    });
+  }
+
+  const actPriorityFilter = document.getElementById('actPriorityFilter');
+  if (actPriorityFilter) {
+    actPriorityFilter.addEventListener('change', () => {
+      currentPage = 1;
+      renderTable();
+    });
+  }
+
+  const actTimeFilter = document.getElementById('actTimeFilter');
+  if (actTimeFilter) {
+    actTimeFilter.addEventListener('change', () => {
+      currentPage = 1;
+      renderTable();
+    });
+  }
+
+  // ── View Toggle Switcher (List / Cards) ──
+  const viewToggleList = document.getElementById('viewToggleList');
+  const viewToggleCards = document.getElementById('viewToggleCards');
+  if (viewToggleList && viewToggleCards) {
+    viewToggleList.addEventListener('click', () => {
+      viewToggleList.classList.add('active');
+      viewToggleList.style.background = '#ffffff';
+      viewToggleList.style.color = '#0f172a';
+      viewToggleList.style.boxShadow = '0 1px 2px rgba(0,0,0,0.06)';
+      viewToggleCards.classList.remove('active');
+      viewToggleCards.style.background = 'transparent';
+      viewToggleCards.style.color = '#64748b';
+      viewToggleCards.style.boxShadow = 'none';
+    });
+    viewToggleCards.addEventListener('click', () => {
+      viewToggleCards.classList.add('active');
+      viewToggleCards.style.background = '#ffffff';
+      viewToggleCards.style.color = '#0f172a';
+      viewToggleCards.style.boxShadow = '0 1px 2px rgba(0,0,0,0.06)';
+      viewToggleList.classList.remove('active');
+      viewToggleList.style.background = 'transparent';
+      viewToggleList.style.color = '#64748b';
+      viewToggleList.style.boxShadow = 'none';
     });
   }
 
@@ -940,31 +1392,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── TASKS ──────────────────────────────────
     if (currentTab === 'task') {
-      if (title) title.textContent = 'Tasks';
-      if (desc) desc.textContent = 'Track deliverables, scheduled due dates, and member read receipts';
+      if (title) title.textContent = 'Task Management';
+      if (desc) desc.textContent = 'Create, assign, and track tasks across Program Coordinators, Fellows, and Interns state-wide';
 
-      let tasks = Store.getTasks();
+      const allTasks = Store.getTasks();
+
+      // Dynamic KPI Metric Card live counts
+      const totalAll = allTasks.length;
+      const totalPending = allTasks.filter(t => t.status === 'Pending').length;
+      const totalInProgress = allTasks.filter(t => t.status === 'In Progress').length;
+      const totalDone = allTasks.filter(t => t.status === 'Completed').length;
+      const totalOverdue = allTasks.filter(t => t.status === 'Overdue' || (t.dueDate && t.dueDate < '2026-09-01' && t.status !== 'Completed')).length;
+
+      const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      setEl('kpiCountTotal', totalAll);
+      setEl('kpiCountPending', totalPending);
+      setEl('kpiCountInProgress', totalInProgress);
+      setEl('kpiCountDone', totalDone);
+      setEl('kpiCountOverdue', totalOverdue);
+      setEl('actTotalCount', totalAll);
+
+      let tasks = [...allTasks];
+
+      // KPI card filter
+      if (kpiStatusFilter && kpiStatusFilter !== 'all') {
+        if (kpiStatusFilter === 'Overdue') {
+          tasks = tasks.filter(t => t.status === 'Overdue' || (t.dueDate && t.dueDate < '2026-09-01' && t.status !== 'Completed'));
+        } else {
+          tasks = tasks.filter(t => t.status === kpiStatusFilter);
+        }
+      }
+
+      // Priority dropdown filter
+      const prioFilterVal = (document.getElementById('actPriorityFilter')?.value || '').trim();
+      if (prioFilterVal) {
+        tasks = tasks.filter(t => (t.priority || '').toLowerCase() === prioFilterVal.toLowerCase());
+      }
+
+      // Project / Role dropdown filter
+      if (projectFilter) {
+        tasks = tasks.filter(t =>
+          (t.project || '').toLowerCase().includes(projectFilter) ||
+          (t.assignee || '').toLowerCase().includes(projectFilter)
+        );
+      }
 
       // Text search filter
       if (filter) {
         tasks = tasks.filter(t =>
           (t.title || '').toLowerCase().includes(filter) ||
+          (t.description || '').toLowerCase().includes(filter) ||
           (t.project || '').toLowerCase().includes(filter) ||
           (t.assignee || '').toLowerCase().includes(filter)
         );
       }
 
-      // Project filter from common header dropdown
-      if (projectFilter) {
-        tasks = tasks.filter(t => (t.project || '').toLowerCase().includes(projectFilter));
-      }
-
-      // Date range filtering (From Date & To Date)
+      // Date range filtering
       if (fromDate) {
-        tasks = tasks.filter(t => !t.dueDate || t.dueDate >= fromDate);
+        tasks = tasks.filter(t => t.isMilestone || !t.dueDate || t.dueDate >= fromDate);
       }
       if (toDate) {
-        tasks = tasks.filter(t => !t.dueDate || t.dueDate <= toDate);
+        tasks = tasks.filter(t => t.isMilestone || !t.dueDate || t.dueDate <= toDate);
       }
 
       // Sort tasks date-wise (closest due date first)
@@ -975,16 +1463,18 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentPage > totalPages) currentPage = totalPages;
       if (currentPage < 1) currentPage = 1;
 
+      setEl('actShowingCount', totalItems);
+
       if (badge) badge.textContent = `${totalItems} ${totalItems === 1 ? 'Task' : 'Tasks'}`;
 
       if (thead) thead.innerHTML = `
-        <tr style="background:#ffffff;border-bottom:1.5px solid #edf2f7;color:#64748b;text-transform:uppercase;font-size:0.70rem;font-weight:700;letter-spacing:0.4px;">
-          <th style="padding:8px 10px;width:30%;">TASK NAME</th>
-          <th style="padding:8px 8px;width:14%;">ASSIGNEE</th>
-          <th style="padding:8px 8px;width:13%;">DUE DATE</th>
-          <th style="padding:8px 6px;width:16%;min-width:98px;">PRIORITY</th>
-          <th style="padding:8px 6px;width:18%;min-width:115px;">STATUS</th>
-          <th style="padding:8px 8px;width:9%;text-align:center;">ACTIONS</th>
+        <tr style="background:#fafbfd;border-bottom:1.5px solid #edf2f7;color:#64748b;text-transform:uppercase;font-size:0.71rem;font-weight:700;letter-spacing:0.05em;">
+          <th style="padding:12px 14px;width:34%;">TASK NAME</th>
+          <th style="padding:12px 10px;width:15%;">ASSIGNEE</th>
+          <th style="padding:12px 10px;width:14%;">DUE DATE</th>
+          <th style="padding:12px 8px;width:12%;">PRIORITY</th>
+          <th style="padding:12px 8px;width:16%;">STATUS</th>
+          <th style="padding:12px 10px;width:9%;text-align:center;">ACTIONS</th>
         </tr>`;
 
       const inlineRowHtml = getGridInlineCreationRowHtml();
@@ -993,7 +1483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.innerHTML = inlineRowHtml + `
           <tr>
             <td colspan="6" style="padding:0;">
-              ${emptyState('pi-calendar-times', 'No Tasks Found', 'No tasks match the selected search or date range. You can create a new task directly using the row above!')}
+              ${emptyState('pi-calendar-times', 'No Tasks Found', 'No tasks match the selected search or filter criteria. You can create a new task directly using the row above!')}
             </td>
           </tr>`;
         renderPagination(0, 0, 0);
@@ -1004,7 +1494,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pageTasks = tasks.slice(startIdx, startIdx + pageSize);
 
       tbody.innerHTML = inlineRowHtml + pageTasks.map(t => {
-        const dotColor = t.priority === 'High' ? '#ef4444' : (t.priority === 'Medium' ? '#f59e0b' : '#10b981');
+        const dotColorClass = (t.priority || '').toLowerCase() === 'high' ? 'high' : ((t.priority || '').toLowerCase() === 'low' ? 'low' : 'medium');
         const isSurvey = (t.tag && t.tag.toLowerCase().includes('survey')) ||
           (t.category && t.category.toLowerCase().includes('survey')) ||
           (t.type && t.type.toLowerCase().includes('survey')) ||
@@ -1013,85 +1503,83 @@ document.addEventListener('DOMContentLoaded', () => {
           (t.category && t.category.toLowerCase().includes('meeting')) ||
           (t.type && t.type.toLowerCase().includes('meeting')) ||
           (t.title && t.title.toLowerCase().includes('meeting'));
+        const isMilestone = !!t.isMilestone;
 
         const subtasks = Array.isArray(t.subtasks) ? t.subtasks : [];
-        const completedSubtasks = subtasks.filter(st => st.completed).length;
         const isExpanded = expandedTaskIds.has(t.id);
-        const allSubtasksDone = subtasks.length > 0 && completedSubtasks === subtasks.length;
 
         const expandBtnHtml = `
           <button type="button" class="task-expand-btn ${isExpanded ? 'expanded' : ''}" 
             onclick="window.toggleTaskExpand('${t.id}', event)" 
-            title="${isExpanded ? 'Collapse subtasks' : (subtasks.length > 0 ? `Expand ${subtasks.length} subtasks` : 'Add subtask')}">
-            <i class="pi pi-chevron-right"></i>
+            title="${isExpanded ? 'Collapse subtasks' : (subtasks.length > 0 ? `Expand ${subtasks.length} subtasks` : 'Add subtask')}"
+            style="margin-right:4px;">
+            <i class="pi pi-chevron-right" style="font-size:9px;"></i>
           </button>
         `;
 
-        const subtaskPillHtml = subtasks.length > 0 ? `
-          <span class="subtask-count-pill ${allSubtasksDone ? 'all-done' : ''}" 
-            onclick="window.toggleTaskExpand('${t.id}', event)" 
-            title="Click to ${isExpanded ? 'hide' : 'view'} ${subtasks.length} subtasks">
-            <i class="pi ${allSubtasksDone ? 'pi-check-circle' : 'pi-list'}" style="font-size:9px;"></i>
-            <span>${completedSubtasks}/${subtasks.length} subtasks</span>
-          </span>
-        ` : '';
-
-        const addSubtaskBtnHtml = `
-          <button type="button" class="btn-add-subtask-ghost" 
-            onclick="window.promptAddSubtask('${t.id}', event)" 
-            title="Add a subtask to this task">
-            <i class="pi pi-plus" style="font-size:8px;"></i>
-            <span>Subtask</span>
-          </button>
-        `;
+        const milestoneRowStyle = isMilestone
+          ? 'border-left: 3.5px solid #f59e0b; background: linear-gradient(90deg, #fffdf5 0%, #ffffff 100%) !important;'
+          : '';
 
         let parentRowHtml = `
-          <tr class="act-row-clickable" style="border-bottom:1px solid #f1f5f9;transition:background 0.15s;" onmouseover="this.style.background='#fbfcfe'" onmouseout="this.style.background='transparent'" onclick="window.openTaskReceipts('${t.id}', 'all')">
-            <!-- 1. TASK NAME (With Hierarchy Expand & Subtask Badges) -->
-            <td style="padding:8px 10px;vertical-align:middle;">
-              <div style="display:flex;align-items:flex-start;gap:6px;">
+          <tr class="act-row-clickable" style="border-bottom:1px solid #f1f5f9;transition:all 0.15s ease;${milestoneRowStyle}" 
+              onmouseover="this.style.background='${isMilestone ? '#fefce8' : '#fafcff'}'" 
+              onmouseout="this.style.background='${isMilestone ? '#fffdf5' : 'transparent'}'" 
+              onclick="window.openTaskReceipts('${t.id}', 'all')">
+            <!-- 1. TASK NAME -->
+            <td style="padding:12px 14px;vertical-align:middle;">
+              <div style="display:flex;align-items:flex-start;gap:8px;">
+                <span class="task-priority-dot ${dotColorClass}" style="margin-top:6px;" title="Priority: ${t.priority}"></span>
                 ${expandBtnHtml}
                 <div style="flex:1;min-width:0;">
-                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                    <span style="font-weight:700;color:#1e293b;font-size:0.80rem;line-height:1.3;">${escapeHtml(t.title)}</span>
-                    ${isSurvey ? `<span style="background:#faf5ff;color:#9333ea;border:1px solid #e9d5ff;font-size:0.64rem;font-weight:700;padding:1px 6px;border-radius:5px;line-height:1;">Survey</span>` : ''}
-                    ${isMeeting ? `<span style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:0.64rem;font-weight:700;padding:1px 6px;border-radius:5px;line-height:1;">Meeting</span>` : ''}
-                    ${subtaskPillHtml}
-                    ${addSubtaskBtnHtml}
+                  <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+                    ${isMilestone ? `<span style="color:#d97706;font-size:0.80rem;" title="Milestone">◆</span>` : ''}
+                    <span style="font-weight:700;color:#0f172a;font-size:0.84rem;line-height:1.35;letter-spacing:-0.01em;">${escapeHtml(t.title)}</span>
+                    ${isSurvey && !isMilestone ? `<span style="background:#faf5ff;color:#9333ea;border:1px solid #e9d5ff;font-size:0.66rem;font-weight:700;padding:1px 8px;border-radius:9999px;line-height:1.2;">Survey</span>` : ''}
+                    ${isMilestone ? `<span style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;font-size:0.66rem;font-weight:700;padding:1px 8px;border-radius:9999px;line-height:1.2;">Milestone</span>` : ''}
+                    ${isMeeting ? `<span style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;font-size:0.66rem;font-weight:700;padding:1px 8px;border-radius:9999px;line-height:1.2;">Meeting</span>` : ''}
                   </div>
-                  ${t.description ? `<div style="font-size:0.72rem;color:#64748b;margin-top:2px;line-height:1.3;">${escapeHtml(t.description)}</div>` : ''}
+                  ${t.description ? `<div style="font-size:0.75rem;color:#64748b;margin-top:3px;line-height:1.4;">${escapeHtml(t.description)}</div>` : ''}
                 </div>
               </div>
             </td>
 
-            <!-- 2. ASSIGNEE -->
-            <td style="padding:8px 8px;vertical-align:middle;">
+            <!-- 2. ASSIGNEE (Circular Avatars + Add Button) -->
+            <td style="padding:12px 10px;vertical-align:middle;">
               ${renderAssigneeBadge(t)}
             </td>
 
             <!-- 3. DUE DATE -->
-            <td style="padding:8px 8px;vertical-align:middle;">
+            <td style="padding:12px 10px;vertical-align:middle;white-space:nowrap;">
               ${renderDueDateCell(t.dueDate, t.status)}
             </td>
 
-            <!-- 4. PRIORITY (Dynamic interactive badge) -->
-            <td style="padding:8px 6px;vertical-align:middle;min-width:98px;white-space:nowrap;">
+            <!-- 4. PRIORITY -->
+            <td style="padding:12px 8px;vertical-align:middle;white-space:nowrap;">
               ${renderPriorityBadge(t.priority, t.id)}
             </td>
 
-            <!-- 5. STATUS (Dynamic interactive badge) -->
-            <td style="padding:8px 6px;vertical-align:middle;min-width:115px;white-space:nowrap;">
+            <!-- 5. STATUS -->
+            <td style="padding:12px 8px;vertical-align:middle;white-space:nowrap;">
               ${renderStatusBadge(t.status, t.id)}
             </td>
 
-            <!-- 6. ACTIONS (Only View and Delete - Edit Removed) -->
-            <td style="padding:8px 8px;text-align:center;vertical-align:middle;" onclick="event.stopPropagation()">
-              <div style="display:inline-flex;align-items:center;justify-content:center;gap:10px;">
-                <button type="button" onclick="window.openTaskReceipts('${t.id}', 'all')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px;transition:color 0.15s;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='#94a3b8'" title="View Task Details">
-                  <i class="pi pi-eye"></i>
+            <!-- 6. ACTIONS -->
+            <td style="padding:12px 10px;text-align:center;vertical-align:middle;" onclick="event.stopPropagation()">
+              <div style="display:inline-flex;align-items:center;justify-content:center;gap:4px;">
+                <button type="button" onclick="window.openTaskReceipts('${t.id}', 'all')" 
+                  style="width:26px;height:26px;border-radius:6px;border:none;background:transparent;cursor:pointer;color:#94a3b8;display:inline-flex;align-items:center;justify-content:center;transition:all 0.15s ease;"
+                  onmouseover="this.style.background='#eff6ff';this.style.color='#2563eb';"
+                  onmouseout="this.style.background='transparent';this.style.color='#94a3b8';"
+                  title="View Task Details">
+                  <i class="pi pi-eye" style="font-size:12px;"></i>
                 </button>
-                <button type="button" onclick="window.deleteT('${t.id}')" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:12px;padding:2px;transition:color 0.15s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'" title="Delete Task">
-                  <i class="pi pi-trash"></i>
+                <button type="button" onclick="window.deleteT('${t.id}')" 
+                  style="width:26px;height:26px;border-radius:6px;border:none;background:transparent;cursor:pointer;color:#94a3b8;display:inline-flex;align-items:center;justify-content:center;transition:all 0.15s ease;"
+                  onmouseover="this.style.background='#fee2e2';this.style.color='#ef4444';"
+                  onmouseout="this.style.background='transparent';this.style.color='#94a3b8';"
+                  title="Delete Task">
+                  <i class="pi pi-trash" style="font-size:12px;"></i>
                 </button>
               </div>
             </td>
@@ -1102,85 +1590,186 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isExpanded) {
           subtasksRowsHtml += subtasks.map(st => {
             const isDone = !!st.completed;
-            const stAssignee = st.assignee || (t.assignees && t.assignees[0] ? t.assignees[0].name : 'Dr. Rameshwar Singh');
+            const rawAssignees = st.assignees || (st.assignee ? st.assignee.split(',').map(s => s.trim()).filter(Boolean) : []);
+            const stNames = Array.isArray(rawAssignees) ? rawAssignees.map(a => typeof a === 'string' ? a : a.name).filter(Boolean) : [];
             const stDueDate = st.dueDate || t.dueDate || '2026-09-24';
             const stPriority = st.priority || 'Medium';
             const stStatus = st.status || (isDone ? 'Completed' : 'In Progress');
 
             return `
               <tr class="subtask-row" id="subtask-row-${st.id}" style="border-bottom:1px solid #f1f5f9;background:#fcfdfe;">
-                <!-- 1. SUBTASK TITLE WITH TREE GUIDE & CHECKBOX -->
-                <td style="padding:6px 10px 6px 36px;vertical-align:middle;">
-                  <div style="display:flex;align-items:center;gap:5px;">
+                <!-- 1. SUBTASK TITLE -->
+                <td style="padding:8px 14px 8px 36px;vertical-align:middle;">
+                  <div style="display:flex;align-items:center;gap:6px;">
                     <span class="subtask-tree-guide">↳</span>
                     <div class="subtask-checkbox ${isDone ? 'checked' : ''}" 
                       onclick="window.toggleSubtaskCheck('${t.id}', '${st.id}', event)" 
                       title="${isDone ? 'Click to mark as incomplete' : 'Click to mark as completed'}">
                       ${isDone ? '<i class="pi pi-check" style="font-size:8px;"></i>' : ''}
                     </div>
-                    <span class="subtask-title-text ${isDone ? 'completed' : ''}">${escapeHtml(st.title)}</span>
+                    <span class="subtask-title-text ${isDone ? 'completed' : ''}" style="cursor:pointer;" onclick="window.openSubtaskDetailsModal('${t.id}', '${st.id}', event, 'view')" title="Click to view details">${escapeHtml(st.title)}</span>
+                    <button type="button" onclick="window.openSubtaskDetailsModal('${t.id}', '${st.id}', event, 'edit')"
+                      title="${st.description ? 'Edit subtask details & notes' : 'Add subtask details & notes'}"
+                      style="background:transparent;border:none;color:${st.description ? '#2563eb' : '#94a3b8'};cursor:pointer;font-size:12px;padding:2px 4px;border-radius:4px;display:inline-flex;align-items:center;transition:all 0.15s;flex-shrink:0;"
+                      onmouseover="this.style.color='#2563eb';"
+                      onmouseout="this.style.color='${st.description ? '#2563eb' : '#94a3b8'}';">
+                      <i class="pi pi-file-edit"></i>
+                    </button>
                   </div>
                 </td>
 
                 <!-- 2. ASSIGNEE -->
-                <td style="padding:6px 8px;vertical-align:middle;">
-                  <div style="display:inline-flex;align-items:center;gap:5px;">
-                    <div class="assignee-avatar-circle" style="width:22px;height:22px;font-size:0.60rem;background:${getAvatarColor(stAssignee)};border:none;margin-left:0;box-shadow:none;">${getAvatarInitials(stAssignee)}</div>
-                    <span style="font-size:0.73rem;color:#475569;font-weight:600;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(stAssignee)}">${escapeHtml(stAssignee)}</span>
+                <td style="padding:8px 10px;vertical-align:middle;">
+                  <div style="display:inline-flex;align-items:center;">
+                    ${stNames.length > 0 ? `
+                      <div class="assignee-avatar-group" style="padding:0;margin-right:4px;cursor:pointer;" 
+                        onclick="window.openSubtaskAssigneePicker('${t.id}', '${st.id}', this, event)"
+                        title="${escapeHtml(stNames.join(', '))}">
+                        ${stNames.slice(0, 4).map((name, idx) => `
+                          <div class="assignee-avatar-circle" 
+                            style="width:22px;height:22px;font-size:0.60rem;background:${getAvatarColor(name)};border:none;margin-left:${idx > 0 ? '-5px' : '0'};box-shadow:none;">
+                            ${getAvatarInitials(name)}
+                          </div>
+                        `).join('')}
+                        ${stNames.length > 4 ? `<div class="assignee-avatar-more" style="width:22px;height:22px;font-size:0.55rem;">+${stNames.length - 4}</div>` : ''}
+                        <span style="margin-left:5px;font-size:0.74rem;font-weight:800;color:#1e293b;">${stNames.length}</span>
+                      </div>
+                    ` : ''}
+                    <button type="button" class="subtask-add-assignee-btn" 
+                      onclick="window.openSubtaskAssigneePicker('${t.id}', '${st.id}', this, event)"
+                      title="${stNames.length > 0 ? 'Add / Change Assignees' : 'Add Assignee'}"
+                      style="width:22px;height:22px;border-radius:50%;border:1.5px dashed #94a3b8;background:#f8fafc;color:#64748b;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:all 0.15s ease;box-sizing:border-box;"
+                      onmouseover="this.style.borderColor='#2563eb';this.style.color='#2563eb';this.style.background='#eff6ff';"
+                      onmouseout="this.style.borderColor='#94a3b8';this.style.color='#64748b';this.style.background='#f8fafc';">
+                      <i class="pi pi-user-plus" style="font-size:9px;"></i>
+                    </button>
                   </div>
                 </td>
 
                 <!-- 3. DUE DATE -->
-                <td style="padding:6px 8px;vertical-align:middle;">
-                  <div style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:#64748b;">
+                <td style="padding:8px 10px;vertical-align:middle;">
+                  <div style="display:inline-flex;align-items:center;gap:4px;font-size:0.74rem;color:#64748b;">
                     <i class="pi pi-calendar" style="font-size:10px;color:#94a3b8;"></i>
                     <span>${formatScreenshotDate(stDueDate)}</span>
                   </div>
                 </td>
 
                 <!-- 4. PRIORITY -->
-                <td style="padding:6px 6px;vertical-align:middle;min-width:98px;white-space:nowrap;">
-                  ${renderPriorityBadge(stPriority)}
+                <td style="padding:8px 8px;vertical-align:middle;white-space:nowrap;">
+                  ${renderPriorityBadge(stPriority, t.id, st.id)}
                 </td>
 
                 <!-- 5. STATUS -->
-                <td style="padding:6px 6px;vertical-align:middle;min-width:115px;white-space:nowrap;">
-                  ${renderStatusBadge(stStatus)}
+                <td style="padding:8px 8px;vertical-align:middle;white-space:nowrap;">
+                  ${renderStatusBadge(stStatus, t.id, st.id)}
                 </td>
 
-                <!-- 6. ACTIONS (DELETE SUBTASK) -->
-                <td style="padding:6px 8px;text-align:center;vertical-align:middle;" onclick="event.stopPropagation()">
-                  <button type="button" onclick="window.deleteSubtaskItem('${t.id}', '${st.id}', event)" 
-                    style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:11px;padding:3px 5px;border-radius:4px;transition:all 0.15s;" 
-                    onmouseover="this.style.color='#ef4444';this.style.background='#fee2e2';" 
-                    onmouseout="this.style.color='#94a3b8';this.style.background='transparent';" 
-                    title="Delete Subtask">
-                    <i class="pi pi-trash"></i>
-                  </button>
+                <!-- 6. ACTIONS -->
+                <td style="padding:8px 10px;text-align:center;vertical-align:middle;" onclick="event.stopPropagation()">
+                  <div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+                    <button type="button" onclick="window.openSubtaskDetailsModal('${t.id}', '${st.id}', event, 'view')" 
+                      style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:13px;padding:2px;transition:color 0.15s;" 
+                      onmouseover="this.style.color='#3b82f6'" 
+                      onmouseout="this.style.color='#94a3b8'" 
+                      title="View Subtask Details">
+                      <i class="pi pi-eye"></i>
+                    </button>
+                    <button type="button" onclick="window.deleteSubtaskItem('${t.id}', '${st.id}', event)" 
+                      style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:12px;padding:2px;transition:color 0.15s;" 
+                      onmouseover="this.style.color='#ef4444'" 
+                      onmouseout="this.style.color='#94a3b8'" 
+                      title="Delete Subtask">
+                      <i class="pi pi-trash"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             `;
           }).join('');
 
-          // Quick add subtask row
+          const subtaskDefaultDate = t.dueDate || defaultDueDate;
+
           subtasksRowsHtml += `
             <tr class="subtask-quick-add-row" id="subtask-quick-add-${t.id}" style="border-bottom:1px dashed #e2e8f0;background:#f8fafc;">
-              <td colspan="5" style="padding:5px 10px 5px 36px;vertical-align:middle;">
+              <!-- 1. SUBTASK TITLE -->
+              <td style="padding:6px 14px 6px 36px;vertical-align:middle;">
                 <div style="display:flex;align-items:center;gap:6px;">
                   <span style="color:#94a3b8;font-size:12px;user-select:none;">↳</span>
-                  <input type="text" class="subtask-quick-input" id="quickSubtaskInput-${t.id}" 
-                    placeholder="Add a subtask... (type name & press Enter)" 
-                    onkeydown="if(event.key === 'Enter') { event.preventDefault(); window.submitQuickSubtask('${t.id}', this); }"
-                    onclick="event.stopPropagation();">
+                  <div style="position:relative;flex:1;display:flex;align-items:center;">
+                    <input type="text" class="subtask-quick-input" id="quickSubtaskInput-${t.id}" 
+                      placeholder="Add a subtask... (type name & press Enter)" 
+                      onkeydown="if(event.key === 'Enter') { event.preventDefault(); window.submitQuickSubtask('${t.id}'); }"
+                      onclick="event.stopPropagation();"
+                      style="width:100%;border:1.5px solid #cbd5e1;background:#ffffff;border-radius:6px;padding:4px 28px 4px 8px;font-size:0.75rem;font-weight:600;color:#1e293b;outline:none;font-family:inherit;">
+                    <button type="button" onclick="window.openQuickSubtaskDetailsModal('${t.id}', event)" 
+                      style="position:absolute;right:4px;background:none;border:none;color:#94a3b8;cursor:pointer;padding:2px 4px;font-size:11px;border-radius:3px;display:flex;align-items:center;"
+                      onmouseover="this.style.color='#2563eb'" onmouseout="this.style.color='#94a3b8'"
+                      title="Add details / notes in pop up before saving">
+                      <i class="pi pi-file-edit"></i>
+                    </button>
+                  </div>
                 </div>
               </td>
-              <td style="padding:5px 8px;text-align:center;vertical-align:middle;" onclick="event.stopPropagation();">
-                <button type="button" onclick="const inEl = document.getElementById('quickSubtaskInput-${t.id}'); if(inEl) window.submitQuickSubtask('${t.id}', inEl);" 
-                  style="border:none;background:#2563eb;color:#ffffff;font-size:0.67rem;font-weight:700;padding:3px 8px;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;box-shadow:0 1px 2px rgba(37,99,235,0.2);transition:all 0.15s ease;"
-                  onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'"
-                  title="Add subtask (Enter)">
-                  <i class="pi pi-plus" style="font-size:8px;"></i>
-                  <span>Add</span>
+
+              <!-- 2. ASSIGNEE -->
+              <td style="padding:6px 10px;vertical-align:middle;">
+                <div style="display:inline-flex;align-items:center;" id="quickSubtaskAssigneeWrapper-${t.id}">
+                  <input type="hidden" id="quickSubtaskAssignee-${t.id}" value="">
+                  <span id="quickSubtaskAvatarContainer-${t.id}"></span>
+                  <button type="button" class="subtask-add-assignee-btn" id="quickSubtaskAssigneeBtn-${t.id}"
+                    onclick="window.openQuickSubtaskAssigneePicker('${t.id}', this, event)"
+                    title="Add Assignee"
+                    style="width:22px;height:22px;border-radius:50%;border:1.5px dashed #94a3b8;background:#f8fafc;color:#64748b;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:all 0.15s ease;box-sizing:border-box;"
+                    onmouseover="this.style.borderColor='#2563eb';this.style.color='#2563eb';this.style.background='#eff6ff';"
+                    onmouseout="this.style.borderColor='#94a3b8';this.style.color='#64748b';this.style.background='#f8fafc';">
+                    <i class="pi pi-user-plus" style="font-size:9px;"></i>
+                  </button>
+                </div>
+              </td>
+
+              <!-- 3. DUE DATE -->
+              <td style="padding:6px 10px;vertical-align:middle;">
+                <input type="date" id="quickSubtaskDueDate-${t.id}" value="${subtaskDefaultDate}"
+                  style="width:100%;border:1.5px solid #cbd5e1;background:#ffffff;border-radius:6px;padding:3px 6px;font-size:0.72rem;font-weight:600;color:#334155;outline:none;cursor:pointer;font-family:inherit;">
+              </td>
+
+              <!-- 4. PRIORITY -->
+              <td style="padding:6px 8px;vertical-align:middle;white-space:nowrap;">
+                <div style="position:relative;display:inline-block;white-space:nowrap;" onclick="event.stopPropagation();">
+                  <select id="quickSubtaskPriority-${t.id}" 
+                    onchange="window.updateQuickSubtaskPriorityStyle(this)"
+                    style="appearance:none;-webkit-appearance:none;background:#fffbeb;color:#d97706;border:1.5px solid #fde68a;border-radius:18px;font-size:0.72rem;font-weight:700;padding:4px 22px 4px 10px;cursor:pointer;outline:none;font-family:inherit;white-space:nowrap;transition:all 0.15s ease;">
+                    <option value="High" style="color:#dc2626;background:#fff;">• High</option>
+                    <option value="Medium" selected style="color:#d97706;background:#fff;">• Medium</option>
+                    <option value="Low" style="color:#16a34a;background:#fff;">• Low</option>
+                  </select>
+                  <i class="pi pi-chevron-down" style="position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:7px;color:#d97706;pointer-events:none;"></i>
+                </div>
+              </td>
+
+              <!-- 5. STATUS -->
+              <td style="padding:6px 8px;vertical-align:middle;white-space:nowrap;">
+                <div style="position:relative;display:inline-block;white-space:nowrap;" onclick="event.stopPropagation();">
+                  <select id="quickSubtaskStatus-${t.id}"
+                    onchange="window.updateQuickSubtaskStatusStyle(this)"
+                    style="appearance:none;-webkit-appearance:none;background:#f0f9ff;color:#0284c7;border:1.5px solid #bae6fd;border-radius:18px;font-size:0.72rem;font-weight:700;padding:4px 22px 4px 10px;cursor:pointer;outline:none;font-family:inherit;text-align:center;white-space:nowrap;transition:all 0.15s ease;">
+                    <option value="In Progress" selected style="color:#0284c7;background:#fff;">In Progress</option>
+                    <option value="Pending" style="color:#d97706;background:#fff;">Pending</option>
+                    <option value="Completed" style="color:#16a34a;background:#fff;">Completed</option>
+                    <option value="Overdue" style="color:#dc2626;background:#fff;">Overdue</option>
+                  </select>
+                  <i class="pi pi-chevron-down" style="position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:7px;color:#0284c7;pointer-events:none;"></i>
+                </div>
+              </td>
+
+              <!-- 6. ACTIONS (Circular Add Button) -->
+              <td style="padding:5px 10px;text-align:center;vertical-align:middle;" onclick="event.stopPropagation();">
+                <button type="button" onclick="window.submitQuickSubtask('${t.id}');" 
+                  style="width:24px;height:24px;border-radius:50%;border:none;background:#2563eb;color:#ffffff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 3px rgba(37,99,235,0.3);transition:all 0.15s ease;padding:0;"
+                  onmouseover="this.style.background='#1d4ed8';this.style.transform='scale(1.1)';" 
+                  onmouseout="this.style.background='#2563eb';this.style.transform='scale(1)';"
+                  title="Add Subtask (Enter)">
+                  <i class="pi pi-plus" style="font-size:10px;font-weight:700;"></i>
                 </button>
               </td>
             </tr>
@@ -1537,14 +2126,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 50);
   };
 
-  window.submitQuickSubtask = function (taskId, inputEl) {
-    if (!inputEl) return;
-    const title = inputEl.value.trim();
+  window.submitQuickSubtask = function (taskId, inputEl = null) {
+    const inEl = inputEl || document.getElementById('quickSubtaskInput-' + taskId);
+    if (!inEl) return;
+    const title = inEl.value.trim();
     if (!title) {
-      inputEl.focus();
+      inEl.focus();
       return;
     }
-    const created = Store.addSubtask(taskId, { title: title });
+
+    const assigneeEl = document.getElementById('quickSubtaskAssignee-' + taskId);
+    const dueDateEl = document.getElementById('quickSubtaskDueDate-' + taskId);
+    const priorityEl = document.getElementById('quickSubtaskPriority-' + taskId);
+    const statusEl = document.getElementById('quickSubtaskStatus-' + taskId);
+
+    const assignee = assigneeEl ? assigneeEl.value.trim() : '';
+    const dueDate = dueDateEl ? dueDateEl.value : '';
+    const priority = priorityEl ? priorityEl.value : 'Medium';
+    const status = statusEl ? statusEl.value : 'In Progress';
+    const completed = status === 'Completed';
+
+    const assignedList = (quickSubtaskAssigneesMap[taskId] && quickSubtaskAssigneesMap[taskId].length > 0)
+      ? quickSubtaskAssigneesMap[taskId]
+      : (assignee ? assignee.split(',').map(s => s.trim()).filter(Boolean) : []);
+
+    const created = Store.addSubtask(taskId, {
+      title,
+      assignees: assignedList,
+      assignee: assignedList.join(', '),
+      dueDate,
+      priority,
+      status,
+      completed
+    });
+
+    quickSubtaskAssigneesMap[taskId] = [];
+
     if (created && typeof showToast === 'function') {
       showToast(`Subtask "${title}" added!`);
     }
@@ -1573,6 +2190,421 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Subtask deleted.');
     }
     renderTable();
+  };
+
+  // ══════════════════════════════════════════════
+  //  SUBTASK DETAILS POPUP & COLLABORATION MODAL
+  // ══════════════════════════════════════════════
+  let activeModalSubtaskChecklists = [];
+  let activeModalSubtaskAssignees = [];
+
+  window.openSubtaskDetailsModal = function (taskId, subtaskId, e, mode = 'view') {
+    if (e) e.stopPropagation();
+    const tasks = Store.getTasks();
+    const t = tasks.find(x => x.id === taskId);
+    if (!t) return;
+    const st = Array.isArray(t.subtasks) ? t.subtasks.find(s => s.id === subtaskId) : null;
+    if (!st) return;
+
+    const tIdEl = document.getElementById('stModalTaskId');
+    const stIdEl = document.getElementById('stModalSubtaskId');
+    const parentTitleEl = document.getElementById('stModalParentTitle');
+
+    if (tIdEl) tIdEl.value = taskId;
+    if (stIdEl) stIdEl.value = subtaskId;
+    if (parentTitleEl) parentTitleEl.textContent = `${t.id}: ${t.title}`;
+
+    const rawAssignees = st.assignees || (st.assignee ? st.assignee.split(',').map(s => s.trim()).filter(Boolean) : []);
+    activeModalSubtaskAssignees = Array.isArray(rawAssignees) ? rawAssignees.map(a => typeof a === 'string' ? a : a.name).filter(Boolean) : [];
+    activeModalSubtaskChecklists = Array.isArray(st.checklists) ? JSON.parse(JSON.stringify(st.checklists)) : [];
+
+    const stStatus = st.status || (st.completed ? 'Completed' : 'In Progress');
+    const stPriority = st.priority || 'Medium';
+    const stDueDate = st.dueDate || t.dueDate || '2026-09-24';
+    const stEstHours = st.estimatedHours || '';
+    const stDesc = st.description || '';
+
+    // ── 1. Populate Saved Details View Panel ──
+    const viewTitleEl = document.getElementById('stModalViewTitle');
+    if (viewTitleEl) viewTitleEl.textContent = st.title || 'Untitled Subtask';
+
+    const viewStatusEl = document.getElementById('stModalViewStatusBadge');
+    if (viewStatusEl) {
+      let bg = '#f0f9ff', color = '#0284c7', border = '#bae6fd';
+      if (stStatus === 'Completed') { bg = '#f0fdf4'; color = '#16a34a'; border = '#bbf7d0'; }
+      else if (stStatus === 'Pending') { bg = '#fffbeb'; color = '#d97706'; border = '#fde68a'; }
+      else if (stStatus === 'Overdue') { bg = '#fef2f2'; color = '#dc2626'; border = '#fecaca'; }
+      viewStatusEl.innerHTML = `<span style="background:${bg};color:${color};border:1.5px solid ${border};border-radius:18px;padding:3px 12px;font-size:0.75rem;font-weight:700;display:inline-flex;align-items:center;gap:4px;">${stStatus}</span>`;
+    }
+
+    const viewPriorityEl = document.getElementById('stModalViewPriorityBadge');
+    if (viewPriorityEl) {
+      let bg = '#fffbeb', color = '#d97706', border = '#fde68a', dot = '🟡';
+      if (stPriority === 'High') { bg = '#fef2f2'; color = '#dc2626'; border = '#fecaca'; dot = '🔴'; }
+      else if (stPriority === 'Low') { bg = '#f0fdf4'; color = '#16a34a'; border = '#bbf7d0'; dot = '🟢'; }
+      viewPriorityEl.innerHTML = `<span style="background:${bg};color:${color};border:1px solid ${border};border-radius:14px;padding:2px 8px;font-size:0.75rem;font-weight:700;">${dot} ${stPriority}</span>`;
+    }
+
+    const viewDueDateEl = document.getElementById('stModalViewDueDate');
+    if (viewDueDateEl) {
+      viewDueDateEl.innerHTML = `<i class="pi pi-calendar" style="color:#64748b;font-size:11px;"></i> <span>${formatScreenshotDate(stDueDate)}</span>`;
+    }
+
+    const viewEstEl = document.getElementById('stModalViewEstHours');
+    if (viewEstEl) {
+      viewEstEl.innerHTML = stEstHours ? `<i class="pi pi-clock" style="color:#64748b;font-size:11px;"></i> <span>${escapeHtml(stEstHours)}</span>` : `<span style="color:#94a3b8;font-style:italic;">None</span>`;
+    }
+
+    const viewAssigneesEl = document.getElementById('stModalViewAssigneesList');
+    if (viewAssigneesEl) {
+      if (activeModalSubtaskAssignees.length > 0) {
+        viewAssigneesEl.innerHTML = activeModalSubtaskAssignees.map(name => `
+          <div style="display:inline-flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #e2e8f0;padding:3px 9px 3px 4px;border-radius:16px;">
+            <div class="assignee-avatar-circle" style="width:20px;height:20px;font-size:0.56rem;background:${getAvatarColor(name)};border:none;margin-left:0;box-shadow:none;">${getAvatarInitials(name)}</div>
+            <span style="font-size:0.75rem;font-weight:700;color:#1e293b;">${escapeHtml(name)}</span>
+          </div>
+        `).join('');
+      } else {
+        viewAssigneesEl.innerHTML = `<span style="color:#94a3b8;font-size:0.78rem;font-style:italic;">No team members assigned.</span>`;
+      }
+    }
+
+    const viewDescEl = document.getElementById('stModalViewDescText');
+    if (viewDescEl) {
+      viewDescEl.textContent = stDesc || 'No deliverable instructions or notes recorded for this subtask yet.';
+      viewDescEl.style.color = stDesc ? '#334155' : '#94a3b8';
+      viewDescEl.style.fontStyle = stDesc ? 'normal' : 'italic';
+    }
+
+    window.renderModalViewChecklist();
+
+    // ── 2. Populate Edit Form Panel ──
+    const titleIn = document.getElementById('stModalTitleIn');
+    if (titleIn) titleIn.value = st.title || '';
+
+    const statusIn = document.getElementById('stModalStatusIn');
+    if (statusIn) statusIn.value = stStatus;
+
+    const priorityIn = document.getElementById('stModalPriorityIn');
+    if (priorityIn) priorityIn.value = stPriority;
+
+    const dueDateIn = document.getElementById('stModalDueDateIn');
+    if (dueDateIn) dueDateIn.value = stDueDate;
+
+    const estIn = document.getElementById('stModalEstIn');
+    if (estIn) estIn.value = stEstHours;
+
+    const descIn = document.getElementById('stModalDescIn');
+    if (descIn) descIn.value = stDesc;
+
+    window.renderModalAssigneesList();
+    window.renderModalChecklist();
+
+    // Show delete buttons for existing subtask
+    const delBtn1 = document.getElementById('stModalViewDeleteBtn');
+    const delBtn2 = document.getElementById('stModalDeleteBtn');
+    if (delBtn1) delBtn1.style.display = 'inline-flex';
+    if (delBtn2) delBtn2.style.display = 'inline-flex';
+
+    window.switchSubtaskModalMode(mode);
+    openModal('modalSubtaskDetails');
+  };
+
+  window.switchSubtaskModalMode = function (mode) {
+    const viewPanel = document.getElementById('stModalViewPanel');
+    const editPanel = document.getElementById('stModalEditPanel');
+    const viewFooter = document.getElementById('stModalViewFooter');
+    const editFooter = document.getElementById('stModalEditFooter');
+    const headerTitle = document.getElementById('stModalHeaderTitle');
+
+    if (mode === 'edit') {
+      if (viewPanel) viewPanel.style.display = 'none';
+      if (editPanel) editPanel.style.display = 'flex';
+      if (viewFooter) viewFooter.style.display = 'none';
+      if (editFooter) editFooter.style.display = 'flex';
+      if (headerTitle) headerTitle.textContent = 'Edit Subtask Details';
+      setTimeout(() => {
+        const inEl = document.getElementById('stModalTitleIn');
+        if (inEl) inEl.focus();
+      }, 50);
+    } else {
+      if (viewPanel) viewPanel.style.display = 'flex';
+      if (editPanel) editPanel.style.display = 'none';
+      if (viewFooter) viewFooter.style.display = 'flex';
+      if (editFooter) editFooter.style.display = 'none';
+      if (headerTitle) headerTitle.textContent = 'Subtask Saved Details';
+    }
+  };
+
+  window.cancelSubtaskModalEdit = function () {
+    const subtaskId = document.getElementById('stModalSubtaskId')?.value;
+    if (subtaskId) {
+      window.switchSubtaskModalMode('view');
+    } else {
+      closeModal(document.getElementById('modalSubtaskDetails'));
+    }
+  };
+
+  window.renderModalViewChecklist = function () {
+    const container = document.getElementById('stModalViewChecklistContainer');
+    const progressEl = document.getElementById('stModalViewChecklistProgress');
+    if (!container) return;
+
+    const total = activeModalSubtaskChecklists.length;
+    const done = activeModalSubtaskChecklists.filter(c => c.done).length;
+    if (progressEl) progressEl.textContent = `${done}/${total} Completed`;
+
+    if (total === 0) {
+      container.innerHTML = `<div style="font-size:0.78rem;color:#94a3b8;font-style:italic;">No checklist items recorded.</div>`;
+      return;
+    }
+
+    container.innerHTML = activeModalSubtaskChecklists.map((item, idx) => `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;background:${item.done ? '#f0fdf4' : '#ffffff'};border:1px solid ${item.done ? '#bbf7d0' : '#e2e8f0'};">
+        <input type="checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleModalChecklistItem(${idx})" style="accent-color:#16a34a;cursor:pointer;">
+        <span style="font-size:0.80rem;font-weight:600;color:${item.done ? '#15803d' : '#334155'};text-decoration:${item.done ? 'line-through' : 'none'};">
+          ${escapeHtml(item.text)}
+        </span>
+      </div>
+    `).join('');
+  };
+
+  window.openQuickSubtaskDetailsModal = function (taskId, e) {
+    if (e) e.stopPropagation();
+    const tasks = Store.getTasks();
+    const t = tasks.find(x => x.id === taskId);
+    if (!t) return;
+
+    const tIdEl = document.getElementById('stModalTaskId');
+    const stIdEl = document.getElementById('stModalSubtaskId');
+    const parentTitleEl = document.getElementById('stModalParentTitle');
+
+    if (tIdEl) tIdEl.value = taskId;
+    if (stIdEl) stIdEl.value = ''; // new subtask indicator
+    if (parentTitleEl) parentTitleEl.textContent = `${t.id}: ${t.title}`;
+
+    // Title from quick input if user already typed something
+    const quickTitle = document.getElementById('quickSubtaskInput-' + taskId)?.value || '';
+    const titleIn = document.getElementById('stModalTitleIn');
+    if (titleIn) titleIn.value = quickTitle;
+
+    // Status & Priority from quick inputs
+    const quickStatus = document.getElementById('quickSubtaskStatus-' + taskId)?.value || 'In Progress';
+    const quickPriority = document.getElementById('quickSubtaskPriority-' + taskId)?.value || 'Medium';
+    const quickDueDate = document.getElementById('quickSubtaskDueDate-' + taskId)?.value || t.dueDate || '2026-09-24';
+
+    const statusIn = document.getElementById('stModalStatusIn');
+    if (statusIn) statusIn.value = quickStatus;
+
+    const priorityIn = document.getElementById('stModalPriorityIn');
+    if (priorityIn) priorityIn.value = quickPriority;
+
+    const dueDateIn = document.getElementById('stModalDueDateIn');
+    if (dueDateIn) dueDateIn.value = quickDueDate;
+
+    const estIn = document.getElementById('stModalEstIn');
+    if (estIn) estIn.value = '';
+
+    const descIn = document.getElementById('stModalDescIn');
+    if (descIn) descIn.value = '';
+
+    // Assignees from quick input if any
+    const list = quickSubtaskAssigneesMap[taskId] || [];
+    activeModalSubtaskAssignees = [...list];
+    window.renderModalAssigneesList();
+
+    activeModalSubtaskChecklists = [];
+    window.renderModalChecklist();
+
+    // Hide delete buttons for new subtask
+    const delBtn1 = document.getElementById('stModalViewDeleteBtn');
+    const delBtn2 = document.getElementById('stModalDeleteBtn');
+    if (delBtn1) delBtn1.style.display = 'none';
+    if (delBtn2) delBtn2.style.display = 'none';
+
+    window.switchSubtaskModalMode('edit');
+    openModal('modalSubtaskDetails');
+  };
+
+  window.renderModalAssigneesList = function () {
+    const container = document.getElementById('stModalAssigneesList');
+    if (!container) return;
+
+    container.innerHTML = GRID_AVAILABLE_MEMBERS.map(m => {
+      const isChecked = activeModalSubtaskAssignees.includes(m.name);
+      const initials = getAvatarInitials(m.name);
+      const bg = getAvatarColor(m.name);
+      return `
+        <label style="display:flex;align-items:center;gap:6px;padding:3px 6px;cursor:pointer;border-radius:6px;user-select:none;${isChecked ? 'background:#eff6ff;' : ''}"
+          onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='${isChecked ? '#eff6ff' : 'transparent'}'"
+          onclick="window.toggleModalMember('${escapeHtml(m.name)}', event)">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="event.stopPropagation(); window.toggleModalMember('${escapeHtml(m.name)}', event)"
+            style="width:13px;height:13px;cursor:pointer;accent-color:#2563eb;margin:0;">
+          <div class="assignee-avatar-circle" style="width:20px;height:20px;font-size:0.56rem;background:${bg};border:none;margin-left:0;box-shadow:none;flex-shrink:0;">${initials}</div>
+          <div style="flex:1;min-width:0;line-height:1.2;">
+            <div style="font-size:0.75rem;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.name)}</div>
+          </div>
+        </label>
+      `;
+    }).join('');
+  };
+
+  window.toggleModalMember = function (name, e) {
+    if (e) e.stopPropagation();
+    const idx = activeModalSubtaskAssignees.indexOf(name);
+    if (idx !== -1) {
+      activeModalSubtaskAssignees.splice(idx, 1);
+    } else {
+      activeModalSubtaskAssignees.push(name);
+    }
+    window.renderModalAssigneesList();
+  };
+
+  window.setModalAssigneesAll = function (selectAll) {
+    activeModalSubtaskAssignees = selectAll ? GRID_AVAILABLE_MEMBERS.map(m => m.name) : [];
+    window.renderModalAssigneesList();
+  };
+
+  // Checklist helper inside modal
+  window.renderModalChecklist = function () {
+    const container = document.getElementById('stModalChecklistContainer');
+    const progressEl = document.getElementById('stModalChecklistProgress');
+    if (!container) return;
+
+    const total = activeModalSubtaskChecklists.length;
+    const done = activeModalSubtaskChecklists.filter(c => c.done).length;
+    if (progressEl) progressEl.textContent = `${done}/${total}`;
+
+    if (total === 0) {
+      container.innerHTML = `<div style="font-size:0.74rem;color:#94a3b8;font-style:italic;padding:4px 0;">No checklist items added yet.</div>`;
+      return;
+    }
+
+    container.innerHTML = activeModalSubtaskChecklists.map((item, idx) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border-radius:6px;background:${item.done ? '#f0fdf4' : '#ffffff'};border:1px solid ${item.done ? '#bbf7d0' : '#e2e8f0'};">
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;flex:1;min-width:0;">
+          <input type="checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleModalChecklistItem(${idx})" style="accent-color:#16a34a;cursor:pointer;">
+          <span style="font-size:0.78rem;font-weight:600;color:${item.done ? '#15803d' : '#334155'};text-decoration:${item.done ? 'line-through' : 'none'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${escapeHtml(item.text)}
+          </span>
+        </label>
+        <button type="button" onclick="window.removeModalChecklistItem(${idx})" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:10px;padding:2px 4px;transition:color 0.15s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    `).join('');
+  };
+
+  window.addModalChecklistItem = function () {
+    const input = document.getElementById('stModalNewChecklistIn');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+    activeModalSubtaskChecklists.push({ id: 'ck-' + Date.now().toString(36), text, done: false });
+    input.value = '';
+    window.renderModalChecklist();
+    window.renderModalViewChecklist();
+    input.focus();
+  };
+
+  window.toggleModalChecklistItem = function (idx) {
+    if (activeModalSubtaskChecklists[idx]) {
+      activeModalSubtaskChecklists[idx].done = !activeModalSubtaskChecklists[idx].done;
+      window.renderModalChecklist();
+      window.renderModalViewChecklist();
+    }
+  };
+
+  window.removeModalChecklistItem = function (idx) {
+    activeModalSubtaskChecklists.splice(idx, 1);
+    window.renderModalChecklist();
+    window.renderModalViewChecklist();
+  };
+
+  window.saveSubtaskDetailsModal = function () {
+    const taskId = document.getElementById('stModalTaskId')?.value;
+    const subtaskId = document.getElementById('stModalSubtaskId')?.value;
+    const title = (document.getElementById('stModalTitleIn')?.value || '').trim();
+
+    if (!taskId) return;
+    if (!title) {
+      const titleIn = document.getElementById('stModalTitleIn');
+      if (titleIn) {
+        titleIn.focus();
+        titleIn.style.borderColor = '#ef4444';
+        setTimeout(() => { if (titleIn) titleIn.style.borderColor = '#cbd5e1'; }, 1500);
+      }
+      if (typeof showToast === 'function') showToast('Please enter a subtask name.');
+      return;
+    }
+
+    const status = document.getElementById('stModalStatusIn')?.value || 'In Progress';
+    const priority = document.getElementById('stModalPriorityIn')?.value || 'Medium';
+    const dueDate = document.getElementById('stModalDueDateIn')?.value || '';
+    const estimatedHours = document.getElementById('stModalEstIn')?.value?.trim() || '';
+    const description = document.getElementById('stModalDescIn')?.value?.trim() || '';
+    const completed = status === 'Completed';
+
+    if (subtaskId) {
+      // Update existing subtask
+      Store.updateSubtask(taskId, subtaskId, {
+        title,
+        status,
+        priority,
+        dueDate,
+        estimatedHours,
+        description,
+        assignees: [...activeModalSubtaskAssignees],
+        assignee: activeModalSubtaskAssignees.join(', '),
+        checklists: activeModalSubtaskChecklists,
+        completed
+      });
+      if (typeof showToast === 'function') {
+        showToast(`Subtask "${title}" details saved!`);
+      }
+      // Re-populate and display as saved details in view mode
+      window.openSubtaskDetailsModal(taskId, subtaskId, null, 'view');
+    } else {
+      // Create new subtask from modal
+      const newSt = Store.addSubtask(taskId, {
+        title,
+        status,
+        priority,
+        dueDate,
+        estimatedHours,
+        description,
+        assignees: [...activeModalSubtaskAssignees],
+        assignee: activeModalSubtaskAssignees.join(', '),
+        checklists: activeModalSubtaskChecklists,
+        completed
+      });
+      quickSubtaskAssigneesMap[taskId] = [];
+      const quickInput = document.getElementById('quickSubtaskInput-' + taskId);
+      if (quickInput) quickInput.value = '';
+      if (typeof showToast === 'function') {
+        showToast(`Subtask "${title}" added with details!`);
+      }
+      if (newSt && newSt.id) {
+        window.openSubtaskDetailsModal(taskId, newSt.id, null, 'view');
+      } else {
+        closeModal(document.getElementById('modalSubtaskDetails'));
+      }
+    }
+
+    renderTable();
+  };
+
+  window.deleteActiveModalSubtask = function () {
+    const taskId = document.getElementById('stModalTaskId')?.value;
+    const subtaskId = document.getElementById('stModalSubtaskId')?.value;
+    if (taskId && subtaskId) {
+      Store.deleteSubtask(taskId, subtaskId);
+      closeModal(document.getElementById('modalSubtaskDetails'));
+      if (typeof showToast === 'function') {
+        showToast('Subtask deleted.');
+      }
+      renderTable();
+    }
   };
 
   // ══════════════════════════════════════════════

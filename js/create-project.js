@@ -6,11 +6,42 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ── Sidebar Toggle ──
+  // ── Sidebar collapse toggle ──
   const sidebar = document.getElementById('mainSidebar');
   const toggleBtn = document.getElementById('sidebarToggleBtn');
-  if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+  const collapseTrigger = document.getElementById('sidebarCollapseTrigger');
+  const brandIcon = document.getElementById('sidebarBrandIcon');
+
+  function doSidebarToggle() {
+    if (typeof window.toggleAiggpaSidebar === 'function') {
+      window.toggleAiggpaSidebar();
+    } else {
+      const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+      document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
+      if (sidebar) sidebar.classList.toggle('collapsed', isCollapsed);
+    }
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      doSidebarToggle();
+    });
+  }
+  if (collapseTrigger) {
+    collapseTrigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      doSidebarToggle();
+    });
+  }
+  if (brandIcon) {
+    brandIcon.addEventListener('click', (e) => {
+      if (document.documentElement.classList.contains('sidebar-collapsed') ||
+          document.body?.classList.contains('sidebar-collapsed')) {
+        e.preventDefault();
+        doSidebarToggle();
+      }
+    });
   }
 
   // ── Top Dropdown ──
@@ -578,14 +609,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close the popup modal
     window.closeCreateProjectModal();
 
-    // Ensure the FY filter displays this newly created project
+    // Reset FY filter to ALL so the newly created project is always visible
     const fyFilter = document.getElementById('projectFyFilter');
     if (fyFilter) {
-      fyFilter.value = financialYear;
-      // If dropdown does not have exact option, show all
-      if (fyFilter.value !== financialYear) {
-        fyFilter.value = 'ALL';
-      }
+      fyFilter.value = 'ALL';
     }
 
     // Clear search box so it doesn't hide the newly created project
@@ -1032,7 +1059,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     Store.updateProject(project);
-    showToast(`Team assignees saved for "${project.name}"!`);
+
+    // Seed the 5 default research milestones for this project (idempotent — skipped if already exist)
+    const seeded = Store.createDefaultMilestones(project.id, project.name);
+    const milestoneMsg = seeded.length > 0
+      ? ` ${seeded.length} default milestones created.`
+      : '';
+
+    showToast(`Team assignees saved for "${project.name}"!${milestoneMsg}`);
     window.closeAssigneeModal();
     renderProjectsListTable();
   };

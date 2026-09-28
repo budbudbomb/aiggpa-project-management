@@ -9,7 +9,8 @@ const Store = (function () {
     TASKS: 'aiggpa_tasks',
     SURVEYS: 'aiggpa_surveys',
     MEETINGS: 'aiggpa_meetings',
-    QUESTION_BANK: 'aiggpa_question_bank'
+    QUESTION_BANK: 'aiggpa_question_bank',
+    MILESTONES: 'aiggpa_milestones'
   };
 
   const DEFAULT_PROJECTS = [
@@ -326,13 +327,13 @@ const Store = (function () {
         { name: 'Manish Verma', role: 'Survey Intern', read: false, readAt: null },
         { name: 'Pooja Tiwari', role: 'Data Intern', read: true, readAt: '15 Sep 2026, 04:00 PM' }
       ],
-      dueDate: '2026-09-23',
+      dueDate: '2026-09-15',
       priority: 'High',
       status: 'In Progress',
       subtasks: [
-        { id: 'ST-01', title: 'Prepare physical health assessment checklists', completed: true, assignee: 'Kavita Joshi', dueDate: '2026-09-22', priority: 'High', status: 'Completed' },
-        { id: 'ST-02', title: 'Visit Ujjain Urban PHC Sector 1 & 2', completed: false, assignee: 'Rohan Sharma', dueDate: '2026-09-23', priority: 'High', status: 'In Progress' },
-        { id: 'ST-03', title: 'Collect inventory & emergency drug records', completed: false, assignee: 'Pooja Tiwari', dueDate: '2026-09-24', priority: 'Medium', status: 'Pending' }
+        { id: 'ST-01', title: 'Prepare physical health assessment checklists', completed: true, assignee: 'Kavita Joshi', assignees: ['Kavita Joshi'], dueDate: '2026-09-15', priority: 'High', status: 'Completed', description: 'Cross-check PHC physical assessment checklists with district CMO standards before dispatching field team.', estimatedHours: '3 hrs' },
+        { id: 'ST-02', title: 'Visit Ujjain Urban PHC Sector 1 & 2', completed: false, assignee: 'Rohan Sharma', assignees: ['Rohan Sharma'], dueDate: '2026-09-15', priority: 'High', status: 'In Progress', description: 'Inspect cold-chain equipment, medical equipment, and staff attendance log at Sector 1 & 2 PHC facilities.', estimatedHours: '6 hrs' },
+        { id: 'ST-03', title: 'Collect inventory & emergency drug records', completed: false, assignee: 'Pooja Tiwari', assignees: ['Pooja Tiwari'], dueDate: '2026-09-16', priority: 'Medium', status: 'Pending', description: 'Gather stock registers for Essential Drugs List (EDL) and verify expiry logs.', estimatedHours: '4 hrs' }
       ]
     },
     {
@@ -343,50 +344,50 @@ const Store = (function () {
       project: 'District Governance Performance Index',
       assignee: 'All Fellows',
       assignees: [
-        { name: 'Dr. Neha Saxena', role: 'District Fellow', read: true, readAt: '23 Sep 2026, 02:00 PM' },
+        { name: 'Dr. Neha Saxena', role: 'District Fellow', read: true, readAt: '05 Sep 2026, 02:00 PM' },
         { name: 'Alok Mishra', role: 'Policy Fellow', read: false, readAt: null },
         { name: 'Deepak Chouhan', role: 'Research Fellow', read: false, readAt: null }
       ],
-      dueDate: '2026-09-23',
+      dueDate: '2026-09-05',
       priority: 'High',
       status: 'Pending',
       subtasks: [
-        { id: 'ST-04', title: 'Extract August attendance data from bio-metrics', completed: true, assignee: 'Dr. Neha Saxena', dueDate: '2026-09-21', priority: 'Medium', status: 'Completed' },
-        { id: 'ST-05', title: 'Consolidate block fellow achievement notes', completed: false, assignee: 'Alok Mishra', dueDate: '2026-09-23', priority: 'High', status: 'Pending' }
+        { id: 'ST-04', title: 'Extract August attendance data from bio-metrics', completed: true, assignee: 'Dr. Neha Saxena', dueDate: '2026-09-04', priority: 'Medium', status: 'Completed' },
+        { id: 'ST-05', title: 'Consolidate block fellow achievement notes', completed: false, assignee: 'Alok Mishra', dueDate: '2026-09-05', priority: 'High', status: 'Pending' }
       ]
     },
     {
       id: 'TSK-03',
-      title: 'Rural Infrastructure Assessment & Connectivity Audit',
+      title: 'Rural Infrastructure Assessment',
       tag: 'Survey',
       description: 'Document road and connectivity infrastructure conditions in assigned blocks.',
       project: 'Rural Connectivity & Public Works Audit',
       assignee: 'All Interns',
       assignees: [
-        { name: 'Siddharth Sen', role: 'Infra Intern', read: true, readAt: '23 Sep 2026, 09:15 AM' },
-        { name: 'Aakash Rathore', role: 'GIS Intern', read: true, readAt: '23 Sep 2026, 10:00 AM' },
-        { name: 'Megha Patidar', role: 'Field Intern', read: true, readAt: '23 Sep 2026, 11:20 AM' },
-        { name: 'Nikhil Jain', role: 'Audit Intern', read: true, readAt: '23 Sep 2026, 11:45 AM' }
+        { name: 'Siddharth Sen', role: 'Infra Intern', read: true, readAt: '31 Jul 2026, 09:15 AM' },
+        { name: 'Aakash Rathore', role: 'GIS Intern', read: true, readAt: '31 Jul 2026, 10:00 AM' },
+        { name: 'Megha Patidar', role: 'Field Intern', read: true, readAt: '31 Jul 2026, 11:20 AM' },
+        { name: 'Nikhil Jain', role: 'Audit Intern', read: true, readAt: '31 Jul 2026, 11:45 AM' }
       ],
-      dueDate: '2026-09-23',
+      dueDate: '2026-07-31',
       priority: 'Medium',
-      status: 'Completed'
+      status: 'Overdue'
     },
     {
       id: 'TSK-04',
-      title: 'Community Feedback Collection — Scheme Delivery',
+      title: 'Community Feedback Collection',
       tag: 'Survey',
       description: 'Gather community satisfaction feedback on government scheme delivery.',
       project: 'Public Scheme Delivery Assessment',
       assignee: 'All Interns',
       assignees: [
-        { name: 'Tanvi Dubey', role: 'Feedback Intern', read: true, readAt: '23 Sep 2026, 09:30 AM' },
+        { name: 'Tanvi Dubey', role: 'Feedback Intern', read: true, readAt: '18 Sep 2026, 09:30 AM' },
         { name: 'Gaurav Yadav', role: 'Field Intern', read: false, readAt: null },
         { name: 'Divya Rajput', role: 'Community Intern', read: false, readAt: null },
-        { name: 'Kunal Malviya', role: 'Survey Intern', read: true, readAt: '23 Sep 2026, 01:00 PM' },
+        { name: 'Kunal Malviya', role: 'Survey Intern', read: true, readAt: '18 Sep 2026, 01:00 PM' },
         { name: 'Preeti Solanki', role: 'Data Intern', read: false, readAt: null }
       ],
-      dueDate: '2026-09-23',
+      dueDate: '2026-09-18',
       priority: 'Medium',
       status: 'Pending'
     },
@@ -396,12 +397,11 @@ const Store = (function () {
       tag: '',
       description: 'Conduct 2-day digital literacy awareness session at gram panchayat level.',
       project: 'Digital Inclusion Drive',
-      assignee: 'Priya Patel',
-      assigneeRole: 'INTERN',
+      assignee: 'All Interns',
       assignees: [
         { name: 'Priya Patel', role: 'Digital Training Intern', read: false, readAt: null }
       ],
-      dueDate: '2026-09-23',
+      dueDate: '2026-09-28',
       priority: 'Low',
       status: 'In Progress'
     },
@@ -411,48 +411,17 @@ const Store = (function () {
       tag: '',
       description: 'Coordinate with all district Fellows for quarterly performance review and intern orientation.',
       project: 'State Capacity Building Framework',
-      assignee: 'All Program Coordinators',
-      assignees: [
-        { name: 'Virendra Singh', role: 'Divisional Coordinator', read: true, readAt: '18 Sep 2026, 10:00 AM' },
-        { name: 'Anuradha Mehta', role: 'Orientation Lead', read: true, readAt: '18 Sep 2026, 11:20 AM' },
-        { name: 'Sanjay Deshmukh', role: 'Program Coordinator', read: false, readAt: null },
-        { name: 'Ritu Bhargava', role: 'Capacity Coordinator', read: true, readAt: '18 Sep 2026, 03:15 PM' },
-        { name: 'Harish Parihar', role: 'Training Coordinator', read: true, readAt: '18 Sep 2026, 04:45 PM' },
-        { name: 'Sunil Shrivastava', role: 'Monitoring Coordinator', read: false, readAt: null }
-      ],
-      dueDate: '2026-09-23',
-      priority: 'High',
-      status: 'In Progress'
-    },
-    {
-      id: 'TSK-07',
-      title: 'Stakeholder Consultation & Policy Brief Formulation',
-      tag: '',
-      description: 'Consolidate recommendations from multi-departmental consultations for state policy note.',
-      project: 'DPI-Based Open Networks for Human Capital in Viksit MP 2047',
       assignee: 'All Fellows',
       assignees: [
-        { name: 'Dr. Neha Saxena', role: 'District Fellow', read: true, readAt: '23 Sep 2026, 11:30 AM' },
-        { name: 'Alok Mishra', role: 'Policy Fellow', read: true, readAt: '23 Sep 2026, 12:15 PM' }
+        { name: 'Virendra Singh', role: 'Divisional Coordinator', read: true, readAt: '20 Sep 2026, 10:00 AM' },
+        { name: 'Anuradha Mehta', role: 'Orientation Lead', read: true, readAt: '20 Sep 2026, 11:20 AM' },
+        { name: 'Sanjay Deshmukh', role: 'Program Coordinator', read: false, readAt: null },
+        { name: 'Ritu Bhargava', role: 'Capacity Coordinator', read: true, readAt: '20 Sep 2026, 03:15 PM' },
+        { name: 'Harish Parihar', role: 'Training Coordinator', read: true, readAt: '20 Sep 2026, 04:45 PM' },
+        { name: 'Sunil Shrivastava', role: 'Monitoring Coordinator', read: false, readAt: null }
       ],
-      dueDate: '2026-09-23',
+      dueDate: '2026-09-20',
       priority: 'High',
-      status: 'In Progress'
-    },
-    {
-      id: 'TSK-08',
-      title: 'Field Investigator Verification & Data Quality Audit',
-      tag: 'Survey',
-      description: 'Cross-verify field samples and GPS timestamps submitted across primary centers.',
-      project: 'Urban Water Governance & Service Delivery Audit',
-      assignee: 'All Interns',
-      assignees: [
-        { name: 'Kavita Joshi', role: 'Health Intern', read: true, readAt: '23 Sep 2026, 08:45 AM' },
-        { name: 'Rohan Sharma', role: 'Field Intern', read: true, readAt: '23 Sep 2026, 09:30 AM' },
-        { name: 'Pooja Tiwari', role: 'Data Intern', read: false, readAt: null }
-      ],
-      dueDate: '2026-09-23',
-      priority: 'Medium',
       status: 'Completed'
     }
   ];
@@ -694,9 +663,15 @@ const Store = (function () {
     // Tasks
     getTasks: function () {
       let list = get(KEYS.TASKS, null);
-      if (!list || list.length < 6 || !list.some(t => t.id === 'TSK-07')) {
-        set(KEYS.TASKS, DEFAULT_TASKS);
-        return DEFAULT_TASKS;
+      // Only reset to defaults if the list has no real tasks AND no milestones
+      // (milestones are user data that must not be wiped)
+      const hasMilestones = list && list.some(t => t.isMilestone);
+      if (!list || (!hasMilestones && (list.length < 6 || !list.some(t => t.id === 'TSK-01')))) {
+        // Preserve any milestone tasks that exist in the current list
+        const existingMilestones = (list || []).filter(t => t.isMilestone);
+        const merged = [...DEFAULT_TASKS, ...existingMilestones];
+        set(KEYS.TASKS, merged);
+        return merged;
       }
       list = list.map(t => {
         if (!t.assignees || t.assignees.length === 0) {
@@ -760,19 +735,46 @@ const Store = (function () {
       const t = list.find(x => x.id === taskId);
       if (t) {
         if (!Array.isArray(t.subtasks)) t.subtasks = [];
+        const rawAssignees = Array.isArray(subtask.assignees) ? subtask.assignees : (subtask.assignee ? subtask.assignee.split(',').map(s => s.trim()).filter(Boolean) : []);
         const newSubtask = {
           id: 'ST-' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4),
           title: (subtask.title || '').trim(),
           completed: !!subtask.completed,
-          assignee: subtask.assignee || (t.assignees && t.assignees[0] ? t.assignees[0].name : 'Dr. Rameshwar Singh'),
+          assignee: rawAssignees.join(', '),
+          assignees: rawAssignees,
           dueDate: subtask.dueDate || t.dueDate || '2026-09-24',
           priority: subtask.priority || 'Medium',
           status: subtask.status || (subtask.completed ? 'Completed' : 'In Progress'),
+          description: subtask.description || '',
+          estimatedHours: subtask.estimatedHours || '',
+          checklists: Array.isArray(subtask.checklists) ? subtask.checklists : [],
           createdAt: new Date().toISOString()
         };
         t.subtasks.push(newSubtask);
         this.saveTasks(list);
         return newSubtask;
+      }
+      return null;
+    },
+    updateSubtask: function (taskId, subtaskId, updatedData) {
+      const list = this.getTasks();
+      const t = list.find(x => x.id === taskId);
+      if (t && Array.isArray(t.subtasks)) {
+        const idx = t.subtasks.findIndex(s => s.id === subtaskId);
+        if (idx !== -1) {
+          const rawAssignees = Array.isArray(updatedData.assignees)
+            ? updatedData.assignees
+            : (updatedData.assignee ? updatedData.assignee.split(',').map(s => s.trim()).filter(Boolean) : (t.subtasks[idx].assignees || []));
+          t.subtasks[idx] = {
+            ...t.subtasks[idx],
+            ...updatedData,
+            assignees: rawAssignees,
+            assignee: rawAssignees.join(', '),
+            completed: updatedData.status === 'Completed' ? true : (updatedData.status ? false : !!t.subtasks[idx].completed)
+          };
+          this.saveTasks(list);
+          return t.subtasks[idx];
+        }
       }
       return null;
     },
@@ -798,6 +800,92 @@ const Store = (function () {
         this.saveTasks(list);
       }
     },
+
+    // Milestones
+    getMilestones: function () {
+      return get(KEYS.MILESTONES, []);
+    },
+    saveMilestones: function (data) {
+      set(KEYS.MILESTONES, data);
+    },
+    getMilestonesForProject: function (projectId) {
+      return this.getMilestones().filter(m => m.projectId === projectId);
+    },
+    /**
+     * Creates 5 default research-phase milestones for a project.
+     * Milestones are stored in BOTH the milestones index AND the tasks store
+     * so they appear naturally in the Activities task table.
+     * Safe to call multiple times — skips if milestones already exist for that project.
+     */
+    createDefaultMilestones: function (projectId, projectName) {
+      if (!projectId) return [];
+
+      // Guard: skip if already seeded (check tasks store)
+      const existingTasks = this.getTasks();
+      const alreadySeeded = existingTasks.some(t => t.isMilestone && t.projectId === projectId);
+      if (alreadySeeded) return [];
+
+      const MILESTONE_NAMES = [
+        'Literature Review',
+        'Questionnaire Development',
+        'Field Survey',
+        'Data Analysis',
+        'Report Writing'
+      ];
+
+      const now = new Date();
+      // Spread milestones across the next 12 months as placeholder due dates
+      const newMilestones = MILESTONE_NAMES.map((name, i) => {
+        const due = new Date(now);
+        due.setMonth(due.getMonth() + (i + 1) * 2); // every 2 months
+        const dueDateStr = due.toISOString().split('T')[0];
+
+        return {
+          id: 'MS-' + Date.now().toString(36) + '-' + i,
+          projectId,
+          project: projectName || '',          // used by activities.js project filter
+          projectName: projectName || '',
+          title: name,
+          isMilestone: true,
+          tag: 'Milestone',
+          category: 'milestone',
+          status: 'Pending',
+          priority: 'Medium',
+          assignees: [],
+          assignee: '',
+          dueDate: dueDateStr,
+          description: '',
+          subtasks: [],
+          progress: 0,
+          createdAt: new Date(now.getTime() + i).toISOString()
+        };
+      });
+
+      // Add to tasks store so activities.js renderTable() picks them up
+      const taskList = this.getTasks();
+      newMilestones.forEach(m => taskList.unshift(m));
+      this.saveTasks(taskList);
+
+      // Also index in the milestones store
+      const allMilestones = this.getMilestones();
+      this.saveMilestones([...allMilestones, ...newMilestones]);
+
+      return newMilestones;
+    },
+    updateMilestone: function (milestoneId, updatedData) {
+      const list = this.getMilestones();
+      const idx = list.findIndex(m => m.id === milestoneId);
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], ...updatedData };
+        this.saveMilestones(list);
+        return list[idx];
+      }
+      return null;
+    },
+    deleteMilestone: function (milestoneId) {
+      const list = this.getMilestones().filter(m => m.id !== milestoneId);
+      this.saveMilestones(list);
+    },
     updateSubtaskField: function (taskId, subtaskId, field, value) {
       const list = this.getTasks();
       const t = list.find(x => x.id === taskId);
@@ -805,8 +893,14 @@ const Store = (function () {
         const st = t.subtasks.find(s => s.id === subtaskId);
         if (st) {
           st[field] = value;
-          if (field === 'status') {
+          if (field === 'assignees') {
+            st.assignee = Array.isArray(value) ? value.join(', ') : (value || '');
+          } else if (field === 'assignee') {
+            st.assignees = value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
+          } else if (field === 'status') {
             st.completed = (value === 'Completed');
+          } else if (field === 'completed') {
+            st.status = value ? 'Completed' : 'In Progress';
           }
           this.saveTasks(list);
           return st;
@@ -989,3 +1083,64 @@ function showToast(message) {
     toast.style.transform = 'translateY(10px)';
   }, 3200);
 }
+
+// ── Global Collapsible Sidebar Controller ──
+(function initGlobalSidebar() {
+  const COLLAPSE_KEY = 'aiggpa_sidebar_collapsed';
+
+  function applySidebarState(isCollapsed) {
+    if (isCollapsed) {
+      document.documentElement.classList.add('sidebar-collapsed');
+      if (document.body) document.body.classList.add('sidebar-collapsed');
+      const sidebar = document.getElementById('mainSidebar');
+      if (sidebar) sidebar.classList.add('collapsed');
+    } else {
+      document.documentElement.classList.remove('sidebar-collapsed');
+      if (document.body) document.body.classList.remove('sidebar-collapsed');
+      const sidebar = document.getElementById('mainSidebar');
+      if (sidebar) sidebar.classList.remove('collapsed');
+    }
+  }
+
+  function toggleSidebarCollapse() {
+    const isCurrentlyCollapsed = document.documentElement.classList.contains('sidebar-collapsed') ||
+      (document.body && document.body.classList.contains('sidebar-collapsed'));
+    const newState = !isCurrentlyCollapsed;
+    applySidebarState(newState);
+    try {
+      localStorage.setItem(COLLAPSE_KEY, newState ? 'true' : 'false');
+    } catch (e) {}
+    return newState;
+  }
+
+  window.toggleAiggpaSidebar = toggleSidebarCollapse;
+  window.applyAiggpaSidebarState = applySidebarState;
+
+  // Immediately apply from localStorage
+  try {
+    if (localStorage.getItem(COLLAPSE_KEY) === 'true') {
+      applySidebarState(true);
+    }
+  } catch (e) {}
+
+  document.addEventListener('DOMContentLoaded', () => {
+    try {
+      if (localStorage.getItem(COLLAPSE_KEY) === 'true') {
+        applySidebarState(true);
+      }
+    } catch (e) {}
+
+    // Global keyboard shortcut: Ctrl+B or Cmd+B to toggle sidebar
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        // Only if not focused in an input/textarea
+        const tag = document.activeElement?.tagName;
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+          e.preventDefault();
+          toggleSidebarCollapse();
+        }
+      }
+    });
+  });
+})();
+
