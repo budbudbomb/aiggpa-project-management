@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIGGPA - Project Management</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="mainSidebar">
+      <div class="sidebar-header">
+        <div class="company-logo-box">
+          <div class="aiggpa-brand-icon">
+            <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 7L29 12V21C29 26.5 25.2 31.6 20 33C14.8 31.6 11 26.5 11 21V12L20 7Z" stroke="#ffffff"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.15)" />
+              <path d="M16 20L19 23L24 17" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="aiggpa-brand-text">
+            <span class="brand-title">AIGGPA</span>
+            <span class="brand-sub">Project Governance</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+
+        <a href="create-project.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-plus-circle"></i>
+            <span>Create Project</span>
+          </div>
+        </a>
+
+        <a href="activities.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-check-square"></i>
+            <span>Tasks</span>
+          </div>
+        </a>
+
+        <a href="create-survey.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-file-edit"></i>
+            <span>Surveys</span>
+          </div>
+        </a>
+      </nav>
+      <!-- Sidebar Bottom User Profile Pill -->
+      <div class="sidebar-footer">
+        <div class="user-profile-pill">
+          <div class="profile-left">
+            <div class="profile-avatar" id="sidebarAvatar">AI</div>
+            <div class="profile-info">
+              <h4 id="sidebarUserName">AIGGPA</h4>
+              <p id="sidebarUserRole">Center Head</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+            <i class="pi pi-bars"></i>
+          </button>
+          <div class="search-box">
+            <i class="pi pi-search search-icon"></i>
+            <input type="text" id="globalSearchInput" placeholder="Search projects...">
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- User Profile Dropdown with Logout -->
+          <div class="user-profile-dropdown" style="position: relative;">
+            <button type="button" id="topUserDropdownBtn"
+              style="border: 1px solid #dbeafe; background: #eff6ff; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; border-radius: 20px; transition: all 0.2s;">
+              <div class="avatar-small">AI</div>
+              <span style="font-weight: 700; color: #1e293b; font-size: 0.85rem;" id="topbarUserName">AIGGPA</span>
+              <i class="pi pi-chevron-down" style="font-size: 9px; color: #64748b;"></i>
+            </button>
+
+            <!-- Dropdown Menu under username -->
+            <div id="topUserDropdownMenu"
+              style="display: none; position: absolute; right: 0; top: 120%; width: 190px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); padding: 8px 0; z-index: 99999;">
+              <div style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9;">
+                <div style="font-weight: 800; color: #1e293b; font-size: 0.88rem;">AIGGPA Admin</div>
+                <div style="font-size: 0.74rem; color: #64748b;" id="topbarDropdownRole">Center Head</div>
+              </div>
+              <a href="login.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: #ef4444; text-decoration: none; font-size: 0.85rem; font-weight: 700; transition: background 0.15s;"
+                onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                <i class="pi pi-sign-out" style="font-size: 14px;"></i>
+                <span>Logout</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- WORKSPACE / SETTINGS VIEW -->
+      <main class="workspace-content settings-container">
+        <!-- Banner Header -->
+        <div class="page-title-banner" style="margin-bottom: 24px;">
+          <div class="title-with-icon">
+            <div class="title-icon-box">
+              <i class="pi pi-folder-open"></i>
+            </div>
+            <div class="title-text-group">
+              <h1>Project Management &amp; Monitoring</h1>
+              <p>Create government-sanctioned research projects, allocate designated research teams, and track
+                utilization.</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <a href="create-project.html" class="btn btn-primary"
+              style="height: 42px; font-size: 0.88rem; padding: 0 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+              <i class="pi pi-plus"></i>
+              <span>Create Project</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- 4 Metric Cards Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon-wrapper kpi-blue">
+              <i class="pi pi-folder-open"></i>
+            </div>
+            <div class="kpi-details">
+              <span class="kpi-label">Active Research Projects</span>
+              <h3 class="kpi-value" id="kpiActiveProjects">3</h3>
+              <span class="kpi-trend positive"><i class="pi pi-arrow-up-right"></i> Sanctioned</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-wrapper kpi-emerald">
+              <i class="pi pi-indian-rupee"></i>
+            </div>
+            <div class="kpi-details">
+              <span class="kpi-label">Approved Sanctioned Budget</span>
+              <h3 class="kpi-value" id="kpiTotalBudget">₹55.0 L</h3>
+              <span class="kpi-trend positive"><i class="pi pi-check"></i> Government Sanctioned</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-wrapper kpi-purple">
+              <i class="pi pi-chart-pie"></i>
+            </div>
+            <div class="kpi-details">
+              <span class="kpi-label">Financial Utilization</span>
+              <h3 class="kpi-value" id="kpiUtilizedBudget">₹32.0 L</h3>
+              <span class="kpi-trend neutral"><i class="pi pi-percentage"></i> 58.2% Disbursed</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon-wrapper kpi-amber">
+              <i class="pi pi-users"></i>
+            </div>
+            <div class="kpi-details">
+              <span class="kpi-label">Field Investigators Deployed</span>
+              <h3 class="kpi-value" id="kpiTotalInvestigators">13</h3>
+              <span class="kpi-trend positive"><i class="pi pi-check-circle"></i> On Ground Active</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROJECTS TABLE CARD -->
+        <div
+          style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 16px; padding: 22px; box-shadow: var(--shadow-card); margin-top: 24px;">
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h3 style="font-size: 1.08rem; font-weight: 800; color: var(--text-primary);">AIGGPA Active Projects</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Sanctioned timeline, designated team allocations, and approved budgets</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="text" id="projectsTableSearchInput" class="form-control-input"
+                placeholder="🔍 Filter projects..." style="height: 36px; font-size: 0.82rem; width: 220px;">
+            </div>
+          </div>
+
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+              <thead>
+                <tr
+                  style="background: #f8fafc; border-bottom: 1.5px solid #e2e8f0; color: #475569; text-transform: uppercase; font-size: 0.74rem;">
+                  <th style="padding: 12px 16px;">Code &amp; Project Title</th>
+                  <th style="padding: 12px 16px;">Timeline</th>
+                  <th style="padding: 12px 16px;">Designated Team Composition</th>
+                  <th style="padding: 12px 16px;">Budget Sanctioned</th>
+                  <th style="padding: 12px 16px;">Status</th>
+                  <th style="padding: 12px 16px; text-align: center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="projectsTableTbody">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <!-- Scripts -->
+  <script src="js/store.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+
+</html>

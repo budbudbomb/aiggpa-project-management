@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIGGPA - Create &amp; Sanction Research Project</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    /* Tab Strip Styling */
+    .prj-tab-strip {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 22px;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .prj-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #64748b;
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .prj-tab-btn:hover {
+      background: #eff4fe;
+      color: #1837d4;
+      border-color: #93c5fd;
+    }
+
+    .prj-tab-btn.active {
+      background: linear-gradient(135deg, #1837d4, #0284c7);
+      color: #ffffff;
+      border-color: #1837d4;
+      box-shadow: 0 4px 14px rgba(24, 55, 212, 0.25);
+    }
+
+    .prj-card {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-card);
+      margin-bottom: 24px;
+    }
+
+    /* Budget Table Styling */
+    .budget-edit-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      text-align: left;
+    }
+
+    .budget-edit-table th {
+      background: #f8fafc;
+      border-bottom: 1.5px solid #cbd5e1;
+      color: #475569;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      padding: 11px 12px;
+      font-weight: 800;
+    }
+
+    .budget-edit-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+
+    /* Employee Checkbox List Styling */
+    .emp-checklist-container {
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .emp-checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px;
+      max-height: 240px;
+      overflow-y: auto;
+      padding-right: 4px;
+      margin-top: 10px;
+    }
+
+    .emp-checkbox-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .emp-checkbox-card:hover {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+
+    .emp-checkbox-card.selected {
+      border-color: #1837d4;
+      background: #eff4fe;
+      box-shadow: 0 2px 8px rgba(24, 55, 212, 0.1);
+    }
+
+    .emp-checkbox-card input[type="checkbox"] {
+      width: 17px;
+      height: 17px;
+      accent-color: #1837d4;
+      cursor: pointer;
+    }
+
+    .step-footer-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1.5px solid #f1f5f9;
+    }
+
+    /* Action Buttons in Project Table */
+    .btn-action-budget {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn-action-budget:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
+      color: #1e40af;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(29, 78, 216, 0.15);
+    }
+
+    .btn-action-assignee {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1.5px solid #bbf7d0;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn-action-assignee:hover {
+      background: #dcfce7;
+      border-color: #86efac;
+      color: #166534;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(22, 101, 52, 0.15);
+    }
+    
+    .btn-action-budget-edit {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #fffbeb;
+      color: #d97706;
+      border: 1.5px solid #fde68a;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn-action-budget-edit:hover {
+      background: #fef3c7;
+      border-color: #fcd34d;
+      color: #b45309;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(217, 119, 6, 0.15);
+    }
+
+    .btn-action-edit-pencil {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: #fffbeb;
+      color: #b45309;
+      border: 1.5px solid #fde68a;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 1px 2px rgba(217, 119, 6, 0.08);
+    }
+
+    .btn-action-edit-pencil:hover {
+      background: #fef3c7;
+      border-color: #fcd34d;
+      color: #92400e;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2);
+    }
+
+    .btn-action-budget-view {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn-action-budget-view:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
+      color: #1e40af;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(29, 78, 216, 0.15);
+    }
+
+    /* Assignee Avatar Group in Projects Table */
+    .assignee-avatar-group {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 20px;
+      transition: all 0.15s ease;
+    }
+
+    .assignee-avatar-group:hover {
+      background: #eff6ff;
+    }
+
+    .assignee-avatar-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      margin-left: -8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      transition: transform 0.15s ease, z-index 0.15s;
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .assignee-avatar-circle:first-child {
+      margin-left: 0;
+    }
+
+    .assignee-avatar-circle:hover {
+      transform: translateY(-2px) scale(1.12);
+      z-index: 10;
+    }
+
+    .assignee-avatar-more {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #334155;
+      background: #e2e8f0;
+      border: 2px solid #ffffff;
+      margin-left: -8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      user-select: none;
+    }
+
+    .btn-action-assignee-edit {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: #f5f3ff;
+      color: #6d28d9;
+      border: 1.5px solid #ddd6fe;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn-action-assignee-edit:hover {
+      background: #ede9fe;
+      border-color: #c4b5fd;
+      color: #5b21b6;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(109, 40, 217, 0.15);
+    }
+
+    .filter-bar-card {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* Table Pagination Controls */
+    .pagination-btn {
+      padding: 5px 12px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: #eff6ff;
+      border-color: #93c5fd;
+      color: #1837d4;
+    }
+
+    .pagination-btn.active {
+      background: #1837d4;
+      border-color: #1837d4;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(24, 55, 212, 0.25);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+      color: #94a3b8;
+    }
+
+    /* Create Project Popup Modal */
+    .cp-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .cp-modal-dialog {
+      background: #ffffff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 860px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      border: 1.5px solid #e2e8f0;
+      overflow: hidden;
+      margin: auto;
+      animation: cpModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes cpModalFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="mainSidebar">
+      <div class="sidebar-header">
+        <div class="company-logo-box">
+          <div class="aiggpa-brand-icon">
+            <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 7L29 12V21C29 26.5 25.2 31.6 20 33C14.8 31.6 11 26.5 11 21V12L20 7Z" stroke="#ffffff"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.15)" />
+              <path d="M16 20L19 23L24 17" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="aiggpa-brand-text">
+            <span class="brand-title">AIGGPA</span>
+            <span class="brand-sub">Project Governance</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+
+        <a href="create-project.html" class="menu-item active" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-plus-circle" style="color: #1837d4;"></i>
+            <span>Create Project</span>
+          </div>
+        </a>
+
+        <a href="activities.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-check-square"></i>
+            <span>Tasks</span>
+          </div>
+        </a>
+
+        <a href="create-survey.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-file-edit"></i>
+            <span>Surveys</span>
+          </div>
+        </a>
+      </nav>
+
+      <!-- Sidebar User Profile -->
+      <div class="sidebar-footer">
+        <div class="user-profile-pill">
+          <div class="profile-left">
+            <div class="profile-avatar">AI</div>
+            <div class="profile-info">
+              <h4>AIGGPA</h4>
+              <p>Center Head</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+            <i class="pi pi-bars"></i>
+          </button>
+          <div class="search-box">
+            <i class="pi pi-search search-icon"></i>
+            <input type="text" id="globalSearchInput" placeholder="Search project creation desk...">
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <button type="button" class="btn btn-secondary" onclick="window.switchProjectTab('list')"
+            style="padding: 6px 14px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="pi pi-list"></i>
+            <span>Projects List</span>
+          </button>
+          <div class="user-profile-dropdown" style="position: relative;">
+            <button type="button" id="topUserDropdownBtn"
+              style="border: 1px solid #dbeafe; background: #eff6ff; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; border-radius: 20px; transition: all 0.2s;">
+              <div class="avatar-small">AI</div>
+              <span style="font-weight: 700; color: #1e293b; font-size: 0.85rem;">AIGGPA</span>
+              <i class="pi pi-chevron-down" style="font-size: 9px; color: #64748b;"></i>
+            </button>
+            <div id="topUserDropdownMenu"
+              style="display: none; position: absolute; right: 0; top: 120%; width: 190px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); padding: 8px 0; z-index: 99999;">
+              <div style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9;">
+                <div style="font-weight: 800; color: #1e293b; font-size: 0.88rem;">AIGGPA Admin</div>
+                <div style="font-size: 0.74rem; color: #64748b;">Center Head</div>
+              </div>
+              <a href="login.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: #ef4444; text-decoration: none; font-size: 0.85rem; font-weight: 700; transition: background 0.15s;"
+                onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                <i class="pi pi-sign-out" style="font-size: 14px;"></i>
+                <span>Logout</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- WORKSPACE / MAIN CONTENT -->
+      <main class="workspace-content settings-container">
+        <!-- Banner Header -->
+        <div class="page-title-banner" style="margin-bottom: 20px;">
+          <div class="title-with-icon">
+            <div class="title-icon-box" style="background: linear-gradient(135deg, #1837d4, #0284c7); color: #fff;">
+              <i class="pi pi-folder-open"></i>
+            </div>
+            <div class="title-text-group">
+              <h1>Project Management &amp; Creation Desk</h1>
+              <p>Filter projects by financial year, create new projects, and allocate head-wise budgets and team
+                assignees.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             TAB STRIP NAVIGATION (Create Project, Add Budget, Add Assignee)
+        ═══════════════════════════════════════════════ -->
+        <div class="prj-tab-strip" style="margin-bottom: 20px;">
+          <button type="button" class="prj-tab-btn active" id="tabBtnList" onclick="window.handleCreateProjectTabClick()">
+            <i class="pi pi-plus-circle"></i>
+            <span>Add general details</span>
+          </button>
+          <button type="button" class="prj-tab-btn" id="tabBtnBudget" onclick="window.switchProjectTab('budget')">
+            <i class="pi pi-wallet"></i>
+            <span>Add Budget</span>
+          </button>
+          <button type="button" class="prj-tab-btn" id="tabBtnAssignee" onclick="window.openAssigneeModal()">
+            <i class="pi pi-user-plus"></i>
+            <span>Add Assignee</span>
+          </button>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             PROJECTS LIST VIEW (Default Active)
+        ═══════════════════════════════════════════════ -->
+        <div id="tabContentList" class="prj-card" style="display: block; padding: 22px;">
+          <!-- Filter Bar with FY Dropdown on Left, Search and + New Project on Right -->
+          <div class="filter-bar-card"
+            style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+            <!-- Financial Year Dropdown on the Left -->
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label for="projectFyFilter"
+                style="font-weight: 800; font-size: 0.88rem; color: #1e293b; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                <i class="pi pi-calendar" style="color: #1837d4; font-size: 1.05rem;"></i>
+                <span>Financial Year:</span>
+              </label>
+              <select id="projectFyFilter" class="form-control-select"
+                style="min-width: 180px; height: 42px; font-weight: 700; font-size: 0.88rem; color: #0f172a; border: 1.5px solid #93c5fd; background: #f8fafc; border-radius: 10px; cursor: pointer;">
+                <option value="ALL">All Financial Years</option>
+                <option value="2026–2027" selected>2026–2027</option>
+                <option value="2025–2026">2025–2026</option>
+                <option value="2024–2025">2024–2025</option>
+              </select>
+            </div>
+
+            <!-- Search Bar on the Right -->
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; justify-content: flex-end; min-width: 280px;">
+              <div style="position: relative; flex: 1; max-width: 360px;">
+                <i class="pi pi-search"
+                  style="position: absolute; left: 14px; top: 14px; color: #94a3b8; font-size: 0.95rem;"></i>
+                <input type="text" id="projectListSearchInput" class="form-control-input"
+                  placeholder="Search by title, scheme..."
+                  style="padding-left: 40px; height: 42px; font-size: 0.9rem; border-radius: 10px; width: 100%;">
+              </div>
+            </div>
+          </div>
+
+          <!-- Projects Table -->
+          <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+              <thead>
+                <tr
+                  style="background: #f8fafc; border-bottom: 1.5px solid #cbd5e1; color: #475569; text-transform: uppercase; font-size: 0.72rem; font-weight: 800;">
+                  <th style="padding: 12px 16px;">Project Title</th>
+                  <th style="padding: 12px 16px;">Financial Year</th>
+                  <th style="padding: 12px 16px;">Timeline</th>
+                  <th style="padding: 12px 16px;">Estimated Budget</th>
+                  <th style="padding: 12px 16px;">Assignees</th>
+                  <th style="padding: 12px 16px; text-align: center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="projectsListTableTbody">
+                <!-- Dynamically injected -->
+              </tbody>
+            </table>
+
+            <!-- Table Pagination Bar -->
+            <div id="projectsPaginationContainer"
+              style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-top: 1px solid #e2e8f0; background: #f8fafc; flex-wrap: wrap; gap: 10px;">
+              <div style="font-size: 0.82rem; color: #475569; font-weight: 700;" id="paginationInfoText">
+                Showing 0 Projects
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px;" id="paginationControlsBox">
+                <!-- Pagination buttons injected dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             MODAL POPUP: CREATE NEW PROJECT
+        ═══════════════════════════════════════════════ -->
+        <div id="createProjectModal" class="cp-modal-overlay">
+          <div class="cp-modal-dialog" style="max-width: 720px;">
+
+            <!-- Modal Header -->
+            <div style="padding: 20px 28px; border-bottom: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #ffffff;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #1837d4, #0284c7); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; box-shadow: 0 4px 12px rgba(24,55,212,0.25);">
+                  <i class="pi pi-folder-open"></i>
+                </div>
+                <div>
+                  <div style="font-weight: 800; font-size: 1.05rem; color: #0f172a; line-height: 1.2;" id="createProjectModalTitle">Add General Details</div>
+                  <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;" id="createProjectModalSubtitle">Fill in the project general details below and save.</div>
+                </div>
+              </div>
+              <button type="button" onclick="window.closeCreateProjectModal()"
+                style="border: 1.5px solid #e2e8f0; background: #f8fafc; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; transition: all 0.15s ease; flex-shrink: 0;"
+                onmouseover="this.style.background='#fee2e2'; this.style.borderColor='#fca5a5'; this.style.color='#dc2626';"
+                onmouseout="this.style.background='#f8fafc'; this.style.borderColor='#e2e8f0'; this.style.color='#64748b';">
+                <i class="pi pi-times" style="font-size: 0.9rem;"></i>
+              </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div style="padding: 28px; overflow-y: auto; max-height: calc(90vh - 140px); display: flex; flex-direction: column; gap: 20px;">
+
+              <!-- Project Title -->
+              <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px;" for="cpProjectName">Project Title <span style="color: #ef4444;">*</span></label>
+                <input type="text" id="cpProjectName" class="form-control-input"
+                  placeholder="e.g. Assessment of Renewable Energy Adoption in Rural Madhya Pradesh"
+                  style="width: 100%; height: 44px; font-size: 0.92rem; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 14px; transition: border-color 0.2s; box-sizing: border-box;"
+                  onfocus="this.style.borderColor='#1837d4'; this.style.boxShadow='0 0 0 3px rgba(24,55,212,0.08)';"
+                  onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+              </div>
+
+              <!-- Scheme Name -->
+              <div>
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px;" for="cpProjectScheme">Scheme Name <span style="color: #ef4444;">*</span></label>
+                <select id="cpProjectScheme" class="form-control-select"
+                  style="width: 100%; height: 44px; font-size: 0.88rem; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 14px; background: #ffffff; cursor: pointer; box-sizing: border-box;"
+                  onfocus="this.style.borderColor='#1837d4'; this.style.boxShadow='0 0 0 3px rgba(24,55,212,0.08)';"
+                  onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                  <option value="">— Select Scheme —</option>
+                  <option value="SCH-01: Atal Bihari Vajpayee Institute of Good Governance and Policy Analysis">SCH-01: Atal Bihari Vajpayee Institute (AIGGPA)</option>
+                  <option value="SCH-02: M.P. State Planning Commission Special Research Studies">SCH-02: M.P. State Planning Commission</option>
+                  <option value="SCH-03: State NITI Aayog Capacity Building Scheme">SCH-03: State NITI Aayog Capacity Building</option>
+                  <option value="SCH-04: Chief Minister Research Fellowship Scheme">SCH-04: Chief Minister Research Fellowship</option>
+                </select>
+              </div>
+
+              <!-- Row: Financial Year + Funding Pattern -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                  <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px;" for="cpProjectFY">Financial Year <span style="color: #ef4444;">*</span></label>
+                  <select id="cpProjectFY" class="form-control-select"
+                    style="width: 100%; height: 44px; font-size: 0.88rem; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 14px; background: #ffffff; cursor: pointer; box-sizing: border-box;"
+                    onfocus="this.style.borderColor='#1837d4'; this.style.boxShadow='0 0 0 3px rgba(24,55,212,0.08)';"
+                    onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                    <option value="2026–2027" selected>2026–2027</option>
+                    <option value="2025–2026">2025–2026</option>
+                    <option value="2024–2025">2024–2025</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px;" for="cpFundingPattern">Funding Pattern <span style="color: #ef4444;">*</span></label>
+                  <select id="cpFundingPattern" class="form-control-select"
+                    style="width: 100%; height: 44px; font-size: 0.88rem; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 14px; background: #ffffff; cursor: pointer; box-sizing: border-box;"
+                    onfocus="this.style.borderColor='#1837d4'; this.style.boxShadow='0 0 0 3px rgba(24,55,212,0.08)';"
+                    onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                    <option value="">— Select Pattern —</option>
+                    <option value="Internal">Internal (AIGGPA Grant)</option>
+                    <option value="External">External (State Ministry)</option>
+                    <option value="Composite">Composite Funding</option>
+                    <option value="Pro Bono">Pro Bono / Collaborative</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Row: PRC Date (single) -->
+              <div style="max-width: 340px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px;" for="cpPrcDate">Date of PRC <span style="color: #ef4444;">*</span></label>
+                <input type="date" id="cpPrcDate" class="form-control-input"
+                  style="width: 100%; height: 44px; font-size: 0.88rem; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 14px; box-sizing: border-box;"
+                  onfocus="this.style.borderColor='#1837d4'; this.style.boxShadow='0 0 0 3px rgba(24,55,212,0.08)';"
+                  onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+              </div>
+
+              <!-- Section Divider: Timeline -->
+              <div style="display: flex; align-items: center; gap: 10px; margin: 4px 0 0;">
+                <i class="pi pi-clock" style="color: #1837d4; font-size: 0.95rem;"></i>
+                <span style="font-size: 0.78rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px;">Project Timeline</span>
+                <div style="flex: 1; height: 1px; background: #e2e8f0;"></div>
+              </div>
+
+              <!-- Row: Start Date + End Date -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                  <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px;" for="cpStartDate">Start Date <span style="color: #ef4444;">*</span></label>
+                  <input type="date" id="cpStartDate" class="form-control-input"
+                    style="width: 100%; height: 44px; font-size: 0.88rem; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 14px; box-sizing: border-box;"
+                    onfocus="this.style.borderColor='#1837d4'; this.style.boxShadow='0 0 0 3px rgba(24,55,212,0.08)';"
+                    onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                </div>
+                <div>
+                  <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px;" for="cpEndDate">End Date <span style="color: #ef4444;">*</span></label>
+                  <input type="date" id="cpEndDate" class="form-control-input"
+                    style="width: 100%; height: 44px; font-size: 0.88rem; border-radius: 10px; border: 1.5px solid #cbd5e1; padding: 0 14px; box-sizing: border-box;"
+                    onfocus="this.style.borderColor='#1837d4'; this.style.boxShadow='0 0 0 3px rgba(24,55,212,0.08)';"
+                    onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
+                </div>
+              </div>
+
+              <!-- Duration (Auto-calculated) -->
+              <div style="max-width: 200px;">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px;">
+                  Duration
+                  <span style="font-size: 0.68rem; font-weight: 800; background: #e0f2fe; color: #0369a1; padding: 1px 7px; border-radius: 4px; margin-left: 4px; vertical-align: middle;">Auto</span>
+                </label>
+                <div style="display: flex; align-items: center; height: 44px; border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; background: #f8fafc;">
+                  <input type="number" id="cpDurationMonths" value="0" readonly
+                    style="border: none; outline: none; background: transparent; font-weight: 800; color: #1837d4; font-size: 1rem; width: 60px; text-align: center; padding: 0;">
+                  <span style="font-weight: 600; color: #64748b; font-size: 0.82rem; padding: 0 14px; border-left: 1px solid #e2e8f0; height: 100%; display: flex; align-items: center;">Months</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="padding: 16px 28px; background: #f8fafc; border-top: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: flex-end; gap: 10px;">
+              <button type="button" onclick="window.closeCreateProjectModal()"
+                style="height: 42px; padding: 0 20px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; color: #475569; font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: all 0.15s;"
+                onmouseover="this.style.background='#f1f5f9';" onmouseout="this.style.background='#ffffff';">
+                Cancel
+              </button>
+              <button type="button" id="btnSaveNewProject" onclick="window.handleSaveProjectOnly()"
+                style="height: 42px; padding: 0 28px; background: linear-gradient(135deg, #1837d4, #0284c7); border: none; border-radius: 10px; color: #ffffff; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(24,55,212,0.25); transition: all 0.15s;"
+                onmouseover="this.style.opacity='0.92'; this.style.transform='translateY(-1px)';"
+                onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)';">
+                <i class="pi pi-check-circle"></i>
+                <span id="btnSaveNewProjectText">Save Project</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ══════════════════════════════════════════════
+             TAB 2: ADD BUDGET FLOW (SCREENSHOT 2 & 3)
+        ═══════════════════════════════════════════════ -->
+        <div id="tabContentBudget" class="prj-card" style="display: none; padding: 22px;">
+          <!-- Top Project Selector & Context Header Bar -->
+          <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 12px 18px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 300px; max-width: 650px;">
+              <label for="cpBudgetProjectSelect" style="display: flex; align-items: center; gap: 6px; font-weight: 800; color: #1837d4; font-size: 0.88rem; white-space: nowrap; margin: 0; text-transform: uppercase;">
+                <i class="pi pi-folder-open" style="font-size: 1.1rem;"></i>
+                <span>Project:</span>
+              </label>
+              <select id="cpBudgetProjectSelect" class="form-control-select"
+                style="font-weight: 700; font-size: 0.88rem; height: 40px; color: #0f172a; border: 1.5px solid #93c5fd; background: #f8fafc; width: 100%; cursor: pointer;"
+                onchange="window.handleBudgetProjectChange(this.value)">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div id="budgetProjectContextPill" style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #475569; font-weight: 600;">
+                <!-- e.g. FY 2026–2027 | 12 Months -->
+              </div>
+              <button type="button" class="btn btn-secondary" onclick="window.switchProjectTab('list')"
+                style="padding: 7px 14px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border-radius: 8px;">
+                <i class="pi pi-arrow-left"></i>
+                <span>Back to Projects List</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- CARD 1: + Add New Budget Detail Line Item (Screenshot 2) -->
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 22px 24px; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.05rem; color: #1e1b4b; margin-bottom: 18px;">
+              <i class="pi pi-plus" style="font-size: 1rem; font-weight: 900; color: #4338ca;"></i>
+              <span>Add New Budget Detail Line Item</span>
+            </div>
+
+            <!-- Row 1: Category, Subcategory, Quantity, Duration -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px;">
+              <div>
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Category <span style="color: #ef4444;">*</span></label>
+                <select id="bLineCategory" class="form-control-select" style="width: 100%; height: 42px; font-size: 0.86rem; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; background: #ffffff;" onchange="window.onBudgetCategoryChange(this.value)">
+                  <option value="" disabled selected>Select Category</option>
+                  <option value="HR">HR</option>
+                  <option value="Travel Allowances">Travel Allowances</option>
+                  <option value="Stay arrangement">Stay arrangement</option>
+                  <option value="Others">Others</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Sub Category</label>
+                <select id="bLineSubcategory" class="form-control-select" style="width: 100%; height: 42px; font-size: 0.86rem; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; background: #ffffff;">
+                  <option value="">Select Category first</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Quantity</label>
+                <input type="number" id="bLineQuantity" class="form-control-input" placeholder="Enter quantity" min="0"
+                  style="width: 100%; height: 42px; font-size: 0.86rem; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px;"
+                  oninput="window.calcLineEstimatedAmount()">
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Duration</label>
+                <input type="number" id="bLineDuration" class="form-control-input" placeholder="Enter duration" min="0"
+                  style="width: 100%; height: 42px; font-size: 0.86rem; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px;"
+                  oninput="window.calcLineEstimatedAmount()">
+              </div>
+            </div>
+
+            <!-- Row 2: Unit Type, Cost/Unit, Estimated Amount, Save Button -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr) 220px; gap: 16px; align-items: flex-end;">
+              <div>
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Unit Type</label>
+                <select id="bLineUnitType" class="form-control-select" style="width: 100%; height: 42px; font-size: 0.86rem; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; background: #ffffff;" onchange="window.calcLineEstimatedAmount()">
+                  <option value="" disabled selected>Select Unit Type</option>
+                  <option value="Night">Night</option>
+                  <option value="Month">Month</option>
+                  <option value="Day">Day</option>
+                  <option value="Person">Person</option>
+                  <option value="Trip">Trip</option>
+                  <option value="Unit">Unit</option>
+                  <option value="Lump Sum">Lump Sum</option>
+                  <option value="Percentage (%)">Percentage (%)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Cost / Unit (₹)</label>
+                <input type="text" id="bLineCostPerUnit" class="form-control-input" placeholder="Enter cost per unit"
+                  style="width: 100%; height: 42px; font-size: 0.86rem; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px;"
+                  oninput="window.calcLineEstimatedAmount()">
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px;">Estimated Amount (₹) <span style="color: #ef4444;">*</span></label>
+                <input type="number" id="bLineEstimatedAmount" class="form-control-input" placeholder="Auto calculated" min="0"
+                  style="width: 100%; height: 42px; font-size: 0.86rem; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; font-weight: 700; color: #1e1b4b;">
+              </div>
+
+              <div>
+                <button type="button" id="btnSaveLineItem" onclick="window.addBudgetLineItem()"
+                  style="width: 100%; height: 42px; background: #222479; color: #ffffff; font-weight: 700; font-size: 0.88rem; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.15s ease; box-shadow: 0 3px 8px rgba(34, 36, 121, 0.25);"
+                  onmouseover="this.style.background='#1a1b63'" onmouseout="this.style.background='#222479'">
+                  <i class="pi pi-plus" style="font-size: 11px;"></i>
+                  <span>Save &amp; Add Line Item</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARD 2: Line Items Table (Screenshot 3) -->
+          <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; overflow: hidden; margin-bottom: 22px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
+            <div style="padding: 14px 20px; background: #f8fafc; border-bottom: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+              <div style="font-size: 0.92rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                <i class="pi pi-list" style="color: #1837d4;"></i>
+                <span>Project Budget Detail Line Items</span>
+              </div>
+              <span id="bLineItemsCountBadge" style="font-size: 0.78rem; font-weight: 700; color: #64748b; background: #ffffff; border: 1px solid #cbd5e1; padding: 3px 10px; border-radius: 6px;">
+                0 Line Items
+              </span>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem; text-align: left;">
+                <thead>
+                  <tr style="background: #f1f5f9; border-bottom: 1.5px solid #e2e8f0; color: #1e293b; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.03em;">
+                    <th style="padding: 12px 14px; width: 45px; text-align: center;">#</th>
+                    <th style="padding: 12px 16px; min-width: 140px; white-space: nowrap;">CATEGORY</th>
+                    <th style="padding: 12px 16px; min-width: 140px; white-space: nowrap;">SUB CATEGORY</th>
+                    <th style="padding: 12px 14px; white-space: nowrap; cursor: pointer; user-select: none;" onclick="window.sortBudgetLineItems('quantity')">
+                      <span style="display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">QUANTITY <span>⇅</span></span>
+                    </th>
+                    <th style="padding: 12px 14px; white-space: nowrap; cursor: pointer; user-select: none;" onclick="window.sortBudgetLineItems('duration')">
+                      <span style="display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">DURATION <span>⇅</span></span>
+                    </th>
+                    <th style="padding: 12px 14px; white-space: nowrap;">UNIT TYPE</th>
+                    <th style="padding: 12px 16px; white-space: nowrap; cursor: pointer; user-select: none;" onclick="window.sortBudgetLineItems('costPerUnit')">
+                      <span style="display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">COST / UNIT (₹) <span>⇅</span></span>
+                    </th>
+                    <th style="padding: 12px 16px; white-space: nowrap; cursor: pointer; user-select: none;" onclick="window.sortBudgetLineItems('amount')">
+                      <span style="display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">ESTIMATED AMT (₹) <span>⇅</span></span>
+                    </th>
+                    <th style="padding: 12px 14px; width: 70px; text-align: center; white-space: nowrap;">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="bLineItemsTbody">
+                  <!-- Injected dynamically -->
+                </tbody>
+                <tfoot id="bLineItemsTfoot" style="background: #f8fafc; border-top: 2px solid #e2e8f0; font-weight: 800;">
+                  <!-- Dynamic total row -->
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bottom Actions Bar -->
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 10px; flex-wrap: wrap;">
+            <button type="button" onclick="window.clearAllCurrentBudgetItems()"
+              style="padding: 10px 18px; border: 1.5px solid #cbd5e1; background: #ffffff; color: #64748b; font-weight: 700; font-size: 0.86rem; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="pi pi-trash"></i>
+              <span>Clear Items</span>
+            </button>
+            
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button type="button" class="btn btn-secondary" onclick="window.switchProjectTab('list')"
+                style="height: 42px; padding: 0 20px; font-weight: 700; font-size: 0.88rem; border-radius: 8px;">
+                Cancel
+              </button>
+              <button type="button" class="btn btn-primary" id="btnSaveBudgetSubmit" onclick="window.saveBudgetForSelectedProject()"
+                style="height: 42px; padding: 0 26px; font-weight: 800; font-size: 0.88rem; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #1837d4, #0284c7); box-shadow: 0 4px 12px rgba(24,55,212,0.25);">
+                <i class="pi pi-check-circle"></i>
+                <span>Save Budget</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════
+             TAB 3: ASSIGN TEAM (Designation-Wise Positions)
+        ═══════════════════════════════════════════════ -->
+        <div id="tabContentTeam" class="prj-card" style="display: none;">
+          <!-- Top Project Selector & Title Strip -->
+          <div
+            style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 320px; max-width: 720px;">
+                <label for="cpTeamProjectSelect"
+                  style="display: flex; align-items: center; gap: 6px; font-weight: 800; color: #15803d; font-size: 0.88rem; white-space: nowrap; margin: 0;">
+                  <i class="pi pi-users" style="font-size: 1.15rem;"></i>
+                  <span>Project:</span>
+                </label>
+                <div style="flex: 1; width: 100%;">
+                  <select id="cpTeamProjectSelect" class="form-control-select"
+                    style="font-weight: 700; font-size: 0.88rem; height: 38px; color: #0f172a; border: 1.5px solid #86efac; background: #f8fafc; width: 100%; cursor: pointer;"
+                    onchange="window.handleTeamProjectChange(this.value)">
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" class="btn btn-secondary" onclick="window.switchProjectTab('list')"
+                  style="padding: 6px 12px; font-size: 0.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="pi pi-arrow-left"></i>
+                  <span>Back to Projects List</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="notice-box" style="margin-bottom: 18px;">
+            <strong>Assign Team Members</strong><br>
+            Please select the designation, enter the number of positions, and select the specific employees for this
+            project.
+          </div>
+
+          <!-- Dynamic Add Team Member Form -->
+          <div
+            style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+            <div style="display: grid; grid-template-columns: 1.5fr 110px 2fr auto; gap: 16px; align-items: flex-end;">
+
+              <!-- Designation Dropdown -->
+              <div>
+                <label
+                  style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Designation
+                  <span class="required">*</span></label>
+                <select id="teamDesignationSelect" class="form-control-select"
+                  style="height: 42px; font-weight: 600; width: 100%; border: 1.5px solid #cbd5e1; background: #f8fafc;"
+                  onchange="window.updateEmployeeList()">
+                  <option value="" disabled selected>Select Designation...</option>
+                  <option value="Senior Advisor">Senior Advisor</option>
+                  <option value="Research Associate">Research Associate</option>
+                  <option value="Fellow">Fellow</option>
+                  <option value="Field Investigator">Field Investigator</option>
+                </select>
+              </div>
+
+              <!-- No. of Positions -->
+              <div>
+                <label
+                  style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 6px; display: block; white-space: nowrap;">Positions
+                  <span class="required">*</span></label>
+                <input type="number" id="teamPositionCount" class="form-control-input" min="1" value="1"
+                  style="height: 42px; font-weight: 700; text-align: center; width: 100%; border: 1.5px solid #cbd5e1; background: #f8fafc;">
+              </div>
+
+              <!-- Employees Dropdown -->
+              <div style="position: relative;">
+                <label
+                  style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Select
+                  Employees <span class="required">*</span></label>
+
+                <div id="employeeDropdownTrigger" onclick="window.toggleEmployeeMenu(event)"
+                  style="height: 42px; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #f8fafc; transition: border-color 0.2s;">
+                  <span id="selectedEmployeesText"
+                    style="font-size: 0.88rem; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">Select
+                    employees...</span>
+                  <i class="pi pi-chevron-down" style="color: #64748b; font-size: 11px;"></i>
+                </div>
+
+                <!-- Checkbox Menu -->
+                <div id="employeeCheckboxMenu"
+                  style="display: none; position: absolute; top: calc(100% + 6px); left: 0; width: 100%; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 100; max-height: 220px; overflow-y: auto;">
+                  <div style="padding: 12px; font-size: 0.85rem; color: #94a3b8; text-align: center;"
+                    id="employeeMenuEmpty">Select a designation first</div>
+                  <div id="employeeMenuList" style="display: none; padding: 6px 0;"></div>
+                </div>
+              </div>
+
+              <!-- Add Button -->
+              <div>
+                <button type="button" class="btn btn-primary" onclick="window.addTeamMemberRow()"
+                  style="height: 42px; padding: 0 22px; font-weight: 800; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(24,55,212,0.2); white-space: nowrap;">
+                  <i class="pi pi-plus"></i> Add to Team
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Table of Assigned Team Members -->
+          <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+              <thead style="background: #f8fafc; border-bottom: 1.5px solid #cbd5e1;">
+                <tr>
+                  <th style="padding: 10px 14px; color: #475569; font-weight: 700; width: 180px;">Designation</th>
+                  <th style="padding: 10px 14px; color: #475569; font-weight: 700; width: 90px; text-align: center;">
+                    Positions</th>
+                  <th style="padding: 10px 14px; color: #475569; font-weight: 700;">Assigned Employees</th>
+                  <th style="padding: 10px 14px; width: 60px; text-align: center;">Act</th>
+                </tr>
+              </thead>
+              <tbody id="assignedTeamTbody">
+                <tr>
+                  <td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8; font-weight: 600;">No team
+                    members assigned yet. Use the form above to add members.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="step-footer-actions" style="display: flex; justify-content: flex-end; gap: 12px;">
+            <button type="button" class="btn btn-primary" id="btnSaveTeamSubmit"
+              onclick="window.saveTeamForSelectedProject()"
+              style="height: 42px; padding: 0 24px; font-size: 0.88rem; font-weight: 800; background: linear-gradient(135deg, #15803d, #059669); border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(21, 128, 61, 0.2);">
+              <i class="pi pi-check-circle" style="font-size: 1rem;"></i>
+              <span>Save </span>
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Team Details Popup Modal -->
+  <div id="teamDetailsModal" class="cp-modal-overlay">
+    <div class="cp-modal-dialog" style="max-width: 480px;">
+      <div style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); padding: 18px 24px; border-bottom: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: #1837d4; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: 0 2px 8px rgba(24, 55, 212, 0.3);">
+            <i class="pi pi-users"></i>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 1.1rem; color: #0f172a;">Team Assignees</div>
+            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600;">Detailed Breakdown</div>
+          </div>
+        </div>
+        <button type="button" onclick="window.closeTeamDetailsModal()" style="border: 1px solid #cbd5e1; background: #ffffff; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; transition: all 0.15s ease;" onmouseover="this.style.background='#fee2e2'; this.style.borderColor='#fca5a5'; this.style.color='#dc2626';" onmouseout="this.style.background='#ffffff'; this.style.borderColor='#cbd5e1'; this.style.color='#64748b';">
+          <i class="pi pi-times" style="font-size: 0.95rem; font-weight: bold;"></i>
+        </button>
+      </div>
+      <div id="teamDetailsModalBody" style="padding: 24px; max-height: 400px; overflow-y: auto;">
+        <!-- Content injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Assign Team Members / Add Assignee Popup Modal -->
+  <div id="assigneeModal" class="cp-modal-overlay">
+    <div class="cp-modal-dialog" style="max-width: 820px;">
+      <!-- Modal Header -->
+      <div style="background: linear-gradient(135deg, #f8fafc 0%, #f0fdf4 100%); padding: 18px 26px; border-bottom: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #15803d, #059669); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; box-shadow: 0 3px 10px rgba(21, 128, 61, 0.3);">
+            <i class="pi pi-user-plus"></i>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 1.1rem; color: #0f172a;">Assign Team Members</div>
+            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600; margin-top: 2px;">Allocate designation-wise positions and assign employees</div>
+          </div>
+        </div>
+        <button type="button" onclick="window.closeAssigneeModal()"
+          style="border: 1.5px solid #cbd5e1; background: #ffffff; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; transition: all 0.15s ease;"
+          onmouseover="this.style.background='#fee2e2'; this.style.borderColor='#fca5a5'; this.style.color='#dc2626';"
+          onmouseout="this.style.background='#ffffff'; this.style.borderColor='#cbd5e1'; this.style.color='#64748b';">
+          <i class="pi pi-times" style="font-size: 0.95rem; font-weight: bold;"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div style="padding: 24px 28px; max-height: calc(85vh - 160px); overflow-y: auto;">
+        <!-- Project Selector Strip -->
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px;">
+          <label for="modalAssignProjectSelect" style="display: flex; align-items: center; gap: 6px; font-weight: 800; color: #15803d; font-size: 0.88rem; white-space: nowrap; margin: 0; text-transform: uppercase;">
+            <i class="pi pi-folder-open" style="font-size: 1.1rem;"></i>
+            <span>Project:</span>
+          </label>
+          <select id="modalAssignProjectSelect" class="form-control-select"
+            style="font-weight: 700; font-size: 0.88rem; height: 40px; color: #0f172a; border: 1.5px solid #86efac; background: #ffffff; width: 100%; cursor: pointer;"
+            onchange="window.handleModalAssignProjectChange(this.value)">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <!-- Dynamic Add Member Form -->
+        <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);">
+          <div style="display: grid; grid-template-columns: 1.4fr 100px 2fr auto; gap: 14px; align-items: flex-end;">
+            <!-- Designation -->
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Designation <span style="color: #ef4444;">*</span></label>
+              <select id="modalTeamDesignationSelect" class="form-control-select"
+                style="height: 42px; font-weight: 600; width: 100%; border: 1.5px solid #cbd5e1; background: #f8fafc; border-radius: 8px;"
+                onchange="window.updateModalEmployeeList()">
+                <option value="" disabled selected>Select Designation...</option>
+                <option value="Senior Advisor">Senior Advisor</option>
+                <option value="Research Associate">Research Associate</option>
+                <option value="Fellow">Fellow</option>
+                <option value="Field Investigator">Field Investigator</option>
+              </select>
+            </div>
+
+            <!-- Positions -->
+            <div>
+              <label style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 6px; display: block; white-space: nowrap;">Positions <span style="color: #ef4444;">*</span></label>
+              <input type="number" id="modalTeamPositionCount" class="form-control-input" min="1" value="1"
+                style="height: 42px; font-weight: 700; text-align: center; width: 100%; border: 1.5px solid #cbd5e1; background: #f8fafc; border-radius: 8px;">
+            </div>
+
+            <!-- Employee Dropdown -->
+            <div style="position: relative;">
+              <label style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Select Employees <span style="color: #ef4444;">*</span></label>
+              <div id="modalEmployeeDropdownTrigger" onclick="window.toggleModalEmployeeMenu(event)"
+                style="height: 42px; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: #f8fafc;">
+                <span id="modalSelectedEmployeesText" style="font-size: 0.86rem; color: #64748b; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">Select employees...</span>
+                <i class="pi pi-chevron-down" style="color: #64748b; font-size: 11px;"></i>
+              </div>
+
+              <!-- Checkbox Menu -->
+              <div id="modalEmployeeCheckboxMenu"
+                style="display: none; position: absolute; top: calc(100% + 6px); left: 0; width: 100%; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); z-index: 1000; max-height: 200px; overflow-y: auto;">
+                <div style="padding: 12px; font-size: 0.85rem; color: #94a3b8; text-align: center;" id="modalEmployeeMenuEmpty">Select a designation first</div>
+                <div id="modalEmployeeMenuList" style="display: none; padding: 6px 0;"></div>
+              </div>
+            </div>
+
+            <!-- Add Button -->
+            <div>
+              <button type="button" class="btn btn-primary" onclick="window.addModalTeamMemberRow()"
+                style="height: 42px; padding: 0 20px; font-weight: 800; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(24,55,212,0.2); white-space: nowrap; border-radius: 8px;">
+                <i class="pi pi-plus"></i> Add
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table of Assigned Members -->
+        <div style="border: 1.5px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem; text-align: left;">
+            <thead style="background: #f8fafc; border-bottom: 1.5px solid #e2e8f0;">
+              <tr>
+                <th style="padding: 11px 14px; color: #475569; font-weight: 800; width: 180px;">Designation</th>
+                <th style="padding: 11px 14px; color: #475569; font-weight: 800; width: 90px; text-align: center;">Positions</th>
+                <th style="padding: 11px 14px; color: #475569; font-weight: 800;">Assigned Employees</th>
+                <th style="padding: 11px 14px; width: 60px; text-align: center;">Act</th>
+              </tr>
+            </thead>
+            <tbody id="modalAssignedTeamTbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="padding: 16px 28px; background: #f8fafc; border-top: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
+        <button type="button" class="btn btn-secondary" onclick="window.closeAssigneeModal()"
+          style="height: 40px; padding: 0 18px; font-weight: 700; font-size: 0.86rem; border-radius: 8px;">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" onclick="window.saveModalTeamForSelectedProject()"
+          style="height: 40px; padding: 0 24px; font-size: 0.88rem; font-weight: 800; background: linear-gradient(135deg, #15803d, #059669); border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(21, 128, 61, 0.2);">
+          <i class="pi pi-check-circle"></i>
+          <span>Save Assignees</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Project Options Modal (Basic details, Budget, Assignee) -->
+  <div id="projectEditOptionsModal" class="cp-modal-overlay">
+    <div class="cp-modal-dialog" style="max-width: 500px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.18);">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); padding: 18px 24px; border-bottom: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: #fffbeb; color: #b45309; border: 1.5px solid #fde68a; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.15);">
+            <i class="pi pi-pencil"></i>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 1.05rem; color: #0f172a;" id="editOptionsModalProjectName">Edit Project</div>
+            <div style="font-size: 0.75rem; color: #64748b; font-weight: 600; margin-top: 2px;">Select the section you want to edit</div>
+          </div>
+        </div>
+        <button type="button" onclick="window.closeProjectEditOptionsModal()"
+          style="border: 1.5px solid #cbd5e1; background: #ffffff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; transition: all 0.15s ease;"
+          onmouseover="this.style.background='#fee2e2'; this.style.borderColor='#fca5a5'; this.style.color='#dc2626';"
+          onmouseout="this.style.background='#ffffff'; this.style.borderColor='#cbd5e1'; this.style.color='#64748b';">
+          <i class="pi pi-times" style="font-size: 0.88rem; font-weight: bold;"></i>
+        </button>
+      </div>
+
+      <!-- Body: 3 Edit Options -->
+      <div style="padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; background: #ffffff;">
+        <!-- Option 1: Basic details -->
+        <div class="edit-option-card" onclick="window.handleEditOptionSelect('basic')"
+          style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px; cursor: pointer; transition: all 0.18s ease; background: #ffffff;"
+          onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#f0f7ff'; this.style.transform='translateY(-1px)';"
+          onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#ffffff'; this.style.transform='translateY(0)';">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #eff6ff; color: #1d4ed8; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; border: 1px solid #dbeafe;">
+              <i class="pi pi-file-edit"></i>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 0.94rem; color: #0f172a;">1. Basic details</div>
+              <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Project title, scheme, financial year &amp; timeline dates</div>
+            </div>
+          </div>
+          <i class="pi pi-chevron-right" style="color: #94a3b8; font-size: 0.85rem;"></i>
+        </div>
+
+        <!-- Option 2: Budget -->
+        <div class="edit-option-card" onclick="window.handleEditOptionSelect('budget')"
+          style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px; cursor: pointer; transition: all 0.18s ease; background: #ffffff;"
+          onmouseover="this.style.borderColor='#10b981'; this.style.background='#f0fdf4'; this.style.transform='translateY(-1px)';"
+          onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#ffffff'; this.style.transform='translateY(0)';">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #f0fdf4; color: #15803d; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; border: 1px solid #bbf7d0;">
+              <i class="pi pi-wallet"></i>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 0.94rem; color: #0f172a;">2. Budget</div>
+              <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Modify budget line items, unit rates, quantities &amp; duration</div>
+            </div>
+          </div>
+          <i class="pi pi-chevron-right" style="color: #94a3b8; font-size: 0.85rem;"></i>
+        </div>
+
+        <!-- Option 3: Assignee -->
+        <div class="edit-option-card" onclick="window.handleEditOptionSelect('assignee')"
+          style="display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border: 1.5px solid #e2e8f0; border-radius: 12px; cursor: pointer; transition: all 0.18s ease; background: #ffffff;"
+          onmouseover="this.style.borderColor='#8b5cf6'; this.style.background='#faf5ff'; this.style.transform='translateY(-1px)';"
+          onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#ffffff'; this.style.transform='translateY(0)';">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #faf5ff; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; border: 1px solid #ddd6fe;">
+              <i class="pi pi-users"></i>
+            </div>
+            <div>
+              <div style="font-weight: 800; font-size: 0.94rem; color: #0f172a;">3. Assignee</div>
+              <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Allocate designation positions &amp; assigned team members</div>
+            </div>
+          </div>
+          <i class="pi pi-chevron-right" style="color: #94a3b8; font-size: 0.85rem;"></i>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="padding: 12px 24px; background: #f8fafc; border-top: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="window.closeProjectEditOptionsModal()"
+          style="height: 36px; padding: 0 16px; font-weight: 700; font-size: 0.82rem; border-radius: 8px;">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Budget Details Popup Modal -->
+  <div id="viewBudgetModal" class="cp-modal-overlay">
+    <div class="cp-modal-dialog" style="max-width: 980px;">
+      <!-- Modal Header -->
+      <div style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); padding: 18px 26px; border-bottom: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #1837d4; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; box-shadow: 0 3px 10px rgba(24, 55, 212, 0.3);">
+            <i class="pi pi-wallet"></i>
+          </div>
+          <div>
+            <div style="font-weight: 800; font-size: 1.1rem; color: #0f172a;" id="viewBudgetModalProjectName">Project Budget Details</div>
+            <div style="font-size: 0.78rem; color: #64748b; font-weight: 600; margin-top: 2px;" id="viewBudgetModalProjectMeta">Financial Year: 2026–2027</div>
+          </div>
+        </div>
+        <button type="button" onclick="window.closeViewBudgetModal()"
+          style="border: 1.5px solid #cbd5e1; background: #ffffff; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #64748b; transition: all 0.15s ease;"
+          onmouseover="this.style.background='#fee2e2'; this.style.borderColor='#fca5a5'; this.style.color='#dc2626';"
+          onmouseout="this.style.background='#ffffff'; this.style.borderColor='#cbd5e1'; this.style.color='#64748b';">
+          <i class="pi pi-times" style="font-size: 0.95rem; font-weight: bold;"></i>
+        </button>
+      </div>
+
+      <!-- Top Summary KPIs -->
+      <div style="padding: 16px 26px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;" id="viewBudgetModalKpiRow">
+        <!-- Injected dynamically -->
+      </div>
+
+      <!-- Modal Body (Table) -->
+      <div style="padding: 24px; max-height: calc(85vh - 200px); overflow-y: auto;">
+        <div style="border: 1.5px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem; text-align: left;">
+            <thead>
+              <tr style="background: #f1f5f9; border-bottom: 1.5px solid #e2e8f0; color: #1e293b; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.03em;">
+                <th style="padding: 11px 14px; width: 45px; text-align: center;">#</th>
+                <th style="padding: 11px 16px; white-space: nowrap;">CATEGORY</th>
+                <th style="padding: 11px 16px; white-space: nowrap;">SUB CATEGORY</th>
+                <th style="padding: 11px 14px; width: 90px; white-space: nowrap;">QUANTITY</th>
+                <th style="padding: 11px 14px; width: 90px; white-space: nowrap;">DURATION</th>
+                <th style="padding: 11px 14px; width: 90px; white-space: nowrap;">UNIT TYPE</th>
+                <th style="padding: 11px 16px; white-space: nowrap;">COST / UNIT (₹)</th>
+                <th style="padding: 11px 16px; white-space: nowrap;">ESTIMATED AMT (₹)</th>
+              </tr>
+            </thead>
+            <tbody id="viewBudgetModalTbody">
+              <!-- Dynamically rendered -->
+            </tbody>
+            <tfoot id="viewBudgetModalTfoot" style="background: #f8fafc; border-top: 2px solid #e2e8f0; font-weight: 800;">
+              <!-- Dynamically rendered -->
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div style="padding: 14px 26px; background: #f8fafc; border-top: 1.5px solid #e2e8f0; display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
+        <button type="button" class="btn btn-secondary" onclick="window.closeViewBudgetModal()"
+          style="height: 38px; padding: 0 18px; font-weight: 700; font-size: 0.84rem; border-radius: 8px;">
+          Close
+        </button>
+        <button type="button" class="btn btn-primary" id="viewBudgetModalEditBtn"
+          style="height: 38px; padding: 0 20px; font-weight: 800; font-size: 0.84rem; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; background: #1837d4;">
+          <i class="pi pi-pencil"></i>
+          <span>Modify Budget</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/create-project.js"></script>
+</body>
+
+</html>

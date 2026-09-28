@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIGGPA - Project Budget Estimation Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/primeicons/primeicons.css">
+  <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+  <div class="app-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="company-logo-box">
+          <div class="aiggpa-brand-icon">
+            <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 7L29 12V21C29 26.5 25.2 31.6 20 33C14.8 31.6 11 26.5 11 21V12L20 7Z" stroke="#ffffff"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.15)" />
+              <path d="M16 20L19 23L24 17" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="aiggpa-brand-text">
+            <span class="brand-title">AIGGPA</span>
+            <span class="brand-sub">Project Governance</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+
+        <a href="create-project.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-plus-circle"></i>
+            <span>Create Project</span>
+          </div>
+        </a>
+
+        <a href="activities.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-check-square"></i>
+            <span>Tasks</span>
+          </div>
+        </a>
+
+        <a href="create-survey.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-file-edit"></i>
+            <span>Surveys</span>
+          </div>
+        </a>
+      </nav>
+
+      <!-- Sidebar Bottom User Profile Pill -->
+      <div class="sidebar-footer">
+        <div class="user-profile-pill">
+          <div class="profile-left">
+            <div class="profile-avatar" id="sidebarAvatar">AI</div>
+            <div class="profile-info">
+              <h4 id="sidebarUserName">AIGGPA</h4>
+              <p id="sidebarUserRole">Center Head</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+            <i class="pi pi-bars"></i>
+          </button>
+          <div class="search-box">
+            <i class="pi pi-search search-icon"></i>
+            <input type="text" id="globalSearchInput" placeholder="Search projects...">
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- User Profile Dropdown with Logout -->
+          <div class="user-profile-dropdown" style="position: relative;">
+            <button type="button" id="topUserDropdownBtn"
+              style="border: 1px solid #dbeafe; background: #eff6ff; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; border-radius: 20px; transition: all 0.2s;">
+              <div class="avatar-small">AI</div>
+              <span style="font-weight: 700; color: #1e293b; font-size: 0.85rem;" id="topbarUserName">AIGGPA</span>
+              <i class="pi pi-chevron-down" style="font-size: 9px; color: #64748b;"></i>
+            </button>
+            <div class="user-dropdown-menu" id="topUserDropdownMenu"
+              style="display: none; position: absolute; right: 0; top: 44px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 220px; z-index: 1000; padding: 8px 0;">
+              <div style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9;">
+                <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;" id="dropdownUserName">AIGGPA</div>
+                <div style="font-size: 0.76rem; color: #64748b;" id="dropdownUserRole">Center Head</div>
+              </div>
+              <a href="create-project.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: #334155; text-decoration: none; font-size: 0.84rem;">
+                <i class="pi pi-folder" style="color: #64748b;"></i>
+                <span>Projects</span>
+              </a>
+              <div style="border-top: 1px solid #f1f5f9; margin-top: 4px;"></div>
+              <a href="index.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: #ef4444; text-decoration: none; font-size: 0.84rem; font-weight: 600;">
+                <i class="pi pi-sign-out"></i>
+                <span>Logout</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- WORKSPACE / BUDGET DESK CONTENT -->
+      <main class="workspace-content settings-container" style="padding-top: 14px;">
+        <!-- CHOOSE PROJECT & COMPACT HEADER BAR -->
+        <div style="margin-bottom: 14px;">
+          <a href="create-project.html" class="btn btn-secondary"
+            style="font-weight: 700; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+            <i class="pi pi-arrow-left"></i>
+            <span>Back to Projects List</span>
+          </a>
+        </div>
+
+        <!-- MAIN BUDGET PUNCHING WORKSPACE (COMPACT SINGLE CARD) -->
+        <div
+          style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 18px; box-shadow: var(--shadow-card);">
+
+          <!-- COMPACT QUICK-PUNCH TOOLBAR (Directly above table) -->
+          <div
+            style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
+
+            <!-- Row 1: Project Select & Budget Head -->
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; align-items: flex-end;">
+
+              <!-- Project Selector -->
+              <div>
+                <label for="budgetProjectSelect"
+                  style="font-size: 0.76rem; font-weight: 800; color: #1837d4; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; text-transform: uppercase;">
+                  <i class="pi pi-folder-open"></i> Project Selection
+                </label>
+                <select id="budgetProjectSelect" class="form-control-select"
+                  style="font-weight: 700; font-size: 0.86rem; height: 38px; color: #0f172a; border: 1.5px solid #93c5fd; background: #ffffff; width: 100%; cursor: pointer;">
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+
+              <!-- Budget Head -->
+              <div>
+                <label
+                  style="font-size: 0.76rem; font-weight: 800; color: #334155; margin-bottom: 5px; display: block; text-transform: uppercase;">
+                  Budget Head <span class="required">*</span>
+                </label>
+                <select id="entryBudgetHead" class="form-control-select"
+                  style="height: 38px; font-weight: 700; font-size: 0.86rem; color: #0f172a; border: 1.5px solid #cbd5e1; background: #ffffff;">
+                  <!-- Head options -->
+                </select>
+                <input type="hidden" id="entryCategorySelect" value="detailed">
+              </div>
+
+            </div>
+
+            <!-- Dynamic Fields: Lump Sum Mode (1 Single Line) -->
+            <div id="fieldsLumpSum"
+              style="display: none; grid-template-columns: minmax(200px, 340px) 160px auto; gap: 10px; align-items: flex-end;">
+              <div>
+                <label
+                  style="font-size: 0.7rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block; letter-spacing: 0.02em;">ITEM
+                  DESCRIPTION</label>
+                <input type="text" id="entryLumpSumParticular" class="form-control-input"
+                  placeholder="e.g. Field Contingency / Travel" style="height: 38px; font-size: 0.85rem;">
+              </div>
+              <div>
+                <label
+                  style="font-size: 0.7rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block; letter-spacing: 0.02em;">ESTIMATED
+                  AMOUNT (₹) <span class="required">*</span></label>
+                <input type="number" id="entryLumpSumAmount" min="0" class="form-control-input" placeholder="e.g. 50000"
+                  style="height: 38px; font-weight: 800; font-size: 0.95rem; text-align: right; color: #1837d4;">
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn" onclick="window.clearBudgetForm()"
+                  style="height: 38px; padding: 0 12px; font-weight: 700; font-size: 0.84rem; border: 1.5px solid #cbd5e1; background: #ffffff; color: #475569; border-radius: 6px; cursor: pointer;"
+                  title="Clear Inputs">
+                  <i class="pi pi-refresh" style="font-size: 12px;"></i>
+                </button>
+                <button type="button" class="btn btn-primary" onclick="window.addBudgetEntryToList()"
+                  style="height: 38px; padding: 0 18px; font-weight: 800; font-size: 0.84rem; white-space: nowrap; box-shadow: 0 2px 5px rgba(24, 55, 212, 0.25); display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="pi pi-plus" style="font-size: 11px;"></i> Add to Budget
+                </button>
+              </div>
+            </div>
+
+            <!-- Dynamic Fields: Detailed Mode (Compact 1 Line + Quick Punch) -->
+            <div id="fieldsDetailed">
+              <div
+                style="display: grid; grid-template-columns: minmax(200px, 320px) 75px 85px 110px 125px 125px auto; gap: 8px; align-items: flex-end;">
+                <div>
+                  <label
+                    style="font-size: 0.7rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block; letter-spacing: 0.02em;">ITEM
+                    DESCRIPTION / ROLE <span class="required">*</span></label>
+                  <select id="entryDetailedParticular" class="form-control-select"
+                    style="height: 38px; font-size: 0.83rem;">
+                    <!-- Particulars -->
+                  </select>
+                </div>
+                <div>
+                  <label
+                    style="font-size: 0.7rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block; text-align: center; letter-spacing: 0.02em;">UNITS</label>
+                  <input type="number" id="entryUnits" min="1" value="1" class="form-control-input"
+                    style="height: 38px; text-align: center; font-weight: 700; padding: 0 4px;"
+                    oninput="window.calcDetailedPreview()">
+                </div>
+                <div>
+                  <label
+                    style="font-size: 0.7rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block; text-align: center; letter-spacing: 0.02em;">DURATION</label>
+                  <input type="number" id="entryPeriod" min="1" value="12" class="form-control-input"
+                    style="height: 38px; text-align: center; font-weight: 700; padding: 0 4px;"
+                    oninput="window.calcDetailedPreview()">
+                </div>
+                <div>
+                  <label
+                    style="font-size: 0.7rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block; letter-spacing: 0.02em;">UNIT
+                    TYPE</label>
+                  <select id="entryUnitType" class="form-control-select"
+                    style="height: 38px; font-size: 0.8rem; padding: 0 6px;">
+                    <!-- Types -->
+                  </select>
+                </div>
+                <div>
+                  <label
+                    style="font-size: 0.7rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block; text-align: right; letter-spacing: 0.02em;">RATE
+                    (₹)</label>
+                  <input type="number" id="entryCostPerUnit" min="0" value="125000" class="form-control-input"
+                    style="height: 38px; font-weight: 700; text-align: right; padding: 0 8px;"
+                    oninput="window.calcDetailedPreview()">
+                </div>
+                <div>
+                  <label
+                    style="font-size: 0.7rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block; text-align: right; letter-spacing: 0.02em;">TOTAL</label>
+                  <div
+                    style="height: 38px; display: flex; align-items: center; justify-content: flex-end; padding: 0 10px; background: #eff4fe; border: 1px solid #bfdbfe; border-radius: 8px; font-weight: 800; color: #1837d4; font-size: 0.88rem; white-space: nowrap;"
+                    id="previewTotalCostText">
+                    ₹ 15,00,000
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button type="button" class="btn" onclick="window.clearBudgetForm()"
+                    style="height: 38px; padding: 0 12px; font-weight: 700; font-size: 0.84rem; border: 1.5px solid #cbd5e1; background: #ffffff; color: #475569; border-radius: 6px; cursor: pointer;"
+                    title="Clear Inputs">
+                    <i class="pi pi-refresh" style="font-size: 12px;"></i>
+                  </button>
+                  <button type="button" class="btn btn-primary" onclick="window.addBudgetEntryToList()"
+                    style="height: 38px; padding: 0 18px; font-weight: 800; font-size: 0.84rem; white-space: nowrap; box-shadow: 0 2px 5px rgba(24, 55, 212, 0.25); display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="pi pi-plus" style="font-size: 11px;"></i> Add to Budget
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- COMPACT BUDGET ENTRIES TABLE -->
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <div
+              style="font-size: 0.88rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+              <span>Budget Line Items</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="budgetEntriesCountBadge" style="font-size: 0.75rem; font-weight: 700; color: #64748b;">0 entries
+                added</span>
+            </div>
+          </div>
+
+          <div
+            style="max-height: 430px; overflow-y: auto; overflow-x: auto; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #ffffff;">
+            <table
+              style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.82rem; text-align: left;">
+              <thead style="position: sticky; top: 0; z-index: 5;">
+                <tr
+                  style="background: #f8fafc; border-bottom: 1.5px solid #e2e8f0; color: #475569; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.03em;">
+                  <th
+                    style="padding: 9px 12px; width: 32px; text-align: center; background: #f8fafc; border-bottom: 1.5px solid #e2e8f0;">
+                    #</th>
+                  <th
+                    style="padding: 9px 12px; min-width: 180px; background: #f8fafc; border-bottom: 1.5px solid #e2e8f0;">
+                    Budget Head</th>
+                  <th style="padding: 9px 10px; width: 95px; background: #f8fafc; border-bottom: 1.5px solid #e2e8f0;">
+                    Type</th>
+                  <th
+                    style="padding: 9px 12px; min-width: 170px; background: #f8fafc; border-bottom: 1.5px solid #e2e8f0;">
+                    Item Description</th>
+                  <th
+                    style="padding: 9px 12px; min-width: 150px; background: #f8fafc; border-bottom: 1.5px solid #e2e8f0;">
+                    Calculation / Breakdown</th>
+                  <th
+                    style="padding: 9px 12px; width: 130px; text-align: right; background: #f8fafc; border-bottom: 1.5px solid #e2e8f0;">
+                    Amount (₹)</th>
+                  <th
+                    style="padding: 9px 10px; width: 44px; text-align: center; background: #f8fafc; border-bottom: 1.5px solid #e2e8f0;">
+                    Act</th>
+                </tr>
+              </thead>
+              <tbody id="budgetEntriesTbody">
+                <!-- Entries injected dynamically -->
+              </tbody>
+              <tfoot id="budgetTableTfoot" style="position: sticky; bottom: 0; z-index: 4; background: #ffffff;">
+                <!-- Direct Heads Subtotal, Institutional Overheads Row (15%), and Grand Total Row -->
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- BOTTOM ACTION FOOTER -->
+          <div
+            style="display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1.5px solid #e2e8f0;">
+            <button type="button" onclick="window.clearAllBudgetEntries()"
+              style="background: #f1f5f9; border: 1.5px solid #cbd5e1; color: #475569; font-weight: 700; height: 42px; padding: 0 20px; font-size: 0.88rem; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);">
+              <i class="pi pi-trash"></i> Clear
+            </button>
+            <button type="button" class="btn btn-secondary" id="btnSaveBudgetDraft"
+              onclick="window.saveCurrentBudget(true)"
+              style="background: #ffffff; color: #1d4ed8; border: 1.5px solid #bfdbfe; font-weight: 700; height: 42px; padding: 0 20px; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(29,78,216,0.05);">
+              <i class="pi pi-save"></i> Save Draft
+            </button>
+            <button type="button" class="btn btn-primary" id="btnSaveBudgetSubmit"
+              onclick="window.saveCurrentBudget(false)"
+              style="font-weight: 800; height: 42px; padding: 0 24px; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(24,55,212,0.2);">
+              <i class="pi pi-send"></i> Submit Budget
+            </button>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- FINAL SUBMIT CONFIRMATION MODAL -->
+  <div id="submitConfirmModal"
+    style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+    <div
+      style="background: #ffffff; width: 100%; max-width: 480px; border-radius: 14px; box-shadow: 0 20px 35px rgba(0,0,0,0.25); overflow: hidden; border: 1px solid #cbd5e1; margin: 16px;">
+      <div
+        style="padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i class="pi pi-send" style="color: #1837d4; font-size: 1.1rem;"></i>
+          <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #0f172a;">Submit Budget Estimation</h3>
+        </div>
+        <button type="button" onclick="window.closeSubmitModal()"
+          style="background: none; border: none; font-size: 16px; color: #94a3b8; cursor: pointer;">✕</button>
+      </div>
+
+      <div style="padding: 18px 20px;">
+        <p style="font-size: 0.86rem; color: #475569; margin: 0 0 14px 0;">
+          Are you sure you want to finalize and submit this budget estimation? Below is the final summary:
+        </p>
+
+        <div
+          style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 14px 16px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b; font-weight: 600;">Selected Project:</span>
+            <strong id="modalProjectName" style="color: #0f172a; max-width: 250px; text-align: right;">PRJ-01</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b; font-weight: 600;">Total Line Items:</span>
+            <strong id="modalTotalItems" style="color: #0f172a;">10 items</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b; font-weight: 600;">Direct Heads Subtotal:</span>
+            <strong id="modalSubtotal" style="color: #0f172a;">₹ 16,50,000</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b; font-weight: 600;">Institutional Overheads (15%):</span>
+            <strong id="modalOverheads" style="color: #1837d4;">₹ 2,47,500</strong>
+          </div>
+          <div
+            style="border-top: 1.5px solid #e2e8f0; padding-top: 8px; margin-top: 2px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 800; color: #15803d; text-transform: uppercase; font-size: 0.78rem;">Total
+              Estimated Cost:</span>
+            <strong id="modalGrandTotal" style="color: #15803d; font-size: 1.18rem; font-weight: 900;">₹
+              18,97,500</strong>
+          </div>
+        </div>
+      </div>
+
+      <div
+        style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary" onclick="window.closeSubmitModal()"
+          style="height: 36px; padding: 0 16px; font-weight: 700; font-size: 0.84rem; background: #ffffff; border: 1.5px solid #cbd5e1;">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-primary" onclick="window.confirmFinalSubmit()"
+          style="height: 36px; padding: 0 18px; font-weight: 800; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 6px;">
+          <i class="pi pi-check"></i> Confirm &amp; Submit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/store.js"></script>
+  <script src="js/budget.js"></script>
+</body>
+
+</html>

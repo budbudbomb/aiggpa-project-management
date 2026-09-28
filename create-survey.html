@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIGGPA - Create &amp; Publish Field Survey</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="mainSidebar">
+      <div class="sidebar-header">
+        <div class="company-logo-box">
+          <div class="aiggpa-brand-icon">
+            <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 7L29 12V21C29 26.5 25.2 31.6 20 33C14.8 31.6 11 26.5 11 21V12L20 7Z" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.15)"/>
+              <path d="M16 20L19 23L24 17" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="aiggpa-brand-text">
+            <span class="brand-title">AIGGPA</span>
+            <span class="brand-sub">Project Governance</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+
+        <a href="create-project.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-plus-circle"></i>
+            <span>Create Project</span>
+          </div>
+        </a>
+
+        <a href="activities.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-check-square"></i>
+            <span>Tasks</span>
+          </div>
+        </a>
+
+        <a href="create-survey.html" class="menu-item active" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-file-edit"></i>
+            <span>Surveys</span>
+          </div>
+        </a>
+      </nav>
+
+      <!-- User profile pill -->
+      <div class="sidebar-footer">
+        <div class="user-profile-pill">
+          <div class="profile-left">
+            <div class="profile-avatar">AI</div>
+            <div class="profile-info">
+              <h4>AIGGPA</h4>
+              <p>Center Head</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-wrapper">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+            <i class="pi pi-bars"></i>
+          </button>
+          <div class="search-box">
+            <i class="pi pi-search search-icon"></i>
+            <input type="text" id="globalSearchInput" placeholder="Search...">
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <a href="activities.html" class="btn btn-secondary" style="padding: 6px 14px; font-size: 0.82rem; text-decoration: none;">
+            <i class="pi pi-arrow-left"></i>
+            <span>Back to Surveys</span>
+          </a>
+          <!-- User Profile Dropdown with Logout -->
+          <div class="user-profile-dropdown" style="position: relative;">
+            <button type="button" id="topUserDropdownBtn" style="border: 1px solid #dbeafe; background: #eff6ff; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; border-radius: 20px; transition: all 0.2s;">
+              <div class="avatar-small">AI</div>
+              <span style="font-weight: 700; color: #1e293b; font-size: 0.85rem;">AIGGPA</span>
+              <i class="pi pi-chevron-down" style="font-size: 9px; color: #64748b;"></i>
+            </button>
+
+            <!-- Dropdown Menu under username -->
+            <div id="topUserDropdownMenu" style="display: none; position: absolute; right: 0; top: 120%; width: 190px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); padding: 8px 0; z-index: 99999;">
+              <div style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9;">
+                <div style="font-weight: 800; color: #1e293b; font-size: 0.88rem;">AIGGPA Admin</div>
+                <div style="font-size: 0.74rem; color: #64748b;">Center Head</div>
+              </div>
+              <a href="login.html" style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: #ef4444; text-decoration: none; font-size: 0.85rem; font-weight: 700; transition: background 0.15s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                <i class="pi pi-sign-out" style="font-size: 14px;"></i>
+                <span>Logout</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace-content settings-container">
+        <!-- Banner Header -->
+        <!-- Banner Header with Primary Action Button -->
+        <div class="page-title-banner" style="margin-bottom: 24px;">
+          <div class="title-with-icon">
+            <div class="title-icon-box" style="background: linear-gradient(135deg, #059669, #10b981); color: #fff;">
+              <i class="pi pi-pencil"></i>
+            </div>
+            <div class="title-text-group">
+              <h1>Create Field Survey</h1>
+              <p>Configure survey parameters and map verified questions from your central question bank.</p>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <a href="activities.html" class="btn btn-secondary" style="height: 42px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 16px;">
+              <i class="pi pi-arrow-left"></i>
+              <span>Back</span>
+            </a>
+            <button type="button" class="btn btn-primary" id="btnPublishSurveyInPage" style="height: 42px; padding: 0 24px; font-size: 0.92rem; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(24, 55, 212, 0.28);">
+              <i class="pi pi-check" style="font-weight: 900;"></i>
+              <span>Create &amp; Publish Survey</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Split Layout Grid -->
+        <div class="cs-layout-grid">
+          <!-- Left: Survey Parameters -->
+          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 16px; padding: 22px; box-shadow: var(--shadow-card);">
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+              <i class="pi pi-sliders-h" style="color: #1837d4;"></i>
+              <span>Survey Details</span>
+            </h3>
+
+            <div class="form-group-full" style="margin-bottom: 14px;">
+              <label class="form-label">Survey Title <span class="required">*</span></label>
+              <input type="text" id="csSurveyNameIn" class="form-control-input" placeholder="e.g., Baseline Household Socio-Economic &amp; Livelihood Survey">
+            </div>
+
+            <div class="form-group-full" style="margin-bottom: 14px;">
+              <label class="form-label">Associated Project <span class="required">*</span></label>
+              <select id="csSurveyProjectSelect" class="form-control-select">
+                <!-- Dynamically populated from Store -->
+              </select>
+            </div>
+
+            <div class="form-group-full" style="margin-bottom: 14px;">
+              <label class="form-label">Target Sample Size <span class="required">*</span></label>
+              <input type="number" id="csSurveyMinRespondentsIn" class="form-control-input" value="100" min="5" placeholder="e.g. 100">
+            </div>
+
+            <div class="form-group-full" style="margin-bottom: 14px;">
+              <label class="form-label">Assigned Field Investigators <span class="required">*</span></label>
+              <input type="text" id="csSurveyInvestigatorsIn" class="form-control-input" value="Rajesh Kumar, Sunita Meena, Vikas Tiwari, Anita Das" placeholder="e.g. Rajesh Kumar, Sunita Meena, Vikas Tiwari">
+            </div>
+
+            <div class="form-group-full" style="margin-bottom: 18px;">
+              <label class="form-label">Surveyor Guidelines <span class="required">*</span></label>
+              <textarea id="csSurveyDescIn" class="form-control-input" rows="3" style="height: auto; padding: 10px 14px; font-family: inherit;" placeholder="Fieldwork guidelines, eligibility criteria, cluster verification notes..."></textarea>
+            </div>
+
+            <div style="padding-top: 14px; border-top: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 12px;">
+              <button type="button" class="btn btn-primary btnPublishSurveyTrigger" style="width: 100%; height: 44px; font-weight: 800; justify-content: center; gap: 8px;">
+                <i class="pi pi-check"></i>
+                <span>Save &amp; Publish Survey</span>
+              </button>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 0.78rem; color: #64748b; display: flex; align-items: center; gap: 8px;">
+                <i class="pi pi-shield" style="color: #10b981; font-size: 1rem; flex-shrink: 0;"></i>
+                <span>Permanent question codes ensure 100% data fidelity.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Checkbox Question Mapper -->
+          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 16px; padding: 22px; box-shadow: var(--shadow-card);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <i class="pi pi-check-square" style="color: #1837d4;"></i>
+                  <span>Select Questions</span>
+                </h3>
+                <span id="csSelectedCountBadge" style="font-size: 0.78rem; font-weight: 800; background: #eff4fe; color: #1837d4; padding: 3px 10px; border-radius: 20px;">0 Selected</span>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="button" class="btn btn-primary" id="btnOpenAddQuestionModal" style="font-size: 0.78rem; padding: 6px 14px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="pi pi-plus"></i>
+                  <span>Add Question to Master</span>
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnCSSelectAll" style="font-size: 0.78rem; padding: 5px 12px; font-weight: 700;">
+                  Select All
+                </button>
+                <button type="button" class="btn btn-secondary" id="btnCSDeselectAll" style="font-size: 0.78rem; padding: 5px 12px; color: #ef4444;">
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <!-- Search & Category filter row -->
+            <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 180px;">
+                <input type="text" id="csQuestionFilterIn" class="form-control-input" style="height: 36px; font-size: 0.82rem;" placeholder="🔍 Filter questions from bank...">
+              </div>
+              <div style="width: 160px;">
+                <select id="csCategoryFilterSelect" class="form-control-input" style="height: 36px; font-size: 0.82rem;">
+                  <option value="">All Categories</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Unified Checklist Table -->
+            <div class="cs-questions-table-wrap">
+              <div class="cs-questions-table-header">
+                <div style="width: 20px;"></div>
+                <div style="width: 60px;">Code</div>
+                <div style="flex: 1;">Question Details &amp; Type</div>
+              </div>
+              <div id="csQuestionsList" style="max-height: 440px; overflow-y: auto;">
+                <!-- Dynamically rendered question rows -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE QUESTION IN MASTER (DIRECTLY DURING SURVEY CREATION) -->
+  <div class="modal-backdrop" id="modalAddQuestionToMaster">
+    <div class="modal-container" style="max-width: 620px;">
+      <div class="modal-header">
+        <div>
+          <h2>Create Question in Master</h2>
+          <p>Saved directly into the Master Question Repository and auto-selected for this Survey.</p>
+        </div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px 24px;">
+        <div class="form-group-full" style="margin-bottom: 14px;">
+          <label class="form-label">Question Statement / Text <span class="required">*</span></label>
+          <textarea id="mqQuestionText" class="form-control-input" rows="2" style="height: auto; padding: 10px 12px; font-family: inherit; font-size: 0.88rem;" placeholder="e.g. Does the household own agricultural land or livestock?"></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+          <div>
+            <label class="form-label">Category <span class="required">*</span></label>
+            <select id="mqCategorySelect" class="form-control-select">
+              <option value="Demographics" selected>Demographics</option>
+              <option value="Infrastructure">Infrastructure</option>
+              <option value="Agriculture & Land">Agriculture &amp; Land</option>
+              <option value="Health & Nutrition">Health &amp; Nutrition</option>
+              <option value="Governance & Schemes">Governance &amp; Schemes</option>
+              <option value="Livelihood & Income">Livelihood &amp; Income</option>
+              <option value="Education">Education</option>
+              <option value="Environment & Energy">Environment &amp; Energy</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="form-label">Response Type <span class="required">*</span></label>
+            <select id="mqTypeSelect" class="form-control-select">
+              <option value="Single choice" selected>Single Choice (Radio)</option>
+              <option value="Multiple choice">Multiple Choice (Checkboxes)</option>
+              <option value="Dichotomous">Yes / No</option>
+              <option value="Numeric">Numeric Value (Number)</option>
+              <option value="Text">Open Text / Qualitative</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group-full" id="mqOptionsContainer" style="margin-bottom: 14px;">
+          <label class="form-label">Response Options <span style="font-size: 0.74rem; color: #64748b;">(Comma-separated)</span></label>
+          <input type="text" id="mqOptionsInput" class="form-control-input" value="Yes, No" placeholder="e.g. Yes, No, Don't Know">
+        </div>
+
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; color: #166534; display: flex; align-items: center; gap: 8px;">
+          <i class="pi pi-check-circle" style="font-size: 1.05rem;"></i>
+          <span>A unique permanent Question Code (e.g. Q-11) will be auto-generated and added to the master repository.</span>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 14px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnSaveNewQuestionToMaster" style="font-weight: 800; padding: 0 20px;">
+          <i class="pi pi-check"></i> Save &amp; Add to Survey
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/create-survey.js"></script>
+</body>
+</html>

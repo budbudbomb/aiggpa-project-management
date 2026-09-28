@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIGGPA - Tasks</title>
+  <meta name="description"
+    content="Consolidated workspace to assign standard research tasks and schedule review meetings for AIGGPA projects.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    /* ── Tab Strip ── */
+    .act-tab-strip {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 6px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+    }
+
+    .act-tab-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #64748b;
+      background: transparent;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .act-tab-btn:hover:not(.active) {
+      background: #f1f5f9;
+      color: #334155;
+    }
+
+    .act-tab-btn.active {
+      background: linear-gradient(135deg, #1837d4, #0284c7);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(24, 55, 212, 0.25);
+    }
+
+    .act-tab-btn .tab-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 6px;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.25);
+      color: inherit;
+      transition: all 0.2s;
+    }
+
+    .act-tab-btn:not(.active) .tab-count {
+      background: #eff4fe;
+      color: #1837d4;
+    }
+
+    .act-tab-btn .tab-icon {
+      font-size: 1.1rem;
+    }
+
+    /* ── Layout & Viewport Alignment (Prevents screen cutoff on right) ── */
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    .dashboard-layout {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+
+    .main-wrapper {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      min-width: 0;
+      width: calc(100% - var(--sidebar-width));
+      max-width: calc(100% - var(--sidebar-width));
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 960px) {
+      .main-wrapper {
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+      }
+    }
+
+    .workspace-content {
+      min-width: 0;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: clamp(14px, 2vw, 24px);
+    }
+
+    .topbar {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 0 clamp(16px, 2vw, 24px);
+    }
+
+    .page-title-banner {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* ── Table wrapper ── */
+    .act-table-wrapper {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: clamp(14px, 2vw, 20px);
+      box-shadow: var(--shadow-card);
+      min-width: 0;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .act-table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .act-table-scroll-container {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      box-sizing: border-box;
+    }
+
+    /* ── Subtask Hierarchy & Tree Rows ── */
+    .task-expand-btn {
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 0;
+      transition: all 0.18s ease;
+      flex-shrink: 0;
+    }
+    .task-expand-btn:hover {
+      background: #eff6ff;
+      color: #1837d4;
+    }
+    .task-expand-btn i {
+      font-size: 9px;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .task-expand-btn.expanded i {
+      transform: rotate(90deg);
+      color: #1837d4;
+    }
+    .subtask-count-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 0.67rem;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: #475569;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .subtask-count-pill:hover {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+    .subtask-count-pill.all-done {
+      background: #f0fdf4;
+      color: #16a34a;
+      border-color: #bbf7d0;
+    }
+    .subtask-row {
+      background: #fcfdfe;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.12s ease;
+    }
+    .subtask-row:hover {
+      background: #f8fafc;
+    }
+    .subtask-tree-guide {
+      display: inline-flex;
+      align-items: center;
+      color: #cbd5e1;
+      font-size: 13px;
+      margin-right: 6px;
+      user-select: none;
+    }
+    .subtask-checkbox {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1.5px solid #cbd5e1;
+      background: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+      margin-right: 8px;
+    }
+    .subtask-checkbox:hover {
+      border-color: #1837d4;
+      transform: scale(1.05);
+    }
+    .subtask-checkbox.checked {
+      background: #1837d4;
+      border-color: #1837d4;
+      color: #ffffff;
+    }
+    .subtask-title-text {
+      font-size: 0.77rem;
+      font-weight: 600;
+      color: #334155;
+      transition: color 0.15s ease;
+    }
+    .subtask-title-text.completed {
+      text-decoration: line-through;
+      color: #94a3b8;
+    }
+    .subtask-quick-add-row {
+      background: #fafcff;
+      border-bottom: 1px dashed #e2e8f0;
+    }
+    .subtask-quick-input {
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.77rem;
+      color: #1e293b;
+      font-weight: 500;
+      width: 100%;
+      padding: 4px 6px;
+    }
+    .subtask-quick-input::placeholder {
+      color: #94a3b8;
+      font-style: italic;
+    }
+    .btn-add-subtask-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #1837d4;
+      background: #eff6ff;
+      border: 1px dashed #bfdbfe;
+      border-radius: 6px;
+      padding: 2px 7px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      opacity: 0.85;
+    }
+    .btn-add-subtask-ghost:hover {
+      opacity: 1;
+      background: #dbeafe;
+      border-style: solid;
+    }
+
+    /* Separate receipt buttons */
+    .act-btn-receipt-read {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1.5px solid #bbf7d0;
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .act-btn-receipt-read:hover {
+      background: #dcfce7;
+      border-color: #86efac;
+      transform: translateY(-1px);
+    }
+    .act-btn-receipt-unread {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #fffbeb;
+      color: #b45309;
+      border: 1.5px solid #fde68a;
+      font-size: 0.74rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .act-btn-receipt-unread:hover {
+      background: #fef3c7;
+      border-color: #fcd34d;
+      transform: translateY(-1px);
+    }
+
+    .mrr-filter-btn {
+      padding: 3px 10px;
+      font-size: 0.73rem;
+      border-radius: 6px;
+      font-weight: 700;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mrr-filter-btn.active {
+      background: #1837d4;
+      color: #fff;
+      border-color: #1837d4;
+    }
+
+    .act-quick-filter-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #475569;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .act-quick-filter-btn:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+      color: #1e293b;
+    }
+    .act-quick-filter-btn.active {
+      background: #1837d4;
+      color: #ffffff;
+      border-color: #1837d4;
+      box-shadow: 0 2px 6px rgba(24, 55, 212, 0.25);
+    }
+    .act-assignee-count-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1.5px solid #bbf7d0;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .act-assignee-count-btn:hover {
+      background: #dcfce7;
+      border-color: #86efac;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(22, 101, 52, 0.15);
+    }
+
+    /* Meeting detail modal specifics */
+    .rsvp-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 11px 14px;
+      transition: border-color 0.2s;
+    }
+
+    .rsvp-row:hover {
+      border-color: #cbd5e1;
+    }
+
+    .rsvp-accept-btn {
+      padding: 4px 12px;
+      border-radius: 8px;
+      border: 1.5px solid #bbf7d0;
+      background: #f0fdf4;
+      color: #15803d;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .rsvp-accept-btn:hover {
+      background: #dcfce7;
+    }
+
+    .rsvp-accept-btn.accepted {
+      background: #15803d;
+      color: #fff;
+      border-color: #15803d;
+    }
+
+    .rsvp-decline-btn {
+      padding: 4px 12px;
+      border-radius: 8px;
+      border: 1.5px solid #fecaca;
+      background: #fef2f2;
+      color: #dc2626;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .rsvp-decline-btn:hover {
+      background: #fee2e2;
+    }
+
+    .rsvp-decline-btn.declined {
+      background: #dc2626;
+      color: #fff;
+      border-color: #dc2626;
+    }
+
+    /* Dynamic Grid Inline Creation Row */
+    .grid-quick-add-row {
+      background: #f8fafc;
+      border-bottom: 2px solid #e2e8f0;
+      transition: background 0.25s ease;
+    }
+    .grid-row-highlight {
+      animation: pulseGridRow 1.4s ease;
+    }
+    @keyframes pulseGridRow {
+      0% { background: #e0e7ff; }
+      40% { background: #c7d2fe; }
+      100% { background: #f8fafc; }
+    }
+    .grid-type-pill {
+      border: 1px solid transparent;
+      background: transparent;
+      color: #64748b;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      white-space: nowrap;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .grid-type-pill:hover {
+      color: #1e293b;
+      background: rgba(255, 255, 255, 0.7);
+    }
+    .grid-type-pill.active {
+      background: #ffffff;
+      color: #1837d4;
+      border-color: #cbd5e1;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    .grid-type-pill.active.pill-survey {
+      background: #faf5ff;
+      color: #9333ea;
+      border-color: #e9d5ff;
+      box-shadow: 0 1px 3px rgba(147, 51, 234, 0.15);
+    }
+    .grid-type-pill.active.pill-meeting {
+      background: #eff6ff;
+      color: #2563eb;
+      border-color: #bfdbfe;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Assignee Avatar Group & Circles (Matching Screenshot 2) */
+    .assignee-avatar-group {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 1px 3px;
+      border-radius: 16px;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .assignee-avatar-group:hover {
+      background: #eff6ff;
+    }
+    .assignee-avatar-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.60rem;
+      font-weight: 800;
+      color: #ffffff;
+      border: 1.5px solid #ffffff;
+      margin-left: -5px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+      transition: transform 0.15s ease, z-index 0.15s;
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .assignee-avatar-circle:first-child {
+      margin-left: 0;
+    }
+    .assignee-avatar-circle:hover {
+      transform: translateY(-2px) scale(1.12);
+      z-index: 10;
+    }
+    .assignee-avatar-more {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.56rem;
+      font-weight: 800;
+      color: #334155;
+      background: #e2e8f0;
+      border: 1.5px solid #ffffff;
+      margin-left: -5px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+      position: relative;
+      user-select: none;
+      flex-shrink: 0;
+    }
+    .grid-assignee-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .grid-assignee-trigger:hover {
+      border-color: #2563eb;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+    }
+    .grid-assignee-dropdown {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: calc(100% + 6px);
+      width: 250px;
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+      z-index: 9999;
+      padding: 6px 0;
+    }
+
+    /* Empty state */
+    .act-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 52px 20px;
+      color: #94a3b8;
+      text-align: center;
+      gap: 10px;
+    }
+
+    .act-empty-icon {
+      font-size: 2.5rem;
+      opacity: 0.5;
+    }
+
+    .act-empty-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #64748b;
+    }
+
+    .act-empty-desc {
+      font-size: 0.83rem;
+      color: #94a3b8;
+      max-width: 320px;
+    }
+
+    /* Meeting row clickable */
+    .mtg-row-clickable {
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .mtg-row-clickable:hover {
+      background: #f8fafc !important;
+    }
+
+    /* Minutes textarea */
+    .minutes-textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      color: #1e293b;
+      resize: vertical;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+
+    .minutes-textarea:focus {
+      outline: none;
+      border-color: #1837d4;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dashboard-layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="mainSidebar">
+      <div class="sidebar-header">
+        <div class="company-logo-box">
+          <div class="aiggpa-brand-icon">
+            <svg width="24" height="24" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 7L29 12V21C29 26.5 25.2 31.6 20 33C14.8 31.6 11 26.5 11 21V12L20 7Z" stroke="#ffffff"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.15)" />
+              <path d="M16 20L19 23L24 17" stroke="#38bdf8" stroke-width="2.8" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="aiggpa-brand-text">
+            <span class="brand-title">AIGGPA</span>
+            <span class="brand-sub">Project Governance</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+
+        <a href="create-project.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-plus-circle"></i>
+            <span>Create Project</span>
+          </div>
+        </a>
+
+        <a href="activities.html" class="menu-item active" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-check-square"></i>
+            <span>Tasks</span>
+          </div>
+        </a>
+
+        <a href="create-survey.html" class="menu-item" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-file-edit"></i>
+            <span>Surveys</span>
+          </div>
+        </a>
+      </nav>
+
+      <!-- User profile pill -->
+      <div class="sidebar-footer">
+        <div class="user-profile-pill">
+          <div class="profile-left">
+            <div class="profile-avatar">AI</div>
+            <div class="profile-info">
+              <h4>AIGGPA</h4>
+              <p>Center Head</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+            <i class="pi pi-bars"></i>
+          </button>
+          <div class="search-box">
+            <i class="pi pi-search search-icon"></i>
+            <input type="text" id="globalSearchInput" placeholder="Search tasks, meetings...">
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="user-profile-dropdown" style="position: relative;">
+            <button type="button" id="topUserDropdownBtn"
+              style="border: 1px solid #dbeafe; background: #eff6ff; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; border-radius: 20px; transition: all 0.2s;">
+              <div class="avatar-small">AI</div>
+              <span style="font-weight: 700; color: #1e293b; font-size: 0.85rem;">AIGGPA</span>
+              <i class="pi pi-chevron-down" style="font-size: 9px; color: #64748b;"></i>
+            </button>
+            <div id="topUserDropdownMenu"
+              style="display: none; position: absolute; right: 0; top: 120%; width: 190px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); padding: 8px 0; z-index: 99999;">
+              <div style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9;">
+                <div style="font-weight: 800; color: #1e293b; font-size: 0.88rem;">AIGGPA Admin</div>
+                <div style="font-size: 0.74rem; color: #64748b;">Center Head</div>
+              </div>
+              <a href="login.html"
+                style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: #ef4444; text-decoration: none; font-size: 0.85rem; font-weight: 700; transition: background 0.15s;"
+                onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                <i class="pi pi-sign-out" style="font-size: 14px;"></i>
+                <span>Logout</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace-content settings-container">
+        <!-- Banner Header -->
+        <div class="page-title-banner" style="margin-bottom: 24px;">
+          <div class="title-with-icon">
+            <div class="title-icon-box" style="background: linear-gradient(135deg, #1837d4, #0284c7); color: #fff;">
+              <i class="pi pi-check-square"></i>
+            </div>
+            <div class="title-text-group">
+              <h1 id="actBannerHeading">Tasks</h1>
+              <p id="actBannerSubtitle">Manage project standard tasks, survey tasks, and meeting tasks with real-time tracking.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- DATA TABLE CARD -->
+        <div class="act-table-wrapper">
+          <div class="act-table-header" style="display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 14px; width: 100%; max-width: 100%; box-sizing: border-box;">
+            <!-- Left Side: Title & Project Dropdown Below Headline -->
+            <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0;">
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-primary); margin: 0;" id="actTableTitle">Tasks</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; margin-bottom: 0;" id="actTableDesc">Track deliverables, due dates, and member read receipts</p>
+              </div>
+
+              <!-- Common Project Selector Dropdown Below Headline -->
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 4px 12px; height: 36px; box-sizing: border-box; max-width: 100%;">
+                <i class="pi pi-folder" style="font-size: 13px; color: #64748b; flex-shrink: 0;"></i>
+                <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; flex-shrink: 0;">Project:</span>
+                <select id="actProjectFilter" onchange="window.triggerTaskSearch()" style="border: none; outline: none; font-size: 0.82rem; color: #1e293b; background: transparent; font-family: inherit; font-weight: 700; cursor: pointer; max-width: 220px;">
+                  <option value="">All Projects</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Right Side: Date Selector Fields and Search Button -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <!-- Two Date Selectors (dd/MM/yyyy) -->
+              <div style="display: flex; align-items: center; gap: 5px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 4px 8px; height: 38px; box-sizing: border-box;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 0.76rem; font-weight: 700; color: #64748b;">From:</span>
+                  <input type="date" id="actFromDate" value="2026-09-23" style="border: none; outline: none; font-size: 0.78rem; color: #1e293b; background: transparent; padding: 2px 0; font-family: inherit; font-weight: 600; width: 105px;">
+                </div>
+                <span style="color: #cbd5e1; font-weight: 300;">|</span>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 0.76rem; font-weight: 700; color: #64748b;">To:</span>
+                  <input type="date" id="actToDate" value="2026-09-23" style="border: none; outline: none; font-size: 0.78rem; color: #1e293b; background: transparent; padding: 2px 0; font-family: inherit; font-weight: 600; width: 105px;">
+                </div>
+                <button type="button" id="actClearDatesBtn" style="border: none; background: none; color: #94a3b8; cursor: pointer; padding: 0 4px; font-size: 0.85rem;" title="Clear date range">✕</button>
+              </div>
+
+              <!-- Search Button -->
+              <button type="button" class="btn btn-primary" id="btnExecuteSearch" style="height: 38px; padding: 0 16px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; flex-shrink: 0;">
+                <i class="pi pi-search"></i>
+                <span>Search</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="act-table-scroll-container">
+            <table style="width: 100%; min-width: 700px; border-collapse: collapse; font-size: 0.80rem; text-align: left;">
+              <thead id="actTableThead"></thead>
+              <tbody id="actTableTbody"></tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div id="actPaginationBar" style="display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9; flex-wrap: wrap; gap: 10px;">
+            <div id="actPaginationInfo" style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Showing 1-5</div>
+            <div style="display: flex; align-items: center; gap: 6px;" id="actPaginationBtns"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       MODAL: CREATE NEW TASK
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modalNewTask">
+    <div class="modal-container" style="max-width: 640px;">
+      <div class="modal-header" style="padding: 16px 24px;">
+        <div>
+          <h2 style="font-size: 1.15rem;">Create New Task</h2>
+          <p style="font-size: 0.78rem;">Assign deliverables, literature reviews, or milestones to your team.</p>
+        </div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 18px 24px;">
+        <div class="form-grid-2" style="gap: 12px;">
+          <div class="form-group-full">
+            <label class="form-label">Task Type <span class="required">*</span></label>
+            <select id="modalTaskTypeSelect" class="form-control-select">
+              <option value="standard" selected>📌 Standard Task</option>
+              <option value="survey">📋 Survey Task</option>
+              <option value="meeting">📅 Meeting Task</option>
+            </select>
+          </div>
+
+          <div class="form-group-full">
+            <label class="form-label">Task Title <span class="required">*</span></label>
+            <input type="text" id="taskTitleIn" class="form-control-input"
+              placeholder="e.g. Prepare Literature Review on Tribal Rights">
+          </div>
+
+          <div class="form-group-full">
+            <label class="form-label">Description / Instructions</label>
+            <textarea id="taskDescIn" class="form-control-input" rows="2"
+              style="height: auto; padding: 8px 12px; font-family: inherit; font-size: 0.85rem;"
+              placeholder="Brief instructions, deliverables & constraints..."></textarea>
+          </div>
+
+          <div class="form-group-full">
+            <label class="form-label">Associated Project <span class="required">*</span></label>
+            <select id="taskProjectSelect" class="form-control-select"></select>
+          </div>
+
+          <div>
+            <label class="form-label">Assignees (Comma-separated) <span class="required">*</span></label>
+            <input type="text" id="taskAssigneesIn" class="form-control-input"
+              placeholder="e.g. Priya Verma, Rahul Sharma" value="Priya Verma, Rahul Sharma">
+          </div>
+
+          <div>
+            <label class="form-label">Due Date <span class="required">*</span></label>
+            <input type="date" id="taskDueDateIn" class="form-control-input" value="2026-11-15">
+          </div>
+
+          <div>
+            <label class="form-label">Initial Progress (%)</label>
+            <input type="number" id="taskProgressIn" class="form-control-input" min="0" max="100" value="0"
+              placeholder="0">
+          </div>
+
+          <div>
+            <label class="form-label">Priority</label>
+            <select id="taskPrioritySelect" class="form-control-select">
+              <option value="High">🔴 High Priority</option>
+              <option value="Medium" selected>🟡 Medium Priority</option>
+              <option value="Low">🟢 Low Priority</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer"
+        style="position: sticky; bottom: 0; background: #fafcff; z-index: 10; padding: 14px 24px;">
+        <button class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button class="btn btn-primary" id="btnSaveTaskModal">
+          <i class="pi pi-check"></i>
+          <span>Save Task</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       MODAL: GRID MEETING DETAILS (URL, Duration, Description)
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modalGridMeetingDetails">
+    <div class="modal-container" style="max-width: 500px;">
+      <div class="modal-header" style="padding: 16px 22px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;border-radius:8px;background:#eff6ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:16px;">
+            <i class="pi pi-pencil"></i>
+          </div>
+          <div>
+            <h2 style="font-size: 1.08rem; margin: 0;">Meeting Details</h2>
+            <p style="font-size: 0.78rem; color: #64748b; margin: 2px 0 0 0;">Add meeting link, duration, and brief description.</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 18px 22px;">
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <label class="form-label">Meeting URL</label>
+            <div style="position: relative;">
+              <i class="pi pi-link" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #94a3b8;"></i>
+              <input type="url" id="gridMeetingUrlIn" class="form-control-input" style="padding-left: 34px;"
+                placeholder="https://meet.google.com/xyz-abcd-efg or Zoom link">
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">Meeting Duration</label>
+            <div style="position: relative;">
+              <i class="pi pi-clock" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #94a3b8;"></i>
+              <select id="gridMeetingDurationSelect" class="form-control-select" style="padding-left: 34px;">
+                <option value="30 mins">30 mins</option>
+                <option value="45 mins" selected>45 mins</option>
+                <option value="60 mins (1 hr)">60 mins (1 hr)</option>
+                <option value="90 mins (1.5 hrs)">90 mins (1.5 hrs)</option>
+                <option value="2 hours">2 hours</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">Description / Agenda</label>
+            <textarea id="gridMeetingDescIn" class="form-control-input" rows="3"
+              style="height: auto; padding: 10px 12px; font-family: inherit; font-size: 0.85rem;"
+              placeholder="Brief agenda, discussion points, or key objectives..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 22px; background: #fafcff; border-top: 1px solid #edf2f7; display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="window.saveGridMeetingDetailsModal()">
+          <i class="pi pi-check"></i>
+          <span>Save Details</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       MODAL: TASK READ RECEIPTS & PROGRESS
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modalReadReceipts">
+    <div class="modal-container" style="max-width: 580px;">
+      <div class="modal-header" style="padding: 18px 24px; border-bottom: 1px solid #f1f5f9;">
+        <div>
+          <h2 id="mrrTaskTitle" style="font-size: 1.12rem; font-weight: 800; color: #0f172a;">Task Read Receipts</h2>
+          <p id="mrrTaskSubtitle" style="font-size: 0.8rem; color: #64748b; margin-top: 3px;"></p>
+        </div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 18px 24px; max-height: 65vh; overflow-y: auto;">
+        <!-- Task Description & Deliverables Box -->
+        <div id="mrrTaskDescBox" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
+          <div style="font-size: 0.74rem; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+            <i class="pi pi-align-left" style="font-size: 11px; color: #1837d4;"></i>
+            <span>Task Description / Deliverables</span>
+          </div>
+          <div id="mrrTaskDesc" style="font-size: 0.84rem; color: #334155; line-height: 1.45;"></div>
+        </div>
+
+        <!-- Simple 2-Stat Summary Strip -->
+        <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+          <div
+            id="mrrCardRead"
+            onclick="window.filterModalReceipts('read')"
+            style="flex: 1; background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;"
+            title="Click to view read members">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.15rem;">👁️</span>
+              <span style="font-size: 0.84rem; font-weight: 700; color: #15803d;">Read by Members</span>
+            </div>
+            <span id="mrrStatRead" style="font-size: 1.15rem; font-weight: 800; color: #15803d;">0</span>
+          </div>
+
+          <div
+            id="mrrCardUnread"
+            onclick="window.filterModalReceipts('unread')"
+            style="flex: 1; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; cursor: pointer;"
+            title="Click to view unread members">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 1.15rem;">⏳</span>
+              <span style="font-size: 0.84rem; font-weight: 700; color: #b45309;">Unread / Pending</span>
+            </div>
+            <span id="mrrStatUnread" style="font-size: 1.15rem; font-weight: 800; color: #b45309;">0</span>
+          </div>
+        </div>
+
+        <!-- Scrollable Members List -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+          <div
+            style="font-size: 0.82rem; font-weight: 800; color: #334155; text-transform: uppercase; letter-spacing: 0.03em;">
+            Assigned Team (<span id="mrrTotalAssignedCount">0</span> Members)
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <button type="button" class="mrr-filter-btn active" id="mrrFilterBtnAll" onclick="window.filterModalReceipts('all')">All</button>
+            <button type="button" class="mrr-filter-btn" id="mrrFilterBtnRead" onclick="window.filterModalReceipts('read')">Read</button>
+            <button type="button" class="mrr-filter-btn" id="mrrFilterBtnUnread" onclick="window.filterModalReceipts('unread')">Unread</button>
+          </div>
+        </div>
+        <div id="mrrMembersList" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto;"></div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 24px; background: #f8fafc; border-top: 1px solid #f1f5f9;">
+        <button class="btn btn-secondary" data-close-modal style="font-weight: 700;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       MODAL: SCHEDULE NEW MEETING
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modalNewMeeting">
+    <div class="modal-container" style="max-width: 640px;">
+      <div class="modal-header" style="padding: 16px 24px;">
+        <div>
+          <h2 style="font-size: 1.15rem;">Schedule Review Meeting</h2>
+          <p style="font-size: 0.78rem;">Set up progress reviews, briefings, or check-ins for your project team.</p>
+        </div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 18px 24px;">
+        <div class="form-grid-2" style="gap: 12px;">
+          <div class="form-group-full">
+            <label class="form-label">Meeting Title <span class="required">*</span></label>
+            <input type="text" id="meetingTitleIn" class="form-control-input"
+              placeholder="e.g. Field Methodology Review &amp; Briefing">
+          </div>
+
+          <div class="form-group-full">
+            <label class="form-label">Agenda &amp; Discussion Points</label>
+            <textarea id="meetingAgendaIn" class="form-control-input" rows="2"
+              style="height: auto; padding: 8px 12px; font-family: inherit; font-size: 0.85rem;"
+              placeholder="Key discussion items, deliverables review, roadblocks..."></textarea>
+          </div>
+
+          <div class="form-group-full">
+            <label class="form-label">Associated Project <span class="required">*</span></label>
+            <select id="meetingProjectSelect" class="form-control-select"></select>
+          </div>
+
+          <div>
+            <label class="form-label">Date &amp; Time <span class="required">*</span></label>
+            <input type="datetime-local" id="meetingDateTimeIn" class="form-control-input" value="2026-10-15T15:00">
+          </div>
+
+          <div>
+            <label class="form-label">Mode / Venue <span class="required">*</span></label>
+            <select id="meetingModeSelect" class="form-control-select">
+              <option value="Virtual (Google Meet)">Virtual (Google Meet)</option>
+              <option value="In-Person (Conference Room A)">In-Person (Conference Room A)</option>
+              <option value="Hybrid">Hybrid</option>
+            </select>
+          </div>
+
+          <div class="form-group-full">
+            <label class="form-label">Invited Attendees <span
+                style="font-size: 0.76rem; color: #64748b;">(comma-separated names)</span></label>
+            <input type="text" id="meetingAttendeesIn" class="form-control-input"
+              placeholder="e.g. Senior Advisor, Research Associate, Fellow"
+              value="Senior Advisor, Research Associate, Fellow, Field Investigators">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer"
+        style="position: sticky; bottom: 0; background: #fafcff; z-index: 10; padding: 14px 24px;">
+        <button class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button class="btn btn-primary" id="btnSaveMeetingModal">
+          <i class="pi pi-check"></i>
+          <span>Schedule Meeting</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       MODAL: GRID MEETING DETAILS (URL, DURATION, DESC)
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modalGridMeetingDetails">
+    <div class="modal-container" style="max-width: 520px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.18);">
+      <div class="modal-header" style="padding: 16px 22px; border-bottom: 1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; background:#ffffff;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:16px;">
+            <i class="pi pi-video"></i>
+          </div>
+          <div>
+            <h2 style="font-size: 1.05rem; font-weight: 800; color: #1e293b; margin: 0;">Meeting Details</h2>
+            <p style="font-size: 0.76rem; color: #64748b; margin: 2px 0 0 0;">Add meeting link, duration, and agenda notes</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal style="background:none; border:none; font-size:1.3rem; color:#94a3b8; cursor:pointer;">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px 22px; background:#ffffff;">
+        <div style="display:flex; flex-direction:column; gap: 15px;">
+          <!-- Meeting URL -->
+          <div>
+            <label class="form-label" style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:5px;">
+              Meeting URL <span style="font-size:0.72rem; color:#94a3b8; font-weight:normal;">(Google Meet, Zoom, MS Teams)</span>
+            </label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <span style="position:absolute; left:12px; color:#94a3b8; font-size:13px;"><i class="pi pi-link"></i></span>
+              <input type="url" id="gridMeetingUrlIn" class="form-control-input"
+                placeholder="https://meet.google.com/abc-defg-hij"
+                style="padding-left:34px; width:100%; border:1.5px solid #cbd5e1; border-radius:8px; padding-top:8px; padding-bottom:8px; font-size:0.85rem; outline:none; transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'">
+            </div>
+          </div>
+
+          <!-- Meeting Duration -->
+          <div>
+            <label class="form-label" style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:5px;">
+              Meeting Duration
+            </label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <span style="position:absolute; left:12px; color:#94a3b8; font-size:13px;"><i class="pi pi-clock"></i></span>
+              <select id="gridMeetingDurationSelect" class="form-control-select"
+                style="padding-left:34px; width:100%; border:1.5px solid #cbd5e1; border-radius:8px; padding-top:8px; padding-bottom:8px; font-size:0.85rem; outline:none; background:#ffffff; cursor:pointer; transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'">
+                <option value="15 mins">15 mins</option>
+                <option value="30 mins">30 mins</option>
+                <option value="45 mins" selected>45 mins</option>
+                <option value="1 hour">1 hour</option>
+                <option value="1.5 hours">1.5 hours</option>
+                <option value="2 hours">2 hours</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Meeting Description / Agenda -->
+          <div>
+            <label class="form-label" style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:5px;">
+              Description &amp; Agenda
+            </label>
+            <textarea id="gridMeetingDescIn" rows="3"
+              placeholder="Outline discussion points, review goals, and agenda items..."
+              style="width:100%; border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:0.85rem; font-family:inherit; outline:none; resize:vertical; box-sizing:border-box; transition:border-color 0.2s;"
+              onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 22px; background:#f8fafc; border-top: 1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-secondary" data-close-modal style="padding:6px 14px; font-size:0.82rem; font-weight:600;">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="window.saveGridMeetingDetailsModal()" style="padding:6px 18px; font-size:0.82rem; font-weight:700; display:inline-flex; align-items:center; gap:6px; background:#2563eb; border-color:#2563eb;">
+          <i class="pi pi-check"></i>
+          <span>Save Details</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       MODAL: MEETING DETAIL & RSVP
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modalMeetingDetail">
+    <div class="modal-container" style="max-width: 620px;">
+      <div class="modal-header" style="padding: 16px 24px;">
+        <div>
+          <h2 id="mdTitle" style="font-size: 1.1rem;">Meeting Details</h2>
+          <p id="mdSubtitle" style="font-size: 0.78rem;">Project · Date · Mode</p>
+        </div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 18px 24px;">
+
+        <!-- Meeting Meta Info Box -->
+        <div
+          style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <div
+              style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">
+              Project</div>
+            <div id="mdProject" style="font-size: 0.86rem; font-weight: 700; color: #1e293b;"></div>
+          </div>
+          <div>
+            <div
+              style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">
+              Date &amp; Time</div>
+            <div id="mdDateTime" style="font-size: 0.86rem; font-weight: 700; color: #1e293b;"></div>
+          </div>
+          <div>
+            <div
+              style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">
+              Mode</div>
+            <div id="mdMode" style="font-size: 0.86rem; font-weight: 700; color: #1e293b;"></div>
+          </div>
+          <div>
+            <div
+              style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;">
+              Status</div>
+            <div id="mdStatus" style="font-size: 0.86rem; font-weight: 700;"></div>
+          </div>
+        </div>
+
+        <!-- Agenda box -->
+        <div style="margin-bottom: 18px;">
+          <div style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 6px;">📋 Agenda &amp;
+            Discussion Points</div>
+          <div id="mdAgenda"
+            style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 12px 14px; font-size: 0.84rem; color: #78350f; line-height: 1.5;">
+          </div>
+        </div>
+
+        <!-- RSVP List -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <h4 style="font-size: 0.88rem; font-weight: 800; color: #1e293b;">
+              Attendee RSVP (<span id="mdRsvpCount">0 Confirmed</span>)
+            </h4>
+            <span id="mdRsvpSummaryPill"
+              style="font-size: 0.76rem; font-weight: 700; background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 10px;"></span>
+          </div>
+          <div id="mdRsvpList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <!-- Minutes / Notes (shown after meeting) -->
+        <div style="margin-top: 18px;" id="mdMinutesSection">
+          <div style="font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 6px;">📝 Meeting Minutes /
+            Notes <span style="font-size: 0.72rem; font-weight: 600; color: #94a3b8;">(Optional)</span></div>
+          <textarea class="minutes-textarea" id="mdMinutesTextarea"
+            placeholder="Record key decisions, action items, and follow-ups from this meeting..."></textarea>
+        </div>
+
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 24px;">
+        <button class="btn btn-secondary" data-close-modal>Close</button>
+        <button class="btn btn-primary" id="btnSaveMeetingDetail">
+          <i class="pi pi-save"></i>
+          <span>Save Changes</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       MODAL: SURVEY DETAIL & DATA MATCHING PREVIEW
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modalSurveyDetailView">
+    <div class="modal-container" style="max-width: 900px; max-height: 88vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="border-bottom: 1px solid #e2e8f0; padding: 18px 24px;">
+        <div>
+          <h2 id="sdvSurveyTitle">Survey Questionnaire Details</h2>
+          <p id="sdvSurveySubtitle">Assigned project, sample quota, and mapped question catalog</p>
+        </div>
+        <button class="modal-close-btn" data-close-modal>&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px 24px; overflow-y: auto; flex: 1;">
+        <!-- Tabs -->
+        <div style="display: flex; gap: 8px; border-bottom: 2px solid #e2e8f0; margin-bottom: 18px;">
+          <button type="button" id="tabBtnSDVQuestions" class="qb-pill-btn active"
+            style="border-radius: 8px 8px 0 0; border-bottom: none; padding: 8px 16px;">
+            📋 Mapped Questions (<span id="sdvQuestionsCount">0</span>)
+          </button>
+          <button type="button" id="tabBtnSDVMatching" class="qb-pill-btn"
+            style="border-radius: 8px 8px 0 0; border-bottom: none; padding: 8px 16px;">
+            📊 Field Data Matching Preview
+          </button>
+        </div>
+
+        <!-- Panel 1: Questions List -->
+        <div id="sdvPanelQuestions">
+          <div id="sdvQuestionsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+
+        <!-- Panel 2: Field Data Matching -->
+        <div id="sdvPanelMatching" style="display: none;">
+          <div
+            style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;">
+            <div style="font-weight: 800; color: #1e3a8a; font-size: 0.88rem;">100% Accurate Field Data Matching</div>
+            <p style="font-size: 0.8rem; color: #3b82f6; margin-top: 2px;">
+              Field respondents submit answers corresponding directly to your unique Question Code.
+            </p>
+          </div>
+          <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
+            <table class="match-data-table">
+              <thead>
+                <tr>
+                  <th>Question Code</th>
+                  <th>Question Label</th>
+                  <th>Type</th>
+                  <th>Sample Respondent 1</th>
+                  <th>Sample Respondent 2</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="qb-code-badge">Q-01</span></td>
+                  <td>Primary source of income?</td>
+                  <td>Single choice</td>
+                  <td><span style="font-weight: 700; color: #166534;">Agriculture</span></td>
+                  <td><span style="font-weight: 700; color: #1e40af;">Salaried / Service</span></td>
+                </tr>
+                <tr>
+                  <td><span class="qb-code-badge">Q-02</span></td>
+                  <td>Piped tap water connection?</td>
+                  <td>Yes / No</td>
+                  <td><span style="color: #166534; font-weight: 700;">✓ Yes</span></td>
+                  <td><span style="color: #dc2626; font-weight: 700;">✕ No</span></td>
+                </tr>
+                <tr>
+                  <td><span class="qb-code-badge">Q-03</span></td>
+                  <td>Village public health satisfaction</td>
+                  <td>Rating (1-5)</td>
+                  <td>⭐ 4 Stars</td>
+                  <td>⭐ 3 Stars</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="border-top: 1px solid #e2e8f0; padding: 12px 24px;">
+        <button class="btn btn-secondary" data-close-modal>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/activities.js"></script>
+</body>
+
+</html>
