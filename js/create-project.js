@@ -1013,8 +1013,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       return `
         <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 10px 14px; font-weight: 700; color: #1e293b;">${item.designation}</td>
-          <td style="padding: 10px 14px; text-align: center; font-weight: 800; color: #15803d;">${item.positions}</td>
+          <td style="padding: 10px 14px; font-weight: 700; color: #0f172a;">${item.designation}</td>
+          <td style="padding: 10px 14px; text-align: center; font-weight: 800; color: #1e3a8a;">${item.positions}</td>
           <td style="padding: 10px 14px;">${empBadges}</td>
           <td style="padding: 10px 14px; text-align: center;">
             <button type="button" onclick="window.removeModalTeamMemberRow(${idx})" style="background: #fef2f2; color: #ef4444; border: none; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Remove Row">

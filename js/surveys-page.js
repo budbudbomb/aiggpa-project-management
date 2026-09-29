@@ -238,10 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
                   <i class="pi pi-arrow-right" style="font-size: 10px;"></i>
                 </a>
               ` : ''}
-              <a href="dashboard.html?surveyId=${survey.id}" class="btn-card-dashboard">
+              <div class="btn-card-dashboard" style="pointer-events: none; cursor: default; user-select: none;">
                 <i class="pi pi-chart-bar"></i>
                 <span>View Dashboard</span>
-              </a>
+              </div>
             </div>
           </div>
         </div>
