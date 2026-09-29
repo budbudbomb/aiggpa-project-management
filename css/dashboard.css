@@ -154,10 +154,20 @@ body.sidebar-collapsed .company-logo-box,
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
   transition: transform 0.2s ease;
+  overflow: hidden;
+  padding: 4px;
 }
 
 .aiggpa-brand-icon:hover {
   transform: scale(1.05);
+}
+
+.aiggpa-brand-icon img,
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .aiggpa-brand-text {

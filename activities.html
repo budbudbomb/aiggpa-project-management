@@ -726,12 +726,7 @@
       <div class="sidebar-header">
         <div class="company-logo-box">
           <div class="aiggpa-brand-icon" id="sidebarBrandIcon" title="Toggle Sidebar" style="cursor: pointer;">
-            <svg width="22" height="22" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="20" cy="20" r="18" fill="#1e293b"/>
-              <path d="M14 20C14 16.6863 16.6863 14 20 14C23.3137 14 26 16.6863 26 20" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
-              <path d="M26 20C26 23.3137 23.3137 26 20 26C16.6863 26 14 23.3137 14 20" stroke="#60a5fa" stroke-width="3" stroke-linecap="round"/>
-              <circle cx="20" cy="20" r="3" fill="#ffffff"/>
-            </svg>
+            <img src="assets/logo.png" alt="AIGGPA Logo" class="brand-logo-img">
           </div>
           <div class="aiggpa-brand-text">
             <span class="brand-title">CMYP Portal</span>
@@ -836,19 +831,10 @@
       </header>
 
       <main class="workspace-content settings-container">
-        <!-- Page Title & Primary Action (Matching Reference) -->
-        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
-          <div>
-            <h1 style="font-family: var(--font-display); font-size: 1.65rem; font-weight: 850; color: #0f172a; letter-spacing: -0.025em; margin: 0;">Task Management</h1>
-            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px; font-weight: 500;">Create, assign, and track tasks across Program Coordinators, Fellows, and Interns state-wide</p>
-          </div>
-          <div>
-            <button type="button" class="btn-create-task" id="btnOpenTaskModal" 
-              style="background: #0f172a; color: #ffffff; border: none; border-radius: 9999px; padding: 8px 22px; font-size: 0.86rem; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
-              <i class="pi pi-plus" style="font-size: 12px; font-weight: 800;"></i>
-              <span>Task</span>
-            </button>
-          </div>
+        <!-- Page Title -->
+        <div style="margin-bottom: 22px;">
+          <h1 style="font-family: var(--font-display); font-size: 1.65rem; font-weight: 850; color: #0f172a; letter-spacing: -0.025em; margin: 0;">Task Management</h1>
+          <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px; font-weight: 500;">Create, assign, and track tasks across Program Coordinators, Fellows, and Interns state-wide</p>
         </div>
 
         <!-- 5 Summary Metric KPI Cards (Total, Pending, In Progress, Done, Overdue) -->
@@ -944,22 +930,10 @@
           </div>
         </div>
 
-        <!-- Stats & View Switcher Row -->
+        <!-- Stats Row -->
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 2px;">
           <div style="font-size: 0.82rem; color: #64748b; font-weight: 600;">
             Showing <strong style="color: #0f172a;" id="actShowingCount">6</strong> of <strong style="color: #0f172a;" id="actTotalCount">6</strong> tasks
-          </div>
-          <div style="display: inline-flex; align-items: center; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 2px;">
-            <button type="button" class="view-toggle-btn active" id="viewToggleList" 
-              style="padding: 4px 12px; border-radius: 6px; border: none; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; background: #ffffff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.06);">
-              <i class="pi pi-list" style="font-size: 11px;"></i>
-              <span>List</span>
-            </button>
-            <button type="button" class="view-toggle-btn" id="viewToggleCards" 
-              style="padding: 4px 12px; border-radius: 6px; border: none; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; background: transparent; color: #64748b;">
-              <i class="pi pi-th-large" style="font-size: 11px;"></i>
-              <span>Cards</span>
-            </button>
           </div>
         </div>
 
