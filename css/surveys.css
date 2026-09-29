@@ -5,12 +5,22 @@
 
 /* ── Top Sticky Sub-Header ── */
 .survey-header-strip {
+  position: sticky;
+  top: calc(var(--topbar-height, 56px) + 20px);
+  z-index: 85;
+  background: rgba(248, 250, 252, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 12px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .survey-header-titles h1 {
@@ -61,17 +71,33 @@
 }
 
 .survey-kpi-card {
+  position: relative;
+  overflow: hidden;
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 18px 20px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 18px;
+  padding: 18px 22px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.survey-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+}
+
+.survey-kpi-card:nth-child(2)::before { background: linear-gradient(90deg, #10b981, #34d399); }
+.survey-kpi-card:nth-child(3)::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.survey-kpi-card:nth-child(4)::before { background: linear-gradient(90deg, #4338ca, #6366f1); }
+
 .survey-kpi-card:hover {
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.09), 0 0 0 1px rgba(226, 232, 240, 0.9);
+  transform: translateY(-3px);
 }
 
 .survey-kpi-top {
@@ -434,14 +460,11 @@
   font-size: 0.76rem;
   font-weight: 700;
   text-decoration: none;
-  cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
-}
-
-.btn-card-dashboard:hover {
-  background: #1e3a8a;
-  color: #ffffff;
+  cursor: default !important;
+  pointer-events: none !important;
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+  opacity: 0.95;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════

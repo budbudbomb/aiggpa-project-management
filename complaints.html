@@ -198,14 +198,14 @@
           </button>
         </div>
 
-        <!-- ── Segmented Tab Switcher (My Complaints vs Review Intern Complaints) ── -->
+        <!-- ── Segmented Tab Switcher (My Complaints) ── -->
         <div class="cmp-tab-switcher-box">
           <button type="button" class="cmp-tab-btn active" id="tabBtnMy">
             <i class="pi pi-comments" style="font-size: 15px;"></i>
             <span>My Complaints</span>
             <span class="cmp-tab-badge" id="countBadgeMy">3</span>
           </button>
-          <button type="button" class="cmp-tab-btn" id="tabBtnInterns">
+          <button type="button" class="cmp-tab-btn" id="tabBtnInterns" style="display: none !important;">
             <i class="pi pi-users" style="font-size: 15px;"></i>
             <span>Review Intern Complaints</span>
             <span class="cmp-tab-badge" id="countBadgeInterns">4</span>
@@ -215,37 +215,45 @@
 
         <!-- ── 4 KPI Metric Cards ── -->
         <div class="cmp-kpi-grid">
-          <div class="cmp-kpi-card">
+          <div class="cmp-kpi-card kpi-card-total">
             <div class="cmp-kpi-top">
               <span class="cmp-kpi-label">TOTAL COMPLAINTS</span>
-              <i class="pi pi-inbox" style="color: #4338ca; font-size: 1.1rem;"></i>
+              <div class="cmp-kpi-icon-wrap kpi-icon-total">
+                <i class="pi pi-inbox"></i>
+              </div>
             </div>
             <div class="cmp-kpi-val" id="kpiTotal">0</div>
             <p class="cmp-kpi-sub">In selected view</p>
           </div>
 
-          <div class="cmp-kpi-card">
+          <div class="cmp-kpi-card kpi-card-pending">
             <div class="cmp-kpi-top">
               <span class="cmp-kpi-label">PENDING</span>
-              <i class="pi pi-clock" style="color: #d97706; font-size: 1.1rem;"></i>
+              <div class="cmp-kpi-icon-wrap kpi-icon-pending">
+                <i class="pi pi-clock"></i>
+              </div>
             </div>
             <div class="cmp-kpi-val" style="color: #d97706;" id="kpiPending">0</div>
             <p class="cmp-kpi-sub">Awaiting resolution</p>
           </div>
 
-          <div class="cmp-kpi-card">
+          <div class="cmp-kpi-card kpi-card-resolved">
             <div class="cmp-kpi-top">
               <span class="cmp-kpi-label">RESOLVED</span>
-              <i class="pi pi-check-circle" style="color: #059669; font-size: 1.1rem;"></i>
+              <div class="cmp-kpi-icon-wrap kpi-icon-resolved">
+                <i class="pi pi-check-circle"></i>
+              </div>
             </div>
             <div class="cmp-kpi-val" style="color: #059669;" id="kpiResolved">0</div>
             <p class="cmp-kpi-sub">Successfully addressed</p>
           </div>
 
-          <div class="cmp-kpi-card">
+          <div class="cmp-kpi-card kpi-card-rejected">
             <div class="cmp-kpi-top">
               <span class="cmp-kpi-label">REJECTED</span>
-              <i class="pi pi-times-circle" style="color: #e11d48; font-size: 1.1rem;"></i>
+              <div class="cmp-kpi-icon-wrap kpi-icon-rejected">
+                <i class="pi pi-times-circle"></i>
+              </div>
             </div>
             <div class="cmp-kpi-val" style="color: #e11d48;" id="kpiRejected">0</div>
             <p class="cmp-kpi-sub">Declined after audit</p>
