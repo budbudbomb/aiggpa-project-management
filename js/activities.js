@@ -445,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const initCat = urlParams.get('category');
   if (initCat === 'survey') {
-    window.location.href = 'create-survey.html';
+    window.location.href = 'surveys.html';
     return;
   }
   if (initCat && ['task', 'meeting'].includes(initCat)) currentTab = initCat;

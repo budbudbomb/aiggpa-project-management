@@ -38,15 +38,31 @@ const server = http.createServer((req, res) => {
 
         res.writeHead(200, {
             'Content-Type': contentType,
-            'Cache-Control': 'no-cache'
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
         });
 
         fs.createReadStream(filePath).pipe(res);
     });
 });
 
-server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}/`);
-    console.log(`Dashboard URL: http://localhost:${PORT}/dashboard.html`);
-    console.log(`Login URL: http://localhost:${PORT}/login.html`);
-});
+let currentPort = PORT;
+
+function startServer(port) {
+    server.listen(port, () => {
+        console.log(`Server running at http://localhost:${port}/`);
+        console.log(`Surveys URL: http://localhost:${port}/surveys.html`);
+        console.log(`Create Survey URL: http://localhost:${port}/create-survey.html`);
+        console.log(`Dashboard URL: http://localhost:${port}/dashboard.html`);
+    }).on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.log(`Port ${port} in use, trying ${port + 1}...`);
+            startServer(port + 1);
+        } else {
+            console.error('Server error:', err);
+        }
+    });
+}
+
+startServer(currentPort);

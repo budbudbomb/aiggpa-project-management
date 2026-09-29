@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIGGPA - Survey Management</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/surveys.css">
+  <script>
+    if (localStorage.getItem('aiggpa_sidebar_collapsed') === 'true') {
+      document.documentElement.classList.add('sidebar-collapsed');
+    }
+  </script>
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="mainSidebar">
+      <div class="sidebar-header">
+        <div class="company-logo-box">
+          <div class="aiggpa-brand-icon" id="sidebarBrandIcon" title="Toggle Sidebar" style="cursor: pointer;">
+            <img src="assets/logo.png" alt="AIGGPA Logo" class="brand-logo-img">
+          </div>
+          <div class="aiggpa-brand-text">
+            <span class="brand-title">AIGGPA</span>
+            <span class="brand-sub">Project Governance</span>
+          </div>
+          <button type="button" class="sidebar-collapse-trigger" id="sidebarCollapseTrigger" title="Collapse Sidebar">
+            <i class="pi pi-chevron-left"></i>
+          </button>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <a href="create-project.html" class="menu-item" data-tooltip="Create Project" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-plus-circle"></i>
+            <span>Create Project</span>
+          </div>
+        </a>
+
+        <a href="activities.html" class="menu-item" data-tooltip="Tasks & Activities" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-check-square"></i>
+            <span>Tasks</span>
+          </div>
+        </a>
+
+        <a href="surveys.html" class="menu-item active" data-tooltip="Surveys" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-file-edit"></i>
+            <span>Surveys</span>
+          </div>
+        </a>
+
+        <a href="complaints.html" class="menu-item" data-tooltip="Complaints" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-shield"></i>
+            <span>Complaints</span>
+          </div>
+        </a>
+      </nav>
+
+      <!-- Sidebar Bottom User Profile Pill -->
+      <div class="sidebar-footer">
+        <div class="user-profile-pill">
+          <div class="profile-left">
+            <div class="profile-avatar-wrap" data-tooltip="AIGGPA — Center Head">
+              <div class="profile-avatar">AI</div>
+              <div class="profile-status-dot"></div>
+            </div>
+            <div class="profile-info">
+              <h4>AIGGPA</h4>
+              <p>Center Head</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-wrapper">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+            <i class="pi pi-bars"></i>
+          </button>
+          <div style="font-size: 0.85rem; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+            <span>CMYP Admin</span>
+            <span style="color: #cbd5e1;">/</span>
+            <span style="color: #0f172a;">Surveys</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Notification Bell -->
+          <div style="position: relative; margin-right: 6px; cursor: pointer;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #f8fafc; border: 1px solid #e2e8f0; color: #475569;">
+              <i class="pi pi-bell" style="font-size: 15px;"></i>
+            </div>
+            <span style="position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; border: 2px solid #ffffff;"></span>
+          </div>
+
+          <!-- User Profile Dropdown -->
+          <div class="user-profile-dropdown" style="position: relative;">
+            <button type="button" id="topUserDropdownBtn" style="border: 1px solid #e2e8f0; background: #ffffff; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 4px 12px 4px 6px; border-radius: 20px; transition: all 0.2s;">
+              <div class="avatar-small" style="background: #1e3a8a; color: #fff;">D</div>
+              <div style="text-align: left; line-height: 1.1;">
+                <div style="font-weight: 700; color: #1e293b; font-size: 0.82rem;">Dr. Rajesh Verma (Chief Program Manager)</div>
+                <div style="font-size: 0.68rem; color: #64748b; font-weight: 600;">Admin</div>
+              </div>
+              <i class="pi pi-chevron-down" style="font-size: 9px; color: #64748b;"></i>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div id="topUserDropdownMenu" style="display: none; position: absolute; right: 0; top: 120%; width: 220px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); padding: 8px 0; z-index: 99999;">
+              <div style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9;">
+                <div style="font-weight: 800; color: #1e293b; font-size: 0.86rem;">Dr. Rajesh Verma</div>
+                <div style="font-size: 0.74rem; color: #64748b;">Chief Program Manager</div>
+              </div>
+              <a href="login.html" style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: #ef4444; text-decoration: none; font-size: 0.82rem; font-weight: 700; transition: background 0.15s;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                <i class="pi pi-sign-out" style="font-size: 14px;"></i>
+                <span>Logout</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- WORKSPACE CONTENT -->
+      <main class="workspace-content settings-container" style="padding: 22px 28px;">
+
+        <!-- ── Title Header Strip with + Create Survey button ── -->
+        <div class="survey-header-strip">
+          <div class="survey-header-titles">
+            <h1>Survey Management</h1>
+            <p>Create structured field questionnaires, review hierarchical submissions and supervisor feedbacks, and allocate field surveys.</p>
+          </div>
+          <a href="create-survey.html" class="btn-create-survey-main" id="btnCreateSurveyTop">
+            <i class="pi pi-plus" style="font-weight: 900; font-size: 13px;"></i>
+            <span>Create Survey</span>
+          </a>
+        </div>
+
+        <!-- ── Executive KPI Metric Strip (4 Cards) ── -->
+        <div class="survey-kpi-grid">
+          <!-- Total Surveys -->
+          <div class="survey-kpi-card">
+            <div class="survey-kpi-top">
+              <span class="survey-kpi-label">TOTAL SURVEYS</span>
+              <div class="survey-kpi-icon-wrap icon-indigo">
+                <i class="pi pi-file"></i>
+              </div>
+            </div>
+            <div class="survey-kpi-val" id="kpiTotalSurveys">3</div>
+            <p class="survey-kpi-sub">Created state-wide</p>
+          </div>
+
+          <!-- Active Surveys -->
+          <div class="survey-kpi-card">
+            <div class="survey-kpi-top">
+              <span class="survey-kpi-label">ACTIVE SURVEYS</span>
+              <div class="survey-kpi-icon-wrap icon-emerald">
+                <i class="pi pi-check-circle"></i>
+              </div>
+            </div>
+            <div class="survey-kpi-val" style="color: #059669;" id="kpiActiveSurveys">3</div>
+            <p class="survey-kpi-sub">Currently open for responses</p>
+          </div>
+
+          <!-- Total Target -->
+          <div class="survey-kpi-card">
+            <div class="survey-kpi-top">
+              <span class="survey-kpi-label">TOTAL TARGET</span>
+              <div class="survey-kpi-icon-wrap icon-purple">
+                <i class="pi pi-users"></i>
+              </div>
+            </div>
+            <div class="survey-kpi-val" id="kpiTotalTarget">425</div>
+            <p class="survey-kpi-sub">Participants required</p>
+          </div>
+
+          <!-- Responses Collected -->
+          <div class="survey-kpi-card">
+            <div class="survey-kpi-top">
+              <span class="survey-kpi-label">RESPONSES COLLECTED</span>
+              <div class="survey-kpi-icon-wrap icon-blue">
+                <i class="pi pi-chart-bar"></i>
+              </div>
+            </div>
+            <div class="survey-kpi-val">
+              <span id="kpiTotalResponses">225</span>
+              <span style="font-size: 0.95rem; font-weight: 700; color: #059669;" id="kpiOverallRate">(53%)</span>
+            </div>
+            <p class="survey-kpi-sub">From Fellows and Interns</p>
+          </div>
+        </div>
+
+        <!-- ── Filter Tabs & Search Strip ── -->
+        <div class="survey-filter-strip">
+          <div class="survey-filter-tabs">
+            <button type="button" class="survey-tab-pill active" data-filter="all">
+              <span>All Surveys</span>
+              <span class="pill-count" id="countAllSurveys">3</span>
+            </button>
+            <button type="button" class="survey-tab-pill" data-filter="active">
+              <span>Active</span>
+              <span class="pill-count" id="countActiveSurveys">3</span>
+            </button>
+            <button type="button" class="survey-tab-pill" data-filter="closed">
+              <span>Closed</span>
+              <span class="pill-count" id="countClosedSurveys">0</span>
+            </button>
+          </div>
+
+          <div class="survey-search-box">
+            <i class="pi pi-search"></i>
+            <input type="text" id="surveySearchInput" placeholder="Search by survey name...">
+          </div>
+        </div>
+
+        <!-- ── Dynamic Survey Cards Grid ── -->
+        <div class="survey-cards-grid" id="surveyCardsContainer">
+          <!-- Populated by surveys-page.js from SurveyStore -->
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ── SURVEY DETAILS & HIERARCHY REVIEWS MODAL ── -->
+  <div class="survey-modal-backdrop" id="surveyDetailsModal" style="display: none;">
+    <div class="survey-modal-box">
+      <!-- Modal Header -->
+      <div class="survey-modal-header">
+        <button type="button" class="survey-modal-close" id="modalCloseBtn">
+          <i class="pi pi-times"></i>
+        </button>
+        <div style="padding-right: 40px;">
+          <h2 id="modalSurveyTitle" style="font-size: 1.15rem; font-weight: 800; line-height: 1.3; margin-bottom: 8px;">Survey Details</h2>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span id="modalSurveyBadge" class="survey-badge badge-purple">Active</span>
+            <span id="modalSurveyQCount" style="font-size: 0.76rem; color: #94a3b8; font-weight: 600;">5 Questions</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Tabs Switcher -->
+      <div style="display: flex; gap: 6px; padding: 10px 24px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+        <button type="button" id="modalTabQuestions" style="padding: 6px 14px; border-radius: 8px; border: none; font-size: 0.78rem; font-weight: 800; cursor: pointer; background: #0f172a; color: #ffffff;">
+          Questionnaire Form
+        </button>
+        <button type="button" id="modalTabFeedback" style="padding: 6px 14px; border-radius: 8px; border: none; font-size: 0.78rem; font-weight: 800; cursor: pointer; background: #f1f5f9; color: #475569;">
+          Supervisor Reviews &amp; Feedback
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="survey-modal-body">
+        <div id="modalQuestionsContent">
+          <!-- Populated dynamically -->
+        </div>
+        <div id="modalFeedbackContent" style="display: none;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="survey-modal-footer">
+        <button type="button" class="btn-cs-secondary" onclick="document.getElementById('surveyDetailsModal').style.display='none'">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/survey-store.js"></script>
+  <script src="js/surveys-page.js"></script>
+</body>
+</html>
