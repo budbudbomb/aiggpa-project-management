@@ -609,8 +609,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       addModal.style.display = 'none';
       activeTab = 'my_complaints';
-      tabBtnMy.classList.add('active');
-      tabBtnInterns.classList.remove('active');
+      tabBtnMy?.classList.add('active');
+      tabBtnInterns?.classList.remove('active');
       currentStatusFilter = 'all';
       filterPills.forEach(p => p.classList.remove('active'));
       document.querySelector('[data-status="all"]')?.classList.add('active');

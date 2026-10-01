@@ -6,7 +6,7 @@
   <title>AIGGPA - Complaint Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
   <link rel="stylesheet" href="css/dashboard.css?v=2">
-  <link rel="stylesheet" href="css/complaints.css?v=2">
+  <link rel="stylesheet" href="css/complaints.css?v=4">
   <style>
     /* Critical modal centering and backdrop overlay styles */
     .survey-modal-backdrop {
@@ -91,6 +91,13 @@
 
       <!-- Navigation Menu -->
       <nav class="sidebar-menu">
+        <a href="dashboard.html" class="menu-item" data-tooltip="Dashboard" style="text-decoration: none;">
+          <div class="menu-item-left">
+            <i class="pi pi-th-large"></i>
+            <span>Dashboard</span>
+          </div>
+        </a>
+
         <a href="create-project.html" class="menu-item" data-tooltip="Create Project" style="text-decoration: none;">
           <div class="menu-item-left">
             <i class="pi pi-plus-circle"></i>
@@ -184,7 +191,7 @@
       </header>
 
       <!-- WORKSPACE CONTENT -->
-      <main class="workspace-content settings-container" style="padding: 24px 32px; max-width: 1200px; margin: 0 auto;">
+      <main class="workspace-content settings-container complaints-workspace">
 
         <!-- ── Title Header Strip with + File Complaint button ── -->
         <div class="cmp-header-strip">
@@ -198,8 +205,8 @@
           </button>
         </div>
 
-        <!-- ── Segmented Tab Switcher (My Complaints) ── -->
-        <div class="cmp-tab-switcher-box">
+        <!-- ── Segmented Tab Switcher (Removed per user request) ── -->
+        <div class="cmp-tab-switcher-box" style="display: none !important;">
           <button type="button" class="cmp-tab-btn active" id="tabBtnMy">
             <i class="pi pi-comments" style="font-size: 15px;"></i>
             <span>My Complaints</span>
