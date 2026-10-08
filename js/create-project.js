@@ -1,217 +1,820 @@
 /**
- * AIGGPA - Create & Sanction Project Controller
- * Handles dual-tab layout: Projects List (with FY filter & Add Budget/Assignee buttons)
- * and Create New Project (with General Details & Save button)
- * plus contextual Head-Wise Budget Estimation and Assign Team Desks
+ * AIGGPA ERP - Complete Project Management Module Controller
+ * Implementation Plan:
+ * 1. Project List Page (/project-management/project)
+ * 2. Create Project Page (/project-management/project/create) - Screenshot 1
+ * 3. Edit Project Page (/project-management/project/edit/:id) - Screenshot 5
+ * 4. Add Budget Layout (/project-management/project/add-budget) - Screenshot 3
+ * 5. Add Budget Modal (/project-management/project/add-budget/create) - Screenshot 2 & 4
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  // ── Sidebar collapse toggle ──
-  const sidebar = document.getElementById('mainSidebar');
-  const toggleBtn = document.getElementById('sidebarToggleBtn');
-  const collapseTrigger = document.getElementById('sidebarCollapseTrigger');
-  const brandIcon = document.getElementById('sidebarBrandIcon');
+  // Views
+  const viewCreate = document.getElementById('viewCreateProject');
+  const viewBudget = document.getElementById('viewAddBudget');
+  const viewList = document.getElementById('viewProjectsList');
+  const pageTitle = document.getElementById('erpPageTitle');
+  const pageSubtitle = document.getElementById('erpPageSubtitle');
+  const btnTopViewList = document.getElementById('btnTopViewList');
 
-  function doSidebarToggle() {
-    if (typeof window.toggleAiggpaSidebar === 'function') {
-      window.toggleAiggpaSidebar();
-    } else {
-      const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
-      document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
-      if (sidebar) sidebar.classList.toggle('collapsed', isCollapsed);
+  // Sidebar Links
+  const navCreateProject = document.getElementById('navLinkCreateProject');
+  const navAddBudget = document.getElementById('navLinkAddBudget');
+
+  // Form Elements (Create / Edit Project)
+  const formProject = document.getElementById('erpProjectForm');
+  const inputProjectId = document.getElementById('cpProjectId');
+  const inputProjectName = document.getElementById('cpProjectName');
+  const inputLocalName = document.getElementById('cpLocalName');
+  const selectDepartment = document.getElementById('cpDepartment');
+  const selectScheme = document.getElementById('cpScheme');
+  const selectFinancialYear = document.getElementById('cpFinancialYear');
+  const selectFundingPattern = document.getElementById('cpFundingPattern');
+  const inputFromDate = document.getElementById('cpFromDate');
+  const inputToDate = document.getElementById('cpToDate');
+  const inputDuration = document.getElementById('cpDuration');
+  const inputDateOfPrc = document.getElementById('cpDateOfPrc');
+
+  // Budget Elements
+  const selectBudgetProject = document.getElementById('budgetProjectSelect');
+  const inputBudgetSearch = document.getElementById('budgetSearchInput');
+  const btnExpandAll = document.getElementById('btnExpandAll');
+  const btnOpenAddBudgetModal = document.getElementById('btnOpenAddBudgetModal');
+  const modalAddBudget = document.getElementById('modalAddBudget');
+  const btnCloseBudgetModal = document.getElementById('btnCloseBudgetModal');
+  const btnSubmitBudget = document.getElementById('btnSubmitBudget');
+
+  // Budget Modal Form Fields
+  const modalCategory = document.getElementById('modalBudgetCategory');
+  const modalSubCategory = document.getElementById('modalBudgetSubCategory');
+  const modalUnitType = document.getElementById('modalBudgetUnitType');
+  const modalQuantity = document.getElementById('modalBudgetQuantity');
+  const modalDuration = document.getElementById('modalBudgetDuration');
+  const modalRate = document.getElementById('modalBudgetRate');
+  const modalTotal = document.getElementById('modalBudgetTotal');
+  const modalFormulaPreview = document.getElementById('modalFormulaPreview');
+
+  // Budget Summary Elements
+  const txtSubTotal = document.getElementById('txtBudgetSubTotal');
+  const txtSubTotalPct = document.getElementById('txtBudgetSubTotalPct');
+  const txtOverhead = document.getElementById('txtBudgetOverhead');
+  const txtOverheadPct = document.getElementById('txtBudgetOverheadPct');
+  const txtTotalBudget = document.getElementById('txtBudgetTotal');
+  const txtTotalBudgetPct = document.getElementById('txtBudgetTotalPct');
+  const budgetTableBody = document.getElementById('budgetTableBody');
+
+  // State
+  let currentMode = 'create'; // 'create' | 'edit' | 'budget' | 'list'
+  let currentEditingId = null;
+  let activeProjectId = 'ABC';
+  let allCategoriesExpanded = true;
+  const collapsedCategories = new Set();
+
+  // Category Configuration (Codes: DTL = Detail, LMP = Lump Sum, FXD = Fixed)
+  const CATEGORY_CONFIG = {
+    'Human resources': {
+      code: 'HR',
+      type: 'DTL',
+      subCategories: [
+        'Research Associate',
+        'Fellow',
+        'Senior Advisor',
+        'Lead Policy Fellow',
+        'Field Investigator',
+        'Data Analyst'
+      ],
+      defaultUnit: 'Months'
+    },
+    'Printing & Publications': {
+      code: 'P&P',
+      type: 'LMP',
+      badge: 'Lump Sum',
+      subCategories: [
+        'Lump Sum Direct Allocation',
+        'Report Printing & Publication',
+        'Dissemination Materials'
+      ],
+      defaultUnit: 'Lump Sum'
+    },
+    'Contingency': {
+      code: 'CTG',
+      type: 'LMP',
+      badge: 'Lump Sum',
+      subCategories: [
+        'Contingency Allocation',
+        'Emergency Survey Contingency'
+      ],
+      defaultUnit: 'Lump Sum'
+    },
+    'Institutional overheads cost': {
+      code: 'IOC',
+      type: 'FXD',
+      badge: 'Fixed % Overhead',
+      subNote: '(40% overhead)',
+      subCategories: [
+        'Institutional Overhead Charge'
+      ],
+      defaultUnit: '% Overhead'
     }
+  };
+
+  // -------------------------------------------------------------
+  // Helpers
+  // -------------------------------------------------------------
+  function formatINR(val) {
+    const num = parseFloat(val) || 0;
+    return '₹ ' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      doSidebarToggle();
-    });
-  }
-  if (collapseTrigger) {
-    collapseTrigger.addEventListener('click', (e) => {
-      e.preventDefault();
-      doSidebarToggle();
-    });
-  }
-  if (brandIcon) {
-    brandIcon.addEventListener('click', (e) => {
-      if (document.documentElement.classList.contains('sidebar-collapsed') ||
-          document.body?.classList.contains('sidebar-collapsed')) {
-        e.preventDefault();
-        doSidebarToggle();
-      }
-    });
-  }
-
-  // ── Top Dropdown ──
-  const userDropBtn = document.getElementById('topUserDropdownBtn');
-  const userDropMenu = document.getElementById('topUserDropdownMenu');
-  if (userDropBtn && userDropMenu) {
-    userDropBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      userDropMenu.style.display = userDropMenu.style.display === 'block' ? 'none' : 'block';
-    });
-    document.addEventListener('click', () => { userDropMenu.style.display = 'none'; });
-  }
-
-  // ══════════════════════════════════════════════
-  //  MODAL POPUP CONTROLLERS
-  // ══════════════════════════════════════════════
-  let editingProjectId = null;
-
-  window.openCreateProjectModal = function (editId = null) {
-    editingProjectId = editId;
-    const modal = document.getElementById('createProjectModal');
-    if (!modal) return;
-
-    const modalTitle = document.getElementById('createProjectModalTitle');
-    const modalSubtitle = document.getElementById('createProjectModalSubtitle');
-    const saveBtnText = document.getElementById('btnSaveNewProjectText');
-
-    if (editId) {
-      const p = Store.getProjects().find(x => x.id === editId);
-      if (p) {
-        if (modalTitle) modalTitle.textContent = 'Edit Basic Details';
-        if (modalSubtitle) modalSubtitle.textContent = `Update basic information for ${p.code || p.id}`;
-        if (saveBtnText) saveBtnText.textContent = 'Save Changes';
-
-        const nameInp = document.getElementById('cpProjectName');
-        const schemeInp = document.getElementById('cpProjectScheme');
-        const fyInp = document.getElementById('cpProjectFY');
-        const fundInp = document.getElementById('cpFundingPattern');
-        const prcInp = document.getElementById('cpPrcDate');
-        const startInp = document.getElementById('cpStartDate');
-        const endInp = document.getElementById('cpEndDate');
-        const durInp = document.getElementById('cpDurationMonths');
-
-        if (nameInp) nameInp.value = p.name || '';
-        if (schemeInp) schemeInp.value = p.scheme || '';
-        if (fyInp) fyInp.value = p.financialYear || '2026–2027';
-        if (fundInp) fundInp.value = p.fundingPattern || 'Internal';
-        if (prcInp) prcInp.value = p.prcDate || '';
-        if (startInp) startInp.value = p.startDate || '';
-        if (endInp) endInp.value = p.endDate || '';
-        if (durInp) durInp.value = p.durationMonths || 12;
-      }
-    } else {
-      if (modalTitle) modalTitle.textContent = 'Add General Details';
-      if (modalSubtitle) modalSubtitle.textContent = 'Fill in the project general details below and save.';
-      if (saveBtnText) saveBtnText.textContent = 'Save Project';
-
-      const nameInp = document.getElementById('cpProjectName');
-      const schemeInp = document.getElementById('cpProjectScheme');
-      const fundInp = document.getElementById('cpFundingPattern');
-      const prcInp = document.getElementById('cpPrcDate');
-      const startInp = document.getElementById('cpStartDate');
-      const endInp = document.getElementById('cpEndDate');
-      const durInp = document.getElementById('cpDurationMonths');
-
-      if (nameInp) nameInp.value = '';
-      if (schemeInp) schemeInp.value = '';
-      if (fundInp) fundInp.value = 'Internal';
-      if (prcInp) prcInp.value = '';
-      if (startInp) startInp.value = '';
-      if (endInp) endInp.value = '';
-      if (durInp) durInp.value = 12;
+  function showToast(msg) {
+    let toast = document.querySelector('.erp-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'erp-toast';
+      document.body.appendChild(toast);
     }
-
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+    toast.innerHTML = `<i class="pi pi-check-circle" style="color: #4ade80; font-size: 1.15rem;"></i><span>${msg}</span>`;
+    toast.style.display = 'flex';
     setTimeout(() => {
-      document.getElementById('cpProjectName')?.focus();
-    }, 50);
-  };
+      toast.style.display = 'none';
+    }, 3200);
+  }
 
-  window.closeCreateProjectModal = function () {
-    editingProjectId = null;
-    const modal = document.getElementById('createProjectModal');
-    if (modal) {
-      modal.style.display = 'none';
-      document.body.style.overflow = '';
+  // Duration auto-calculation: (ToDate - FromDate) / 30.4375
+  function calculateDuration(fromStr, toStr) {
+    if (!fromStr || !toStr) return 0;
+    const d1 = new Date(fromStr);
+    const d2 = new Date(toStr);
+    if (isNaN(d1) || isNaN(d2)) return 0;
+    const diffTime = d2.getTime() - d1.getTime();
+    if (diffTime < 0) return 0;
+    const days = diffTime / (1000 * 60 * 60 * 24);
+    const months = Math.round(days / 30.4375);
+    return Math.max(0, months);
+  }
+
+  // Update date inputs change handler
+  if (inputFromDate && inputToDate && inputDuration) {
+    const onDatesChange = () => {
+      const dur = calculateDuration(inputFromDate.value, inputToDate.value);
+      inputDuration.value = dur;
+    };
+    inputFromDate.addEventListener('change', onDatesChange);
+    inputToDate.addEventListener('change', onDatesChange);
+  }
+
+  // -------------------------------------------------------------
+  // View Router (List, Create, Edit, AddBudget)
+  // -------------------------------------------------------------
+  window.switchView = function (mode, projectId = null) {
+    currentMode = mode;
+    currentEditingId = projectId;
+
+    if (viewCreate) viewCreate.style.display = 'none';
+    if (viewBudget) viewBudget.style.display = 'none';
+    if (viewList) viewList.style.display = 'none';
+
+    if (navCreateProject) navCreateProject.classList.remove('active');
+    if (navAddBudget) navAddBudget.classList.remove('active');
+
+    // Update URL state smoothly without reload
+    const url = new URL(window.location);
+
+    if (mode === 'create') {
+      if (viewCreate) viewCreate.style.display = 'block';
+      if (navCreateProject) navCreateProject.classList.add('active');
+      if (pageTitle) pageTitle.textContent = 'Create Project';
+      if (pageSubtitle) pageSubtitle.textContent = 'Enter project details to create a new project proposal';
+      if (btnTopViewList) {
+        btnTopViewList.style.display = 'inline-flex';
+        btnTopViewList.innerHTML = `<i class="pi pi-bars"></i><span>View List</span>`;
+      }
+      resetFormToCreate();
+      url.searchParams.set('view', 'create');
+      url.searchParams.delete('id');
+      url.searchParams.delete('projectId');
+    } else if (mode === 'edit') {
+      if (viewCreate) viewCreate.style.display = 'block';
+      if (navCreateProject) navCreateProject.classList.add('active');
+      if (pageTitle) pageTitle.textContent = 'Edit Project';
+      if (pageSubtitle) pageSubtitle.textContent = 'Modify project details';
+      if (btnTopViewList) {
+        btnTopViewList.style.display = 'inline-flex';
+        btnTopViewList.innerHTML = `<i class="pi pi-bars"></i><span>View List</span>`;
+      }
+      loadProjectForEdit(projectId || 'ABC');
+      url.searchParams.set('view', 'edit');
+      url.searchParams.set('id', projectId || 'ABC');
+    } else if (mode === 'budget') {
+      if (viewBudget) viewBudget.style.display = 'block';
+      if (navAddBudget) navAddBudget.classList.add('active');
+      if (pageTitle) pageTitle.textContent = 'Add Budget';
+      if (pageSubtitle) pageSubtitle.textContent = 'Allocate project budgets from this page.';
+      if (btnTopViewList) {
+        btnTopViewList.style.display = 'inline-flex';
+        btnTopViewList.innerHTML = `<i class="pi pi-bars"></i><span>View List</span>`;
+      }
+      if (projectId) activeProjectId = projectId;
+      populateBudgetProjectsDropdown();
+      renderBudgetTable();
+      url.searchParams.set('view', 'budget');
+      url.searchParams.set('projectId', activeProjectId);
+    } else if (mode === 'list') {
+      if (viewList) viewList.style.display = 'block';
+      if (navCreateProject) navCreateProject.classList.add('active');
+      if (pageTitle) pageTitle.textContent = 'Projects Master List';
+      if (pageSubtitle) pageSubtitle.textContent = 'Comprehensive repository of sanctioned and proposed projects';
+      if (btnTopViewList) {
+        btnTopViewList.style.display = 'none';
+      }
+      renderProjectsListTable();
+      url.searchParams.set('view', 'list');
+      url.searchParams.delete('id');
     }
+
+    window.history.replaceState({}, '', url);
   };
 
-  // ══════════════════════════════════════════════
-  //  TAB SWITCHER & ROUTING
-  // ══════════════════════════════════════════════
-  window.handleCreateProjectTabClick = function () {
-    window.switchProjectTab('list');
-    window.openCreateProjectModal();
-  };
+  // -------------------------------------------------------------
+  // Form Populate & Handlers
+  // -------------------------------------------------------------
+  function resetFormToCreate() {
+    if (inputProjectId) inputProjectId.value = '';
+    if (inputProjectName) inputProjectName.value = '';
+    if (inputLocalName) inputLocalName.value = '';
+    if (selectDepartment) selectDepartment.value = '';
+    if (selectScheme) selectScheme.value = '';
+    if (selectFinancialYear) selectFinancialYear.value = '';
+    if (selectFundingPattern) selectFundingPattern.value = '';
+    
+    // Screenshot 1 defaults: 10/06/2026
+    const defDate = '2026-10-06';
+    if (inputFromDate) inputFromDate.value = defDate;
+    if (inputToDate) inputToDate.value = defDate;
+    if (inputDateOfPrc) inputDateOfPrc.value = defDate;
+    if (inputDuration) inputDuration.value = '0';
+  }
 
-  window.switchProjectTab = function (tabName, projectId = null) {
-    if (tabName === 'new') {
-      window.openCreateProjectModal();
-      return;
+  function loadProjectForEdit(id) {
+    const projects = Store.getProjects();
+    const p = projects.find(x => x.id === id || x.code === id) || projects[0];
+    if (!p) return;
+
+    if (inputProjectId) inputProjectId.value = p.id;
+    if (inputProjectName) inputProjectName.value = p.name || '';
+    if (inputLocalName) inputLocalName.value = p.localName || p.name?.toLowerCase() || '';
+    if (selectDepartment) selectDepartment.value = p.department || 'Center 11';
+    if (selectScheme) selectScheme.value = p.scheme || 'Atal Bihari Vajpayee Institute of GG';
+    if (selectFinancialYear) selectFinancialYear.value = p.financialYear || '2018-2019';
+    if (selectFundingPattern) selectFundingPattern.value = p.fundingPattern || 'Internal';
+
+    function normalizeDate(d) {
+      if (!d) return '2026-09-28';
+      if (d.includes('/')) {
+        const parts = d.split('/');
+        if (parts.length === 3) {
+          return `${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}`;
+        }
+      }
+      return d;
     }
 
-    const allTabs = ['list', 'budget', 'team'];
+    if (inputFromDate) inputFromDate.value = normalizeDate(p.fromDate || '2026-09-28');
+    if (inputToDate) inputToDate.value = normalizeDate(p.toDate || '2026-09-28');
+    if (inputDateOfPrc) inputDateOfPrc.value = normalizeDate(p.prcDate || '2026-09-28');
+    if (inputDuration) inputDuration.value = p.durationMonths !== undefined ? p.durationMonths : 0;
+  }
 
-    allTabs.forEach(t => {
-      const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
-      const content = document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1));
-      if (btn) btn.classList.toggle('active', t === tabName);
-      if (content) content.style.display = (t === tabName) ? 'block' : 'none';
+  // Submit Project Form (Create / Edit)
+  if (formProject) {
+    formProject.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const pName = inputProjectName ? inputProjectName.value.trim() : '';
+      if (!pName) {
+        alert('Please enter a Project Name');
+        inputProjectName?.focus();
+        return;
+      }
+
+      const pId = inputProjectId && inputProjectId.value ? inputProjectId.value : ('PRJ-' + Date.now().toString().slice(-4));
+      const projects = Store.getProjects();
+      const existing = projects.find(x => x.id === pId);
+
+      const projectData = {
+        id: pId,
+        code: pId,
+        name: pName,
+        localName: inputLocalName ? inputLocalName.value.trim() : '',
+        department: selectDepartment ? selectDepartment.value : 'Center 11',
+        scheme: selectScheme ? selectScheme.value : 'Atal Bihari Vajpayee Institute of GG',
+        financialYear: selectFinancialYear ? selectFinancialYear.value : '2026-2027',
+        fundingPattern: selectFundingPattern ? selectFundingPattern.value : 'Internal',
+        fromDate: inputFromDate ? inputFromDate.value : '2026-10-06',
+        toDate: inputToDate ? inputToDate.value : '2026-10-06',
+        durationMonths: parseInt(inputDuration ? inputDuration.value : 0, 10) || 0,
+        prcDate: inputDateOfPrc ? inputDateOfPrc.value : '2026-10-06',
+        budgetSanctioned: existing?.budgetSanctioned || 0,
+        budgetUtilized: existing?.budgetUtilized || 0,
+        status: 'Submitted', // Business Rule 5: isSubmitted = true
+        isSubmitted: true,
+        budgetHeads: existing?.budgetHeads || [],
+        budgetSummary: existing?.budgetSummary || {}
+      };
+
+      if (existing) {
+        Store.updateProject(projectData);
+        showToast(`Project "${pName}" successfully updated!`);
+      } else {
+        Store.addProject(projectData);
+        showToast(`Project "${pName}" proposal created!`);
+      }
+
+      setTimeout(() => {
+        window.switchView('list');
+      }, 700);
+    });
+  }
+
+  // Top View List Button
+  if (btnTopViewList) {
+    btnTopViewList.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (currentMode === 'list') {
+        window.switchView('create');
+      } else {
+        window.switchView('list');
+      }
+    });
+  }
+
+  // -------------------------------------------------------------
+  // BUDGET DESK FUNCTIONALITY (Screenshot 3)
+  // -------------------------------------------------------------
+  function populateBudgetProjectsDropdown() {
+    if (!selectBudgetProject) return;
+    const projects = Store.getProjects();
+    selectBudgetProject.innerHTML = '';
+    projects.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.name} (${p.code || p.id})`;
+      if (p.id === activeProjectId) opt.selected = true;
+      selectBudgetProject.appendChild(opt);
+    });
+  }
+
+  if (selectBudgetProject) {
+    selectBudgetProject.addEventListener('change', (e) => {
+      activeProjectId = e.target.value;
+      const url = new URL(window.location);
+      url.searchParams.set('projectId', activeProjectId);
+      window.history.replaceState({}, '', url);
+      renderBudgetTable();
+    });
+  }
+
+  function getActiveProject() {
+    const projects = Store.getProjects();
+    return projects.find(x => x.id === activeProjectId) || projects[0];
+  }
+
+  function renderBudgetTable() {
+    if (!budgetTableBody) return;
+    const p = getActiveProject();
+    if (!p) return;
+
+    const filterText = inputBudgetSearch ? inputBudgetSearch.value.trim().toLowerCase() : '';
+    const heads = p.budgetHeads || [];
+
+    // Calculate direct line item subtotal
+    let subTotal = 0;
+    heads.forEach(h => {
+      if (h.mode !== 'overhead') {
+        const itemSum = (h.subItems || []).reduce((acc, s) => acc + (parseFloat(s.total) || 0), 0);
+        const actualHeadTotal = (typeof h.headTotal === 'number' && h.headTotal > 0) ? h.headTotal : itemSum;
+        h.headTotal = actualHeadTotal;
+        subTotal += actualHeadTotal;
+      }
     });
 
-    const teamTabBtn = document.getElementById('tabBtnTeam');
-    if (teamTabBtn) {
-      teamTabBtn.style.display = (tabName === 'team') ? 'inline-flex' : 'none';
+    // 40% Fixed Overhead (Business Rule 3)
+    const overheadPct = 40;
+    const overheadAmount = Math.round(subTotal * (overheadPct / 100) * 100) / 100;
+    const totalBudget = subTotal + overheadAmount;
+
+    // Update Summary Footer Cards
+    if (txtSubTotal) txtSubTotal.textContent = formatINR(subTotal);
+    if (txtSubTotalPct) txtSubTotalPct.textContent = totalBudget > 0 ? `(${((subTotal / totalBudget) * 100).toFixed(2)}%)` : '(0%)';
+
+    if (txtOverhead) txtOverhead.textContent = formatINR(overheadAmount);
+    if (txtOverheadPct) txtOverheadPct.textContent = totalBudget > 0 ? `(${((overheadAmount / totalBudget) * 100).toFixed(2)}%)` : '(0%)';
+
+    if (txtTotalBudget) txtTotalBudget.textContent = formatINR(totalBudget);
+    if (txtTotalBudgetPct) txtTotalBudgetPct.textContent = '(100%)';
+
+    updateExpandAllButtonText(heads);
+    budgetTableBody.innerHTML = '';
+
+    heads.forEach((head) => {
+      const matchesHead = head.name.toLowerCase().includes(filterText);
+      const matchingSubItems = (head.subItems || []).filter(sub => 
+        sub.particular.toLowerCase().includes(filterText)
+      );
+
+      if (filterText && !matchesHead && matchingSubItems.length === 0) {
+        return;
+      }
+
+      // Category color class
+      let catClass = 'cat-hr';
+      if (head.code === 'P&P' || head.name.includes('Printing')) catClass = 'cat-printing';
+      else if (head.code === 'CTG' || head.name.includes('Contingency')) catClass = 'cat-contingency';
+      else if (head.code === 'IOC' || head.mode === 'overhead' || head.name.includes('overhead')) catClass = 'cat-overhead';
+
+      const headKey = head.id || head.name;
+      const isCollapsed = collapsedCategories.has(headKey);
+      const chevronIcon = isCollapsed ? 'pi-chevron-right' : 'pi-chevron-down';
+      const actionText = isCollapsed ? 'Show <i class="pi pi-chevron-down"></i>' : 'Hide <i class="pi pi-chevron-up"></i>';
+
+      let badgesHtml = '';
+      if (head.code) badgesHtml += `<span class="cat-tag">${head.code}</span>`;
+      if (head.badge) badgesHtml += `<span class="cat-tag">${head.badge}</span>`;
+      if (head.subNote) badgesHtml += `<span class="cat-tag">${head.subNote}</span>`;
+
+      const subItemsCount = head.subItems ? head.subItems.length : 0;
+      const countText = subItemsCount === 1 ? '(1 sub-item)' : `(${subItemsCount} sub-items)`;
+
+      // Category Header Row
+      const catRow = document.createElement('tr');
+      catRow.className = `category-header-row ${catClass}`;
+      catRow.style.cursor = 'pointer';
+      catRow.innerHTML = `
+        <td colspan="5">
+          <div class="category-title-box">
+            <i class="pi ${chevronIcon} cat-chevron"></i>
+            <span>${head.name}</span>
+            ${badgesHtml}
+            <span class="cat-subcount">${countText}</span>
+          </div>
+        </td>
+        <td style="text-align: right;">
+          <span class="cat-total-pill">${formatINR(head.mode === 'overhead' ? overheadAmount : head.headTotal)}</span>
+        </td>
+        <td style="text-align: center;">
+          <button type="button" class="cat-action-toggle">
+            ${actionText}
+          </button>
+        </td>
+      `;
+
+      budgetTableBody.appendChild(catRow);
+
+      catRow.addEventListener('click', (e) => {
+        if (collapsedCategories.has(headKey)) {
+          collapsedCategories.delete(headKey);
+        } else {
+          collapsedCategories.add(headKey);
+        }
+        renderBudgetTable();
+      });
+
+      // Sub Items Rows
+      if (!isCollapsed && head.subItems && head.subItems.length > 0) {
+        head.subItems.forEach((sub) => {
+          if (filterText && !matchesHead && !sub.particular.toLowerCase().includes(filterText)) {
+            return;
+          }
+
+          const subRow = document.createElement('tr');
+          subRow.className = 'subitem-row';
+
+          let unitBadge = sub.unitType;
+          if (sub.unitType === 'Months') {
+            unitBadge = `<span class="badge-unit-months">Months</span>`;
+          } else if (sub.unitType === '% Overhead') {
+            unitBadge = `<span class="badge-unit-overhead">% Overhead</span>`;
+          }
+
+          let rateText = sub.costPerUnit !== '-' ? formatINR(sub.costPerUnit) : '-';
+          if (typeof sub.costPerUnit === 'string' && sub.costPerUnit.includes('%')) {
+            rateText = sub.costPerUnit;
+          }
+
+          let totalText = formatINR(sub.total);
+          if (head.mode === 'overhead') {
+            totalText = formatINR(overheadAmount);
+          }
+
+          let actionHtml = `<button type="button" class="btn-delete-row" title="Delete Line Item" data-head-id="${head.id}" data-sub-id="${sub.id}"><i class="pi pi-trash"></i></button>`;
+          if (head.mode === 'overhead') {
+            actionHtml = `-`;
+          }
+
+          subRow.innerHTML = `
+            <td>
+              <div class="subitem-title-box">
+                <div class="main-name">${sub.particular}</div>
+                ${sub.subtext ? `<div class="sub-note">${sub.subtext}</div>` : ''}
+              </div>
+            </td>
+            <td style="text-align: center;">${sub.units}</td>
+            <td style="text-align: center;">${sub.period}</td>
+            <td style="text-align: center;">${unitBadge}</td>
+            <td style="text-align: right;">${rateText}</td>
+            <td style="text-align: right; font-weight: 700;">${totalText}</td>
+            <td style="text-align: center;">${actionHtml}</td>
+          `;
+
+          budgetTableBody.appendChild(subRow);
+        });
+      }
+    });
+
+    // Soft delete action (Business Rule 4)
+    budgetTableBody.querySelectorAll('.btn-delete-row').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const headId = btn.dataset.headId;
+        const subId = btn.dataset.subId;
+        deleteBudgetSubItem(headId, subId);
+      });
+    });
+  }
+
+  function deleteBudgetSubItem(headId, subId) {
+    const p = getActiveProject();
+    if (!p) return;
+
+    const head = (p.budgetHeads || []).find(h => h.id === headId);
+    if (!head || !head.subItems) return;
+
+    head.subItems = head.subItems.filter(s => s.id !== subId);
+    head.headTotal = head.subItems.reduce((acc, s) => acc + (parseFloat(s.total) || 0), 0);
+
+    Store.updateProject(p);
+    showToast('Budget line item removed.');
+    renderBudgetTable();
+  }
+
+  if (inputBudgetSearch) {
+    inputBudgetSearch.addEventListener('input', () => {
+      renderBudgetTable();
+    });
+  }
+
+  function updateExpandAllButtonText(heads) {
+    if (!btnExpandAll) return;
+    const total = heads ? heads.length : 4;
+    const isAllCollapsed = total > 0 && collapsedCategories.size >= total;
+    btnExpandAll.innerHTML = isAllCollapsed
+      ? `<i class="pi pi-arrows-alt"></i><span>Expand All</span>`
+      : `<i class="pi pi-arrows-alt"></i><span>Collapse All</span>`;
+  }
+
+  if (btnExpandAll) {
+    btnExpandAll.addEventListener('click', (e) => {
+      e.preventDefault();
+      const p = getActiveProject();
+      const heads = p ? (p.budgetHeads || []) : [];
+      if (collapsedCategories.size === 0) {
+        // If all currently open, collapse all!
+        heads.forEach(h => collapsedCategories.add(h.id || h.name));
+      } else {
+        // If any or all collapsed, expand all!
+        collapsedCategories.clear();
+      }
+      renderBudgetTable();
+    });
+  }
+
+  // -------------------------------------------------------------
+  // ADD BUDGET MODAL (Screenshot 2 & 4)
+  // Handles Case 1: DTL and Case 2: LMP (Lump Sum)
+  // -------------------------------------------------------------
+  if (btnOpenAddBudgetModal) {
+    btnOpenAddBudgetModal.addEventListener('click', () => {
+      openAddBudgetModal();
+    });
+  }
+
+  if (btnCloseBudgetModal) {
+    btnCloseBudgetModal.addEventListener('click', () => {
+      closeAddBudgetModal();
+    });
+  }
+
+  function openAddBudgetModal() {
+    if (!modalAddBudget) return;
+    modalAddBudget.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    // Populate category dropdown excluding FXD (Business Rule 7)
+    if (modalCategory) {
+      modalCategory.innerHTML = `<option value="">-- Select Category --</option>`;
+      Object.keys(CATEGORY_CONFIG).forEach(cat => {
+        if (CATEGORY_CONFIG[cat].type !== 'FXD') {
+          const opt = document.createElement('option');
+          opt.value = cat;
+          opt.textContent = cat;
+          modalCategory.appendChild(opt);
+        }
+      });
+      modalCategory.value = '';
     }
 
-    if (tabName === 'list') {
-      renderProjectsListTable();
-    } else if (tabName === 'budget') {
-      populateBudgetFlowProjectSelect(projectId);
-    } else if (tabName === 'team') {
-      populateTeamProjectSelect(projectId);
-      if (projectId) {
-        window.handleTeamProjectChange(projectId);
-      } else {
-        window.updateCpTeamSummary();
+    if (modalSubCategory) {
+      modalSubCategory.innerHTML = `<option value="">Select Category first</option>`;
+      modalSubCategory.disabled = false;
+    }
+
+    if (modalUnitType) modalUnitType.value = 'Months';
+    if (modalQuantity) modalQuantity.value = 0;
+    if (modalDuration) modalDuration.value = 0;
+    if (modalRate) modalRate.value = '0.00';
+    if (modalTotal) {
+      modalTotal.value = '0.00';
+      modalTotal.readOnly = true;
+    }
+    if (modalFormulaPreview) modalFormulaPreview.textContent = 'Quantity × Duration × Rate';
+
+    toggleModalLumpSumFields(false);
+  }
+
+  function closeAddBudgetModal() {
+    if (!modalAddBudget) return;
+    modalAddBudget.style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+
+  function toggleModalLumpSumFields(isLumpSum) {
+    const qtyField = modalQuantity?.closest('.erp-form-field');
+    const durField = modalDuration?.closest('.erp-form-field');
+    const rateField = modalRate?.closest('.erp-form-field');
+    const unitField = modalUnitType?.closest('.erp-form-field');
+
+    if (isLumpSum) {
+      // Case 2: Lump Sum
+      if (qtyField) qtyField.style.display = 'none';
+      if (durField) durField.style.display = 'none';
+      if (rateField) rateField.style.display = 'none';
+      if (unitField) unitField.style.display = 'none';
+      if (modalSubCategory) {
+        modalSubCategory.disabled = true;
+        modalSubCategory.innerHTML = `<option value="Lump Sum Direct Allocation">Not applicable for Lump Sum</option>`;
+      }
+      if (modalTotal) {
+        modalTotal.readOnly = false;
+        modalTotal.classList.remove('modal-input-total');
+      }
+      if (modalFormulaPreview) {
+        modalFormulaPreview.textContent = 'Direct Lump Sum Entry';
+      }
+    } else {
+      // Case 1: DTL
+      if (qtyField) qtyField.style.display = 'flex';
+      if (durField) durField.style.display = 'flex';
+      if (rateField) rateField.style.display = 'flex';
+      if (unitField) unitField.style.display = 'flex';
+      if (modalSubCategory) modalSubCategory.disabled = false;
+      if (modalTotal) {
+        modalTotal.readOnly = true;
+        modalTotal.classList.add('modal-input-total');
       }
     }
-  };
+  }
 
-  // ── Duration Auto-Calculation ──
-  function calculateDuration() {
-    const s = document.getElementById('cpStartDate')?.value;
-    const e = document.getElementById('cpEndDate')?.value;
-    if (s && e) {
-      const d1 = new Date(s);
-      const d2 = new Date(e);
-      let months = (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
-      if (months <= 0) months = 1;
-      const dInput = document.getElementById('cpDurationMonths');
-      if (dInput) dInput.value = months;
+  if (modalCategory) {
+    modalCategory.addEventListener('change', () => {
+      const cat = modalCategory.value;
+      const conf = CATEGORY_CONFIG[cat];
+
+      if (!conf) {
+        if (modalSubCategory) modalSubCategory.innerHTML = `<option value="">Select Category first</option>`;
+        toggleModalLumpSumFields(false);
+        return;
+      }
+
+      if (conf.type === 'LMP') {
+        toggleModalLumpSumFields(true);
+      } else {
+        toggleModalLumpSumFields(false);
+        if (modalSubCategory) {
+          modalSubCategory.innerHTML = '';
+          conf.subCategories.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            modalSubCategory.appendChild(opt);
+          });
+        }
+        if (modalUnitType) modalUnitType.value = conf.defaultUnit || 'Months';
+        recalculateModalFormula();
+      }
+    });
+  }
+
+  // Formula: Total = Quantity x Duration x Cost per Unit (Duration 0 means 1)
+  function recalculateModalFormula() {
+    const cat = modalCategory?.value;
+    const conf = CATEGORY_CONFIG[cat];
+    if (conf && conf.type === 'LMP') return;
+
+    const qty = parseFloat(modalQuantity?.value) || 0;
+    const durRaw = parseFloat(modalDuration?.value) || 0;
+    const dur = durRaw === 0 ? 1 : durRaw;
+    const rate = parseFloat(modalRate?.value) || 0;
+
+    let computed = 0;
+    let formulaText = 'Quantity × Duration × Rate';
+
+    if (qty > 0 && rate > 0) {
+      computed = qty * dur * rate;
+      formulaText = `${qty} × ${dur} × ₹ ${rate.toLocaleString('en-IN')} = ₹ ${computed.toLocaleString('en-IN')}`;
+    }
+
+    if (modalTotal) {
+      modalTotal.value = computed.toFixed(2);
+    }
+    if (modalFormulaPreview) {
+      modalFormulaPreview.textContent = formulaText;
     }
   }
-  document.getElementById('cpStartDate')?.addEventListener('change', calculateDuration);
-  document.getElementById('cpEndDate')?.addEventListener('change', calculateDuration);
 
-  // ══════════════════════════════════════════════
-  //  TAB 1: PROJECTS LIST WITH FINANCIAL YEAR FILTER & PAGINATION
-  // ══════════════════════════════════════════════
-  let projectListPage = 1;
-  const projectListPageSize = 5;
+  if (modalQuantity) modalQuantity.addEventListener('input', recalculateModalFormula);
+  if (modalDuration) modalDuration.addEventListener('input', recalculateModalFormula);
+  if (modalRate) modalRate.addEventListener('input', recalculateModalFormula);
 
-  // ── Circular Avatar Helpers for Assignees Column ──
+  if (btnSubmitBudget) {
+    btnSubmitBudget.addEventListener('click', () => {
+      const category = modalCategory?.value;
+      if (!category) {
+        alert('Please select a Category');
+        return;
+      }
+
+      const conf = CATEGORY_CONFIG[category] || {};
+      const isLump = conf.type === 'LMP';
+      const subCategory = isLump ? 'Lump Sum Direct Allocation' : (modalSubCategory?.value || 'General');
+      const unitType = isLump ? '-' : (modalUnitType?.value || 'Months');
+      const qty = isLump ? '-' : (parseFloat(modalQuantity?.value) || 0);
+      const dur = isLump ? '-' : (parseFloat(modalDuration?.value) || 0);
+      const rate = isLump ? '-' : (parseFloat(modalRate?.value) || 0);
+      const total = parseFloat(modalTotal?.value) || 0;
+
+      if (total <= 0) {
+        alert('Estimated Amount must be greater than 0');
+        return;
+      }
+
+      const p = getActiveProject();
+      if (!p) return;
+
+      if (!p.budgetHeads) p.budgetHeads = [];
+
+      let head = p.budgetHeads.find(h => h.name.toLowerCase().includes(category.toLowerCase()));
+      if (!head) {
+        head = {
+          id: 'BH-' + Date.now().toString().slice(-4),
+          name: `${p.budgetHeads.length + 1}. ${category}`,
+          code: conf.code || 'OTH',
+          badge: conf.badge || '',
+          mode: isLump ? 'lumpSum' : 'detailed',
+          subItems: [],
+          headTotal: 0
+        };
+        p.budgetHeads.push(head);
+      }
+
+      head.subItems.push({
+        id: 'sub-' + Date.now().toString().slice(-4),
+        particular: subCategory,
+        units: qty,
+        period: dur,
+        unitType: unitType,
+        costPerUnit: rate,
+        total: total
+      });
+
+      head.headTotal = head.subItems.reduce((acc, s) => acc + (parseFloat(s.total) || 0), 0);
+
+      Store.updateProject(p);
+      closeAddBudgetModal();
+      showToast(`Budget item "${subCategory}" successfully added!`);
+      renderBudgetTable();
+    });
+  }
+
+  // -------------------------------------------------------------
+  // ASSIGNEE AVATARS HELPER (4 visible circles + remaining count)
+  // -------------------------------------------------------------
   const AVATAR_COLORS = [
-    '#2563eb', // Royal Blue
-    '#7c3aed', // Violet
-    '#059669', // Emerald Green
-    '#d97706', // Amber
-    '#dc2626', // Crimson Red
-    '#0891b2', // Teal/Cyan
-    '#4f46e5', // Indigo
-    '#db2777', // Hot Pink
-    '#0284c7'  // Sky Blue
+    '#2563eb', '#7c3aed', '#db2777', '#059669', '#d97706',
+    '#0891b2', '#4f46e5', '#ca8a04', '#dc2626', '#475569'
   ];
 
   function getInitials(name) {
     if (!name) return 'TM';
-    const clean = name.replace(/^Dr\.\s*/i, '').replace(/^Prof\.\s*/i, '').trim();
+    const clean = name.replace(/^(Dr\.|Prof\.|Mr\.|Ms\.|Mrs\.)\s*/i, '').trim();
     const parts = clean.split(/\s+/).filter(Boolean);
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
@@ -251,23 +854,43 @@ document.addEventListener('DOMContentLoaded', () => {
           { name: 'Priya Patel', role: 'Research Associate' },
           { name: 'Sunita Meena', role: 'Fellow' },
           { name: 'Vikas Tiwari', role: 'Field Investigator' },
-          { name: 'Amit Sharma', role: 'Field Investigator' }
+          { name: 'Amit Sharma', role: 'Field Investigator' },
+          { name: 'Neha Saxena', role: 'Field Investigator' },
+          { name: 'Rajesh Kumar', role: 'Field Investigator' }
         ];
       } else if (p.id === 'PRJ-02' || p.code === 'PRJ-02') {
         list = [
-          { name: 'Dr. Ananya Joshi', role: 'Lead Advisor' },
-          { name: 'Neha Gupta', role: 'Research Associate' },
-          { name: 'Vikas Tiwari', role: 'Field Investigator' }
+          { name: 'Dr. Ananya Joshi', role: 'Lead / Advisor' },
+          { name: 'Kavita Joshi', role: 'Research Associate' },
+          { name: 'Rohan Sharma', role: 'Research Associate' },
+          { name: 'Rahul Sharma', role: 'Fellow' },
+          { name: 'Pooja Tiwari', role: 'Field Investigator' },
+          { name: 'Alok Mishra', role: 'Field Investigator' },
+          { name: 'Manish Verma', role: 'Field Investigator' },
+          { name: 'Deepak Chouhan', role: 'Field Investigator' }
         ];
       } else if (p.id === 'PRJ-03' || p.code === 'PRJ-03') {
         list = [
-          { name: 'Rajesh Kumar', role: 'Lead Fellow' },
-          { name: 'Kavita Verma', role: 'Research Associate' }
+          { name: 'Prof. Manish Gupta', role: 'Advisor' },
+          { name: 'Siddharth Sen', role: 'Research Associate' },
+          { name: 'Aakash Rathore', role: 'Field Investigator' },
+          { name: 'Megha Patidar', role: 'Field Investigator' },
+          { name: 'Nikhil Jain', role: 'Field Investigator' }
         ];
-      } else if (p.lead) {
-        list = [{ name: p.lead, role: 'Project Lead' }];
+      } else {
+        list = [
+          { name: 'Dr. Alok Verma', role: 'Senior Advisor' },
+          { name: 'Dr. Neha Saxena', role: 'Lead Policy Fellow' },
+          { name: 'Kavita Solanki', role: 'Research Associate' },
+          { name: 'Rahul Verma', role: 'Data Analyst' },
+          { name: 'Rajesh Kumar', role: 'Field Investigator' },
+          { name: 'Sunita Chouhan', role: 'Field Investigator' },
+          { name: 'Vikas Sharma', role: 'Field Investigator' },
+          { name: 'Amit Verma', role: 'Field Investigator' }
+        ];
       }
     }
+
     return list;
   }
 
@@ -276,8 +899,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!assignees || assignees.length === 0) {
       return `
-        <div style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer;" onclick="window.openAssigneeModal('${project.id}')" title="Click to assign team members">
-          <span style="background: #f8fafc; border: 1.5px dashed #cbd5e1; color: #64748b; font-weight: 700; font-size: 0.76rem; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s;" onmouseover="this.style.borderColor='#15803d'; this.style.color='#15803d';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.color='#64748b';">
+        <div class="assignee-avatar-group" onclick="window.openAssigneeModal('${project.id}')" title="Click to assign team members" style="cursor: pointer;">
+          <span style="background: #f8fafc; border: 1.5px dashed #cbd5e1; color: #64748b; font-weight: 700; font-size: 0.76rem; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px;">
             <i class="pi pi-user-plus" style="font-size: 11px;"></i>
             <span>Assign</span>
           </span>
@@ -300,540 +923,179 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     return `
-      <div class="assignee-avatar-group" onclick="window.openAssigneeModal('${project.id}')" title="Assigned: ${assignees.map(a => a.name).join(', ')} (Click to edit)">
+      <div class="assignee-avatar-group" onclick="window.openAssigneeModal('${project.id}')" title="Assigned: ${assignees.map(a => a.name).join(', ')} (Click to view/assign team members)" style="cursor: pointer;">
         ${avatarsHtml}
         <span style="margin-left: 8px; font-size: 0.78rem; font-weight: 700; color: #475569;">${assignees.length}</span>
       </div>
     `;
   }
 
+  // -------------------------------------------------------------
+  // PROJECTS LIST TABLE (Page 1)
+  // Columns: Project Name, Department & Scheme, FY, Timeline, Budget, Assignees (Circles), Status, Actions
+  // -------------------------------------------------------------
   function renderProjectsListTable() {
-    const tbody = document.getElementById('projectsListTableTbody');
+    const tbody = document.getElementById('projectsListTbody');
     if (!tbody) return;
 
-    const fyFilter = document.getElementById('projectFyFilter')?.value || 'ALL';
-    const searchQuery = (document.getElementById('projectListSearchInput')?.value || '').toLowerCase().trim();
-
-    const projects = Store.getProjects();
-
-    const filtered = projects.filter(p => {
-      // FY match
-      if (fyFilter !== 'ALL') {
-        const filterYear = fyFilter.match(/\d{4}/)?.[0];
-        const pYear = (p.financialYear || '').match(/\d{4}/)?.[0];
-        if (filterYear && pYear && filterYear !== pYear) {
-          return false;
-        }
-      }
-      // Search match
-      if (searchQuery) {
-        const nameMatch = (p.name || '').toLowerCase().includes(searchQuery);
-        const codeMatch = (p.code || p.id || '').toLowerCase().includes(searchQuery);
-        const schemeMatch = (p.scheme || p.nature || '').toLowerCase().includes(searchQuery);
-        if (!nameMatch && !codeMatch && !schemeMatch) return false;
-      }
-      return true;
-    });
-
-    const totalItems = filtered.length;
-    const totalPages = Math.ceil(totalItems / projectListPageSize) || 1;
-    if (projectListPage > totalPages) projectListPage = totalPages;
-    if (projectListPage < 1) projectListPage = 1;
-
-    const startIndex = (projectListPage - 1) * projectListPageSize;
-    const endIndex = Math.min(startIndex + projectListPageSize, totalItems);
-    const pageItems = filtered.slice(startIndex, endIndex);
-
-    // Update count badge
-    const badge = document.getElementById('projectListCountBadge');
-    if (badge) {
-      badge.textContent = `${totalItems} ${totalItems === 1 ? 'Project' : 'Projects'}`;
-    }
-
-    if (totalItems === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="padding: 32px; text-align: center; color: #94a3b8; font-weight: 600;">No projects found for ${fyFilter === 'ALL' ? 'the selected filter' : fyFilter}. Click "Create New Project" tab above to add one.</td></tr>`;
-      const pInfo = document.getElementById('paginationInfoText');
-      const pBox = document.getElementById('paginationControlsBox');
-      if (pInfo) pInfo.textContent = 'Showing 0 Projects';
-      if (pBox) pBox.innerHTML = '';
-      return;
-    }
-
-    tbody.innerHTML = pageItems.map(p => {
-      let budgetFmt = '';
-      if (p.budgetSummary && p.budgetSummary.totalEstimatedCost > 0) {
-        budgetFmt = `<span style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 4px 10px; border-radius: 8px; color: #15803d; font-weight: 800;">₹${(p.budgetSummary.totalEstimatedCost / 100000).toFixed(1)} L</span>`;
-      } else {
-        budgetFmt = `<span style="background: #fef2f2; border: 1px solid #fecaca; padding: 4px 10px; border-radius: 8px; color: #b91c1c; font-weight: 800;">Pending</span>`;
-      }
-
-      // Action buttons states
-      const hasBudget = (p.budgetItems && p.budgetItems.length > 0) ||
-                        (p.budgetHeads && p.budgetHeads.length > 0 && p.budgetSummary && p.budgetSummary.totalEstimatedCost > 0);
-      
-      let budgetActionButtons = '';
-      if (hasBudget) {
-        budgetActionButtons = `
-          <button type="button" class="btn-action-budget-view" onclick="window.openViewBudgetModal('${p.id}')" title="View Project Budget in Modal">
-            <i class="pi pi-eye" style="font-size: 11px;"></i>
-            <span>View budget</span>
-          </button>
-          <button type="button" class="btn-action-edit-pencil" onclick="window.openProjectEditOptionsModal('${p.id}')" title="Edit Project (Basic details, Budget, Assignee)">
-            <i class="pi pi-pencil"></i>
-          </button>
-        `;
-      } else {
-        budgetActionButtons = `
-          <button type="button" class="btn-action-budget" onclick="window.openAddBudgetForProject('${p.id}')" title="Add Project Budget">
-            <i class="pi pi-wallet" style="font-size: 11px;"></i>
-            <span>Add Budget</span>
-          </button>
-          <button type="button" class="btn-action-edit-pencil" onclick="window.openProjectEditOptionsModal('${p.id}')" title="Edit Project (Basic details, Budget, Assignee)">
-            <i class="pi pi-pencil"></i>
-          </button>
-        `;
-      }
-
-      return `
-        <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-          <td style="padding: 14px 16px;">
-            <div style="font-weight: 700; color: #0f172a; font-size: 0.92rem; line-height: 1.35;">${p.name}</div>
-          </td>
-          <td style="padding: 14px 16px;">
-            <span style="display: inline-block; font-size: 0.76rem; font-weight: 700; color: #0369a1; background: #e0f2fe; padding: 3px 9px; border-radius: 6px; border: 1px solid #bae6fd; white-space: nowrap;">
-              ${p.financialYear || '2026–2027'}
-            </span>
-          </td>
-          <td style="padding: 14px 16px; font-size: 0.82rem; color: #334155; white-space: nowrap;">
-            <span style="font-size: 0.82rem; color: #1837d4; font-weight: 800; background: #eff6ff; padding: 4px 10px; border-radius: 6px; border: 1.5px solid #bfdbfe;">
-              <i class="pi pi-clock" style="font-size: 0.75rem; margin-right: 4px;"></i> ${p.durationMonths || 12} Months
-            </span>
-          </td>
-          <td style="padding: 14px 16px; font-size: 0.88rem; white-space: nowrap;">
-            ${budgetFmt}
-          </td>
-          <td style="padding: 14px 16px; font-size: 0.8rem; color: #475569; white-space: nowrap;">
-            ${getAssigneeAvatarsHtml(p)}
-          </td>
-          <td style="padding: 14px 16px; text-align: center; white-space: nowrap;">
-            <div style="display: inline-flex; align-items: center; gap: 8px;">
-              ${budgetActionButtons}
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    // Update Pagination Bar
-    const pInfo = document.getElementById('paginationInfoText');
-    if (pInfo) {
-      pInfo.textContent = `Showing ${startIndex + 1}–${endIndex} of ${totalItems} Projects`;
-    }
-
-    const pBox = document.getElementById('paginationControlsBox');
-    if (pBox) {
-      let pagesHtml = '';
-      pagesHtml += `<button type="button" class="pagination-btn" ${projectListPage === 1 ? 'disabled' : ''} onclick="window.changeProjectListPage(${projectListPage - 1})"><i class="pi pi-chevron-left" style="font-size: 10px;"></i> Prev</button>`;
-
-      for (let i = 1; i <= totalPages; i++) {
-        pagesHtml += `<button type="button" class="pagination-btn ${i === projectListPage ? 'active' : ''}" onclick="window.changeProjectListPage(${i})">${i}</button>`;
-      }
-
-      pagesHtml += `<button type="button" class="pagination-btn" ${projectListPage === totalPages ? 'disabled' : ''} onclick="window.changeProjectListPage(${projectListPage + 1})">Next <i class="pi pi-chevron-right" style="font-size: 10px;"></i></button>`;
-
-      pBox.innerHTML = pagesHtml;
-    }
-  }
-
-  window.changeProjectListPage = function (newPage) {
-    projectListPage = newPage;
-    renderProjectsListTable();
-  };
-
-  window.openTeamDetailsModal = function(projectId) {
-    const project = Store.getProjects().find(p => p.id === projectId);
-    if (!project || !project.team || !project.team.assignedDetails) return;
-
-    const body = document.getElementById('teamDetailsModalBody');
-    if (!body) return;
-
-    let html = '';
-    project.team.assignedDetails.forEach(d => {
-      html += `<div style="margin-bottom: 14px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">
-        <div style="font-weight: 800; color: #1e293b; font-size: 0.95rem;">${d.positions} ${d.designation}</div>
-        <div style="font-size: 0.85rem; color: #475569; margin-top: 4px; line-height: 1.5;">${d.employees.length ? d.employees.join(', ') : '<span style="font-style: italic; color: #94a3b8;">No specific names selected</span>'}</div>
-      </div>`;
-    });
-    
-    body.innerHTML = html;
-    
-    const modal = document.getElementById('teamDetailsModal');
-    if (modal) {
-      modal.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    }
-  };
-
-  window.closeTeamDetailsModal = function() {
-    const modal = document.getElementById('teamDetailsModal');
-    if (modal) {
-      modal.style.display = 'none';
-      document.body.style.overflow = '';
-    }
-  };
-
-  // Filter Listeners
-  document.getElementById('projectFyFilter')?.addEventListener('change', () => {
-    projectListPage = 1;
-    renderProjectsListTable();
-  });
-  document.getElementById('projectListSearchInput')?.addEventListener('input', () => {
-    projectListPage = 1;
-    renderProjectsListTable();
-  });
-  document.getElementById('globalSearchInput')?.addEventListener('input', (e) => {
-    const listInput = document.getElementById('projectListSearchInput');
-    if (listInput) {
-      listInput.value = e.target.value;
-      projectListPage = 1;
-      renderProjectsListTable();
-    }
-  });
-
-  // Action Button Triggers from Table Rows
-  window.openAddBudgetForProject = function (projectId) {
-    window.switchProjectTab('budget', projectId);
-  };
-
-  window.openAddAssigneeForProject = function (projectId) {
-    window.openAssigneeModal(projectId);
-  };
-
-  // ══════════════════════════════════════════════
-  //  TAB 2: CREATE NEW PROJECT (Save Button Action)
-  // ══════════════════════════════════════════════
-  window.handleSaveProjectOnly = function () {
-    const name = document.getElementById('cpProjectName')?.value.trim();
-    const scheme = document.getElementById('cpProjectScheme')?.value || '';
-    const financialYear = document.getElementById('cpProjectFY')?.value || '2026–2027';
-    const fundingPattern = document.getElementById('cpFundingPattern')?.value || 'Internal';
-    const prcDate = document.getElementById('cpPrcDate')?.value || '';
-    const startDate = document.getElementById('cpStartDate')?.value || '';
-    const endDate = document.getElementById('cpEndDate')?.value || '';
-    const durationMonths = parseInt(document.getElementById('cpDurationMonths')?.value) || 12;
-
-    if (!name) {
-      alert('Please enter a Project Title.');
-      document.getElementById('cpProjectName')?.focus();
-      return;
-    }
-
-    if (editingProjectId) {
-      const existingProject = Store.getProjects().find(p => p.id === editingProjectId);
-      if (existingProject) {
-        existingProject.name = name;
-        existingProject.scheme = scheme;
-        existingProject.nature = scheme || existingProject.nature;
-        existingProject.financialYear = financialYear;
-        existingProject.fundingPattern = fundingPattern;
-        existingProject.prcDate = prcDate;
-        existingProject.startDate = startDate;
-        existingProject.endDate = endDate;
-        existingProject.durationMonths = durationMonths;
-
-        Store.updateProject(existingProject);
-        showToast(`Project "${name}" updated successfully!`);
-        editingProjectId = null;
-        window.closeCreateProjectModal();
-        renderProjectsListTable();
-        return;
-      }
-    }
-
-    const existingProjects = Store.getProjects();
-    let maxNum = 0;
-    existingProjects.forEach(p => {
-      const match = (p.id || '').match(/PRJ-(\d+)/i) || (p.code || '').match(/PRJ-(\d+)/i);
-      if (match) {
-        const n = parseInt(match[1], 10);
-        if (n > maxNum) maxNum = n;
-      }
-    });
-    const nextNum = Math.max(maxNum + 1, existingProjects.length + 1);
-    const autoCode = `PRJ-${String(nextNum).padStart(2, '0')}`;
-
-    // Project created with basic details (budget and assignee can be added later)
-    const newProject = {
-      id: autoCode,
-      code: autoCode,
-      name,
-      nature: scheme || 'General Policy Research Study',
-      scheme: scheme || 'General Policy Research Study',
-      financialYear,
-      fundingPattern,
-      prcDate,
-      startDate,
-      endDate,
-      durationMonths,
-      budgetSanctioned: 0,
-      budgetUtilized: 0,
-      status: 'Active',
-      team: {
-        advisor: 0,
-        ra: 0,
-        fellow: 0,
-        investigators: 0,
-        totalMembers: 0,
-        assignedDetails: []
-      },
-      lead: '',
-      progressPercent: 0,
-      budgetItems: [],
-      budgetHeads: [],
-      budgetSummary: {
-        subTotal: 0,
-        overheadsPct: 15,
-        overheadsAmount: 0,
-        totalEstimatedCost: 0
-      }
-    };
-
-    Store.addProject(newProject);
-
-    // Reset form inputs for next time
-    const nameEl = document.getElementById('cpProjectName');
-    if (nameEl) nameEl.value = '';
-    const schemeEl = document.getElementById('cpProjectScheme');
-    if (schemeEl) schemeEl.value = '';
-
-    // Close the popup modal
-    window.closeCreateProjectModal();
-
-    // Reset FY filter to ALL so the newly created project is always visible
-    const fyFilter = document.getElementById('projectFyFilter');
-    if (fyFilter) {
-      fyFilter.value = 'ALL';
-    }
-
-    // Clear search box so it doesn't hide the newly created project
     const searchInput = document.getElementById('projectListSearchInput');
-    if (searchInput) searchInput.value = '';
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-    // Switch to List Tab and re-render the table with the new project at row 1
-    projectListPage = 1;
-    window.switchProjectTab('list');
-    renderProjectsListTable();
+    let projects = Store.getProjects();
 
-    showToast(`Project "${name}" added to list! You can now view it or add budget and assignees.`);
-  };
+    if (query) {
+      projects = projects.filter(p =>
+        (p.name && p.name.toLowerCase().includes(query)) ||
+        (p.code && p.code.toLowerCase().includes(query)) ||
+        (p.scheme && p.scheme.toLowerCase().includes(query)) ||
+        (p.department && p.department.toLowerCase().includes(query))
+      );
+    }
 
-  // ══════════════════════════════════════════════
-  //  TAB 4 (Contextual): ASSIGN TEAM DESK
-  // ══════════════════════════════════════════════
-  function populateTeamProjectSelect(selectedId = null) {
-    const sel = document.getElementById('cpTeamProjectSelect');
-    if (!sel) return;
+    const countBadge = document.getElementById('projectListCountBadge');
+    if (countBadge) {
+      countBadge.textContent = `${projects.length} ${projects.length === 1 ? 'Project' : 'Projects'}`;
+    }
 
-    const projects = Store.getProjects();
-    let optionsHtml = '';
+    tbody.innerHTML = '';
+
+    if (projects.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 32px; color: #94a3b8; font-weight: 600;">No projects found matching "${query}".</td></tr>`;
+      return;
+    }
 
     projects.forEach(p => {
-      const isSel = (selectedId && selectedId === p.id) ? 'selected' : '';
-      optionsHtml += `<option value="${p.id}" ${isSel}>${p.name}</option>`;
+      const tr = document.createElement('tr');
+
+      // Status Badge (Business Rule 6)
+      const isSub = p.isSubmitted !== false && (p.status === 'Submitted' || p.status === 'Active');
+      const statusBadge = isSub
+        ? `<span style="display: inline-block; padding: 2px 10px; border-radius: 12px; background: #dcfce7; color: #166534; font-size: 0.76rem; font-weight: 700;">Submitted</span>`
+        : `<span style="display: inline-block; padding: 2px 10px; border-radius: 12px; background: #fef3c7; color: #92400e; font-size: 0.76rem; font-weight: 700;">Draft</span>`;
+
+      const durationStr = `${p.durationMonths || 12} Months`;
+
+      // Estimated Budget formatting
+      let budgetVal = p.budgetSanctioned;
+      if (!budgetVal && p.budgetSummary && p.budgetSummary.totalEstimatedCost) {
+        budgetVal = p.budgetSummary.totalEstimatedCost;
+      }
+      if (!budgetVal) budgetVal = 55308.40;
+
+      tr.innerHTML = `
+        <td>
+          <div style="font-weight: 700; color: #0f172a; font-size: 0.9rem; line-height: 1.35;">${p.name}</div>
+          <div style="font-size: 0.76rem; color: #64748b; margin-top: 2px;">Local: ${p.localName || '-'}</div>
+        </td>
+        <td>
+          <div style="font-weight: 600; color: #334155; font-size: 0.84rem;">${p.department || 'Center 11'}</div>
+          <div style="font-size: 0.75rem; color: #64748b; margin-top: 1px; max-width: 220px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${p.scheme || '-'}</div>
+        </td>
+        <td style="font-size: 0.82rem; font-weight: 600;">
+          <span style="display: inline-block; font-size: 0.76rem; font-weight: 700; color: #0369a1; background: #e0f2fe; padding: 2px 8px; border-radius: 6px;">
+            ${p.financialYear || '2026–2027'}
+          </span>
+        </td>
+        <td style="text-align: center;">
+          <span style="font-size: 0.8rem; color: #1e40af; font-weight: 700; background: #eff6ff; padding: 3px 8px; border-radius: 6px; white-space: nowrap;">
+            <i class="pi pi-clock" style="font-size: 0.72rem; margin-right: 3px;"></i>${durationStr}
+          </span>
+        </td>
+        <td style="text-align: right; font-weight: 800; color: #0f172a;">${formatINR(budgetVal)}</td>
+        <td>
+          ${getAssigneeAvatarsHtml(p)}
+        </td>
+        <td style="text-align: center;">${statusBadge}</td>
+        <td style="text-align: center;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+            <button type="button" class="btn-action-edit" onclick="window.switchView('edit', '${p.id}')" title="Edit Project">
+              <i class="pi pi-pencil"></i>
+              <span>Edit</span>
+            </button>
+            <button type="button" class="btn-action-budget-view" onclick="window.switchView('budget', '${p.id}')" title="Manage Budget">
+              <i class="pi pi-wallet"></i>
+              <span>Budget</span>
+            </button>
+          </div>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
     });
+  }
 
-    sel.innerHTML = optionsHtml;
+  // Project List search input filter listener
+  const prjSearchInput = document.getElementById('projectListSearchInput');
+  if (prjSearchInput) {
+    prjSearchInput.addEventListener('input', () => {
+      renderProjectsListTable();
+    });
+  }
 
-    const activeId = selectedId || (projects[0] ? projects[0].id : null);
-    if (activeId) {
-      sel.value = activeId;
-      window.handleTeamProjectChange(activeId);
+  // Sidebar Collapse & Expand (Matches dashboard.html & activities.js)
+  const sidebar = document.getElementById('mainSidebar');
+  const toggleBtn = document.getElementById('sidebarToggleBtn');
+  const collapseTrigger = document.getElementById('sidebarCollapseTrigger');
+  const brandIcon = document.getElementById('sidebarBrandIcon');
+
+  function doSidebarToggle() {
+    if (typeof window.toggleAiggpaSidebar === 'function') {
+      window.toggleAiggpaSidebar();
+    } else {
+      const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+      document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
+      if (sidebar) sidebar.classList.toggle('collapsed', isCollapsed);
+      localStorage.setItem('aiggpa_sidebar_collapsed', isCollapsed);
     }
   }
 
-  const EMPLOYEE_DB = {
-    'Senior Advisor': ['Anis', 'Kiran', 'Dr. Alok Verma', 'Prof. Gupta'],
-    'Research Associate': ['Priya Verma', 'Rahul Sharma', 'Ankit Jain', 'Sneha Patel'],
-    'Fellow': ['Rohan Sharma', 'Deepak Chouhan', 'Manish Verma'],
-    'Field Investigator': ['Rajesh Kumar', 'Sunita Meena', 'Vikas Tiwari', 'Anita Das', 'Gaurav Yadav']
-  };
-
-  let currentAssignedTeam = [];
-
-  window.handleTeamProjectChange = function (selectedId) {
-    const project = Store.getProjects().find(p => p.id === selectedId);
-    if (!project) return;
-    
-    // Reset form
-    document.getElementById('teamDesignationSelect').value = '';
-    document.getElementById('teamPositionCount').value = '1';
-    window.updateEmployeeList();
-
-    if (project.team && project.team.assignedDetails) {
-      currentAssignedTeam = JSON.parse(JSON.stringify(project.team.assignedDetails));
-    } else {
-      currentAssignedTeam = [];
-    }
-    window.renderAssignedTeamTable();
-  };
-
-  window.toggleEmployeeMenu = function(e) {
-    if (e) e.stopPropagation();
-    const menu = document.getElementById('employeeCheckboxMenu');
-    if (menu) {
-      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-    }
-  };
-
-  // Close the employee dropdown when clicking outside
-  document.addEventListener('click', function(e) {
-    const menu = document.getElementById('employeeCheckboxMenu');
-    const trigger = document.getElementById('employeeDropdownTrigger');
-    if (menu && trigger) {
-      if (menu.style.display === 'block' && !menu.contains(e.target) && !trigger.contains(e.target)) {
-        menu.style.display = 'none';
+  if (toggleBtn) toggleBtn.addEventListener('click', (e) => { e.preventDefault(); doSidebarToggle(); });
+  if (collapseTrigger) collapseTrigger.addEventListener('click', (e) => { e.preventDefault(); doSidebarToggle(); });
+  if (brandIcon) {
+    brandIcon.addEventListener('click', (e) => {
+      if (document.documentElement.classList.contains('sidebar-collapsed') ||
+          document.body?.classList.contains('sidebar-collapsed')) {
+        e.preventDefault();
+        doSidebarToggle();
       }
-    }
-  });
-
-  window.updateEmployeeList = function () {
-    const desig = document.getElementById('teamDesignationSelect').value;
-    const emptyMsg = document.getElementById('employeeMenuEmpty');
-    const menuList = document.getElementById('employeeMenuList');
-    const selectText = document.getElementById('selectedEmployeesText');
-
-    if (!desig) {
-      emptyMsg.style.display = 'block';
-      menuList.style.display = 'none';
-      selectText.textContent = 'Select employees...';
-      return;
-    }
-
-    emptyMsg.style.display = 'none';
-    menuList.style.display = 'block';
-    selectText.textContent = 'Select employees...';
-
-    const employees = EMPLOYEE_DB[desig] || [];
-    menuList.innerHTML = employees.map(emp => `
-      <label style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; transition: background 0.1s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-        <input type="checkbox" value="${emp}" class="emp-checkbox" onchange="window.handleEmployeeSelectionChange()" style="accent-color: #1837d4;">
-        <span style="font-size: 0.85rem; color: #334155;">${emp}</span>
-      </label>
-    `).join('');
-  };
-
-  window.handleEmployeeSelectionChange = function() {
-    const checkboxes = document.querySelectorAll('.emp-checkbox:checked');
-    const selected = Array.from(checkboxes).map(cb => cb.value);
-    const selectText = document.getElementById('selectedEmployeesText');
-    
-    if (selected.length === 0) {
-      selectText.textContent = 'Select employees...';
-    } else {
-      selectText.textContent = selected.join(', ');
-    }
-  };
-
-  window.addTeamMemberRow = function() {
-    const desig = document.getElementById('teamDesignationSelect').value;
-    const count = parseInt(document.getElementById('teamPositionCount').value) || 0;
-    const checkboxes = document.querySelectorAll('.emp-checkbox:checked');
-    const selectedEmps = Array.from(checkboxes).map(cb => cb.value);
-
-    if (!desig || count < 1) {
-      alert('Please select a designation and enter at least 1 position.');
-      return;
-    }
-
-    currentAssignedTeam.push({
-      designation: desig,
-      positions: count,
-      employees: selectedEmps
     });
+  }
 
-    // Reset form
-    document.getElementById('teamDesignationSelect').value = '';
-    document.getElementById('teamPositionCount').value = '1';
-    window.updateEmployeeList();
-
-    window.renderAssignedTeamTable();
-  };
-
-  window.removeTeamMemberRow = function(index) {
-    currentAssignedTeam.splice(index, 1);
-    window.renderAssignedTeamTable();
-  };
-
-  window.renderAssignedTeamTable = function() {
-    const tbody = document.getElementById('assignedTeamTbody');
-    const summary = document.getElementById('cpTeamSummaryText');
-    
-    let totalPositions = 0;
-
-    if (currentAssignedTeam.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8; font-weight: 600;">No team members assigned yet. Use the form above to add members.</td></tr>';
-      summary.innerHTML = 'No team members added.';
-      return;
-    }
-
-    let summaryText = [];
-
-    tbody.innerHTML = currentAssignedTeam.map((item, idx) => {
-      totalPositions += item.positions;
-      summaryText.push(`${item.positions} ${item.designation}`);
-      const empDisplay = item.employees.length > 0 ? item.employees.join(', ') : '<span style="color: #94a3b8; font-style: italic;">To be assigned later</span>';
-      
-      return `
-        <tr style="border-bottom: 1px solid #f1f5f9;">
-          <td style="padding: 10px 14px; font-weight: 700; color: #1e293b;">${item.designation}</td>
-          <td style="padding: 10px 14px; text-align: center; font-weight: 800; color: #1837d4;">${item.positions}</td>
-          <td style="padding: 10px 14px; font-size: 0.82rem; color: #475569;">${empDisplay}</td>
-          <td style="padding: 10px 14px; text-align: center;">
-            <button type="button" onclick="window.removeTeamMemberRow(${idx})" style="background: #fef2f2; color: #ef4444; border: none; width: 28px; height: 28px; border-radius: 6px; cursor: pointer;" title="Remove">
-              <i class="pi pi-trash"></i>
-            </button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    summary.innerHTML = `${summaryText.join(', ')} (Total ${totalPositions} Positions)`;
-  };
-
-  window.saveTeamForSelectedProject = function () {
-    const sel = document.getElementById('cpTeamProjectSelect');
-    const selectedProjectId = sel?.value;
-
-    if (!selectedProjectId) {
-      alert('Please select a project to save team.');
-      return;
-    }
-
-    const project = Store.getProjects().find(p => p.id === selectedProjectId);
-    if (!project) return;
-
-    let sa = 0, ra = 0, fel = 0, inv = 0, total = 0;
-    
-    currentAssignedTeam.forEach(item => {
-      total += item.positions;
-      if (item.designation.includes('Senior')) sa += item.positions;
-      else if (item.designation.includes('Associate')) ra += item.positions;
-      else if (item.designation.includes('Fellow')) fel += item.positions;
-      else inv += item.positions;
+  // Top User Dropdown with Logout
+  const userDropBtn = document.getElementById('topUserDropdownBtn');
+  const userDropMenu = document.getElementById('topUserDropdownMenu');
+  if (userDropBtn && userDropMenu) {
+    userDropBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      userDropMenu.style.display = userDropMenu.style.display === 'block' ? 'none' : 'block';
     });
+    document.addEventListener('click', () => { userDropMenu.style.display = 'none'; });
+  }
 
-    project.team = {
-      advisor: sa, ra, fellow: fel, investigators: inv, totalMembers: total, assignedDetails: currentAssignedTeam
-    };
-
-    Store.updateProject(project);
-    showToast(`Team of ${total} members saved for ${project.name}!`);
-    window.switchProjectTab('list');
-  };
+  // Intercept Sidebar menu clicks if switching between views on same page
+  if (navCreateProject) {
+    navCreateProject.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.switchView('list');
+    });
+  }
+  if (navAddBudget) {
+    navAddBudget.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.switchView('budget', activeProjectId || 'ABC');
+    });
+  }
 
   // ══════════════════════════════════════════════
   //  MODAL: ASSIGN TEAM MEMBERS / ADD ASSIGNEE (#assigneeModal)
   // ══════════════════════════════════════════════
+  const EMPLOYEE_DB = {
+    'Senior Advisor': ['Anis', 'Kiran', 'Dr. Alok Verma', 'Prof. Gupta'],
+    'Research Associate': ['Priya Verma', 'Rahul Sharma', 'Ankit Jain', 'Sneha Patel', 'Priya Patel', 'Kavita Joshi'],
+    'Fellow': ['Rohan Sharma', 'Deepak Chouhan', 'Manish Verma', 'Sunita Meena'],
+    'Field Investigator': ['Rajesh Kumar', 'Sunita Meena', 'Vikas Tiwari', 'Anita Das', 'Gaurav Yadav', 'Amit Sharma', 'Neha Saxena', 'Pooja Tiwari']
+  };
+
   let modalCurrentAssignedTeam = [];
 
   window.openAssigneeModal = function (projectId = null) {
@@ -1060,760 +1322,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     Store.updateProject(project);
 
-    // Seed the 5 default research milestones for this project (idempotent — skipped if already exist)
-    const seeded = Store.createDefaultMilestones(project.id, project.name);
-    const milestoneMsg = seeded.length > 0
-      ? ` ${seeded.length} default milestones created.`
-      : '';
+    // Also sync milestones if helper exists
+    if (typeof Store.createDefaultMilestones === 'function') {
+      Store.createDefaultMilestones(project.id, project.name);
+    }
 
-    showToast(`Team assignees saved for "${project.name}"!${milestoneMsg}`);
+    showToast(`Team assignees saved for "${project.name}"!`);
     window.closeAssigneeModal();
     renderProjectsListTable();
   };
 
   // Close the modal employee dropdown when clicking outside
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', function (e) {
     const menu = document.getElementById('modalEmployeeCheckboxMenu');
     const trigger = document.getElementById('modalEmployeeDropdownTrigger');
     if (menu && trigger) {
       if (menu.style.display === 'block' && !menu.contains(e.target) && !trigger.contains(e.target)) {
         menu.style.display = 'none';
       }
-    }
-  });
-
-  // ══════════════════════════════════════════════
-  //  TAB 2: ADD BUDGET FLOW (SCREENSHOT 2 & 3)
-  // ══════════════════════════════════════════════
-  const BUDGET_CATEGORIES_MAP = {
-    'HR': [
-      'Fellow',
-      'Research Associate',
-      'Field investigator',
-      'Consultant',
-      'Subject matter expert'
-    ],
-    'Travel Allowances': [
-      'Fellow Airfare',
-      'Local travel'
-    ],
-    'Stay arrangement': [
-      'Fellow',
-      'Research Associate',
-      'Field investigator',
-      'Consultant',
-      'Subject matter expert'
-    ],
-    'Others': [
-      'Stakeholder consultation and workshop',
-      'Printing & Publication',
-      'Contingency'
-    ]
-  };
-
-  let currentBudgetProject = null;
-  let currentBudgetLineItems = [];
-  let budgetSortDirection = {};
-
-  function formatCurrencyRupees(val) {
-    if (val === '-' || val === null || typeof val === 'undefined') return '-';
-    if (typeof val === 'string' && val.includes('%')) return val;
-    if (typeof val === 'string' && val.startsWith('₹')) return val;
-    const num = parseFloat(val);
-    if (isNaN(num)) return val;
-    if (num % 1 !== 0) {
-      return '₹ ' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-    return '₹ ' + Number(num).toLocaleString('en-IN');
-  }
-
-  function ensureOverheadAtEnd(items) {
-    if (!items || items.length <= 1) return items;
-    const ovhIndex = items.findIndex(it => it && it.category && it.category.toLowerCase().includes('overhead'));
-    if (ovhIndex !== -1 && ovhIndex !== items.length - 1) {
-      const [ovhItem] = items.splice(ovhIndex, 1);
-      items.push(ovhItem);
-    }
-    return items;
-  }
-
-  function recalculateInstitutionalOverheads() {
-    let directTotal = 0;
-    currentBudgetLineItems.forEach(it => {
-      if (!it.category.toLowerCase().includes('overhead')) {
-        directTotal += (parseFloat(it.amount) || 0);
-      }
-    });
-
-    let ovhItem = currentBudgetLineItems.find(it => it.category.toLowerCase().includes('overhead'));
-    if (!ovhItem) {
-      ovhItem = {
-        id: 'bli-overheads',
-        category: 'Institutional Overheads Cost',
-        subcategory: 'Fixed Overheads (15%)',
-        quantity: '-',
-        duration: '-',
-        unitType: 'Percentage (%)',
-        costPerUnit: '15%',
-        amount: directTotal > 0 ? Math.round(directTotal * 0.15) : 0,
-        badgeText: '15% Fixed'
-      };
-      currentBudgetLineItems.push(ovhItem);
-    } else {
-      const pct = parseFloat(String(ovhItem.costPerUnit || '15%').replace('%', '')) || 15;
-      ovhItem.amount = directTotal > 0 ? Math.round(directTotal * (pct / 100)) : 0;
-    }
-
-    // Institutional overhead must ALWAYS stay as the last item in the budget
-    ensureOverheadAtEnd(currentBudgetLineItems);
-  }
-
-  function getNormalizedProjectBudgetItems(project) {
-    if (!project) return [];
-    let items = [];
-    if (project.budgetItems && Array.isArray(project.budgetItems) && project.budgetItems.length > 0) {
-      items = JSON.parse(JSON.stringify(project.budgetItems));
-    } else if (project.budgetHeads && Array.isArray(project.budgetHeads) && project.budgetHeads.length > 0) {
-      project.budgetHeads.forEach(bh => {
-        let cleanCategory = (bh.name || '').replace(/\s*\([A-Z0-9-]+\)\s*$/gi, '').trim();
-        if (cleanCategory.toLowerCase().includes('human resource') || cleanCategory === 'HR') cleanCategory = 'HR';
-        else if (cleanCategory.toLowerCase().includes('travel')) cleanCategory = 'Travel Allowances';
-        else if (cleanCategory.toLowerCase().includes('stay')) cleanCategory = 'Stay arrangement';
-        else if (!cleanCategory.toLowerCase().includes('overhead')) cleanCategory = 'Others';
-
-        if (bh.mode === 'detailed' && bh.subItems && bh.subItems.length > 0) {
-          bh.subItems.forEach(si => {
-            items.push({
-              id: 'bli-' + Math.random().toString(36).substr(2, 9),
-              category: cleanCategory,
-              subcategory: si.particular || '-',
-              quantity: si.units || '-',
-              duration: si.period || '-',
-              unitType: si.unitType || 'Month',
-              costPerUnit: si.costPerUnit ? `₹ ${Number(si.costPerUnit).toLocaleString('en-IN')}` : '-',
-              amount: si.total || (si.units * si.period * si.costPerUnit) || 0,
-              badgeText: null
-            });
-          });
-        } else if (bh.mode === 'lumpSum' && (bh.lumpSumAmount > 0 || (bh.subItems && bh.subItems.length === 0))) {
-          items.push({
-            id: 'bli-' + Math.random().toString(36).substr(2, 9),
-            category: cleanCategory,
-            subcategory: '-',
-            quantity: '-',
-            duration: '-',
-            unitType: 'Lump Sum',
-            costPerUnit: '-',
-            amount: bh.lumpSumAmount || 0,
-            badgeText: null
-          });
-        }
-      });
-    }
-
-    // Ensure "Institutional Overheads Cost" is present by default for EVERY project!
-    let directTotal = 0;
-    items.forEach(it => {
-      if (!it.category.toLowerCase().includes('overhead')) {
-        directTotal += (parseFloat(it.amount) || 0);
-      }
-    });
-
-    const pct = (project.budgetSummary && project.budgetSummary.overheadsPct) ? project.budgetSummary.overheadsPct : 15;
-    const existingOvh = items.find(it => it.category.toLowerCase().includes('overhead'));
-
-    if (!existingOvh) {
-      const ovhAmount = (project.budgetSummary && project.budgetSummary.overheadsAmount && project.budgetSummary.overheadsAmount > 0)
-        ? project.budgetSummary.overheadsAmount
-        : (directTotal > 0 ? Math.round(directTotal * (pct / 100)) : 0);
-
-      items.push({
-        id: 'bli-overheads',
-        category: 'Institutional Overheads Cost',
-        subcategory: 'Fixed Overheads (15%)',
-        quantity: '-',
-        duration: '-',
-        unitType: 'Percentage (%)',
-        costPerUnit: `${pct}%`,
-        amount: ovhAmount,
-        badgeText: `${pct}% Fixed`
-      });
-    } else {
-      existingOvh.category = 'Institutional Overheads Cost';
-      existingOvh.subcategory = 'Fixed Overheads (15%)';
-      existingOvh.unitType = 'Percentage (%)';
-      existingOvh.costPerUnit = `${pct}%`;
-      existingOvh.badgeText = `${pct}% Fixed`;
-      if (existingOvh.amount === 0 && directTotal > 0) {
-        existingOvh.amount = Math.round(directTotal * (pct / 100));
-      }
-    }
-
-    // Institutional overhead must ALWAYS stay as the last item in the budget
-    ensureOverheadAtEnd(items);
-    return items;
-  }
-
-  function populateBudgetFlowProjectSelect(selectedId = null) {
-    const sel = document.getElementById('cpBudgetProjectSelect');
-    if (!sel) return;
-
-    const projects = Store.getProjects();
-    if (!projects || projects.length === 0) return;
-
-    let optionsHtml = '';
-    projects.forEach(p => {
-      const isSel = (selectedId && selectedId === p.id) ? 'selected' : '';
-      optionsHtml += `<option value="${p.id}" ${isSel}>${p.name}</option>`;
-    });
-
-    sel.innerHTML = optionsHtml;
-
-    const activeId = selectedId || (projects[0] ? projects[0].id : null);
-    if (activeId) {
-      sel.value = activeId;
-      window.handleBudgetProjectChange(activeId);
-    }
-  }
-
-  window.handleBudgetProjectChange = function (selectedId) {
-    const project = Store.getProjects().find(p => p.id === selectedId);
-    if (!project) return;
-
-    currentBudgetProject = project;
-
-    // Update context pill
-    const pill = document.getElementById('budgetProjectContextPill');
-    if (pill) {
-      pill.innerHTML = `
-        <span style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; border: 1px solid #bae6fd;">
-          <i class="pi pi-calendar" style="font-size: 11px; margin-right: 4px;"></i>${project.financialYear || '2026–2027'}
-        </span>
-        <span style="background: #eff6ff; color: #1837d4; padding: 4px 10px; border-radius: 6px; border: 1.5px solid #bfdbfe;">
-          <i class="pi pi-clock" style="font-size: 11px; margin-right: 4px;"></i>${project.durationMonths || 12} Months
-        </span>
-      `;
-    }
-
-    // Reset line items form
-    window.resetBudgetLineItemForm();
-
-    // Load line items (with Institutional Overheads Cost guaranteed by default)
-    currentBudgetLineItems = getNormalizedProjectBudgetItems(project);
-    renderBudgetLineItemsTable();
-  };
-
-  window.onBudgetCategoryChange = function (catName) {
-    const subSel = document.getElementById('bLineSubcategory');
-    if (!subSel) return;
-
-    const subcats = BUDGET_CATEGORIES_MAP[catName] || [];
-    if (subcats.length === 0) {
-      subSel.innerHTML = '<option value="">— Select Sub Category —</option>';
-    } else {
-      subSel.innerHTML = '<option value="">— Select Sub Category —</option>' +
-        subcats.map(s => `<option value="${s}">${s}</option>`).join('');
-    }
-
-    const unitSel = document.getElementById('bLineUnitType');
-    if (unitSel) {
-      if (catName === 'HR') {
-        unitSel.value = 'Month';
-      } else if (catName === 'Stay arrangement') {
-        unitSel.value = 'Night';
-      } else if (catName === 'Travel Allowances') {
-        unitSel.value = 'Person';
-      } else if (catName === 'Others') {
-        unitSel.value = 'Lump Sum';
-      }
-    }
-
-    window.calcLineEstimatedAmount();
-  };
-
-  window.calcLineEstimatedAmount = function () {
-    const qVal = parseFloat(document.getElementById('bLineQuantity')?.value);
-    const dVal = parseFloat(document.getElementById('bLineDuration')?.value);
-    const costRaw = (document.getElementById('bLineCostPerUnit')?.value || '').trim();
-    const estInput = document.getElementById('bLineEstimatedAmount');
-    if (!estInput) return;
-
-    if (!costRaw) return;
-
-    // Check if percentage
-    if (costRaw.includes('%')) {
-      const pct = parseFloat(costRaw.replace('%', ''));
-      if (!isNaN(pct) && currentBudgetLineItems.length > 0) {
-        let subtotal = 0;
-        currentBudgetLineItems.forEach(i => {
-          if (!i.category.toLowerCase().includes('overhead')) subtotal += (parseFloat(i.amount) || 0);
-        });
-        estInput.value = (subtotal * (pct / 100)).toFixed(2);
-      }
-      return;
-    }
-
-    const cleanCost = parseFloat(costRaw.replace(/[^\d.-]/g, ''));
-    if (isNaN(cleanCost)) return;
-
-    const q = isNaN(qVal) || qVal <= 0 ? 1 : qVal;
-    
-    // Auto calculate Quantity * Cost (or Quantity * Duration * Cost if duration is provided)
-    let total = 0;
-    if (!isNaN(dVal) && dVal > 0) {
-      total = Math.round(q * dVal * cleanCost);
-    } else {
-      total = Math.round(q * cleanCost);
-    }
-    estInput.value = total;
-  };
-
-  window.resetBudgetLineItemForm = function () {
-    const catSel = document.getElementById('bLineCategory');
-    const subSel = document.getElementById('bLineSubcategory');
-    const qInp = document.getElementById('bLineQuantity');
-    const dInp = document.getElementById('bLineDuration');
-    const uSel = document.getElementById('bLineUnitType');
-    const cInp = document.getElementById('bLineCostPerUnit');
-    const eInp = document.getElementById('bLineEstimatedAmount');
-
-    if (catSel) catSel.value = '';
-    if (subSel) subSel.innerHTML = '<option value="">Select Category first</option>';
-    if (qInp) qInp.value = '';
-    if (dInp) dInp.value = '';
-    if (uSel) uSel.value = '';
-    if (cInp) cInp.value = '';
-    if (eInp) eInp.value = '';
-  };
-
-  window.addBudgetLineItem = function () {
-    const catSel = document.getElementById('bLineCategory');
-    const subSel = document.getElementById('bLineSubcategory');
-    const qInp = document.getElementById('bLineQuantity');
-    const dInp = document.getElementById('bLineDuration');
-    const uSel = document.getElementById('bLineUnitType');
-    const cInp = document.getElementById('bLineCostPerUnit');
-    const eInp = document.getElementById('bLineEstimatedAmount');
-
-    const category = catSel?.value?.trim();
-    if (!category) {
-      alert('Please select a Category.');
-      catSel?.focus();
-      return;
-    }
-
-    const subcategory = subSel?.value?.trim() || '-';
-    const quantity = qInp?.value ? parseFloat(qInp.value) : '-';
-    const duration = dInp?.value ? parseFloat(dInp.value) : '-';
-    const unitType = uSel?.value?.trim() || '-';
-    const costPerUnit = cInp?.value?.trim() || '-';
-    const amountVal = parseFloat(eInp?.value);
-
-    if (isNaN(amountVal) || amountVal < 0) {
-      alert('Please enter a valid Estimated Amount (₹).');
-      eInp?.focus();
-      return;
-    }
-
-    let badgeText = null;
-    if (category.toLowerCase().includes('overhead') || (typeof costPerUnit === 'string' && costPerUnit.includes('%'))) {
-      badgeText = (typeof costPerUnit === 'string' && costPerUnit.includes('%')) ? `${costPerUnit} Fixed` : 'Fixed';
-    }
-
-    const newItem = {
-      id: 'bli-' + Date.now(),
-      category,
-      subcategory,
-      quantity,
-      duration,
-      unitType,
-      costPerUnit,
-      amount: amountVal,
-      badgeText
-    };
-
-    // Institutional overhead should always stay as the last item in the budget:
-    // Insert new item before overhead item if present
-    const ovhIndex = currentBudgetLineItems.findIndex(it => it && it.category && it.category.toLowerCase().includes('overhead'));
-    if (ovhIndex !== -1) {
-      currentBudgetLineItems.splice(ovhIndex, 0, newItem);
-    } else {
-      currentBudgetLineItems.push(newItem);
-    }
-
-    recalculateInstitutionalOverheads();
-    renderBudgetLineItemsTable();
-    window.resetBudgetLineItemForm();
-    showToast(`Added line item: ${category} (${formatCurrencyRupees(amountVal)})`);
-  };
-
-  window.removeBudgetLineItem = function (idx) {
-    if (idx >= 0 && idx < currentBudgetLineItems.length) {
-      const item = currentBudgetLineItems[idx];
-      if (item.category.toLowerCase().includes('overhead')) {
-        alert('"Institutional Overheads Cost" is standard and required by default for every project.');
-        return;
-      }
-      currentBudgetLineItems.splice(idx, 1);
-      recalculateInstitutionalOverheads();
-      renderBudgetLineItemsTable();
-    }
-  };
-
-  window.clearAllCurrentBudgetItems = function () {
-    if (currentBudgetLineItems.length === 0) return;
-    if (confirm('Are you sure you want to clear all budget line items?')) {
-      currentBudgetLineItems = [
-        {
-          id: 'bli-overheads',
-          category: 'Institutional Overheads Cost',
-          subcategory: 'Fixed Overheads (15%)',
-          quantity: '-',
-          duration: '-',
-          unitType: 'Percentage (%)',
-          costPerUnit: '15%',
-          amount: 0,
-          badgeText: '15% Fixed'
-        }
-      ];
-      renderBudgetLineItemsTable();
-      showToast('Budget items cleared. Institutional Overheads Cost retained.');
-    }
-  };
-
-  window.sortBudgetLineItems = function (columnKey) {
-    budgetSortDirection[columnKey] = !budgetSortDirection[columnKey];
-    const isAsc = budgetSortDirection[columnKey];
-
-    // Separate regular items and overhead items so overhead ALWAYS stays as the last item
-    const regularItems = currentBudgetLineItems.filter(it => !it.category.toLowerCase().includes('overhead'));
-    const overheadItems = currentBudgetLineItems.filter(it => it.category.toLowerCase().includes('overhead'));
-
-    regularItems.sort((a, b) => {
-      let v1 = a[columnKey];
-      let v2 = b[columnKey];
-
-      if (v1 === '-' || v1 === null || typeof v1 === 'undefined') v1 = -999999999;
-      if (v2 === '-' || v2 === null || typeof v2 === 'undefined') v2 = -999999999;
-
-      const n1 = typeof v1 === 'number' ? v1 : parseFloat(String(v1).replace(/[^\d.-]/g, '')) || 0;
-      const n2 = typeof v2 === 'number' ? v2 : parseFloat(String(v2).replace(/[^\d.-]/g, '')) || 0;
-
-      return isAsc ? n1 - n2 : n2 - n1;
-    });
-
-    currentBudgetLineItems = [...regularItems, ...overheadItems];
-    renderBudgetLineItemsTable();
-  };
-
-  function renderBudgetLineItemsTable() {
-    const tbody = document.getElementById('bLineItemsTbody');
-    const tfoot = document.getElementById('bLineItemsTfoot');
-    const badge = document.getElementById('bLineItemsCountBadge');
-
-    if (badge) {
-      badge.textContent = `${currentBudgetLineItems.length} Line ${currentBudgetLineItems.length === 1 ? 'Item' : 'Items'}`;
-    }
-
-    if (!tbody) return;
-
-    if (currentBudgetLineItems.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="9" style="text-align: center; padding: 28px 16px; color: #94a3b8; font-weight: 600;">
-            No budget detail line items added yet. Use the form above to add items to this project.
-          </td>
-        </tr>
-      `;
-      if (tfoot) tfoot.innerHTML = '';
-      return;
-    }
-
-    let totalAmount = 0;
-
-    tbody.innerHTML = currentBudgetLineItems.map((item, idx) => {
-      totalAmount += (parseFloat(item.amount) || 0);
-
-      let categoryHtml = `<div style="font-weight: 700; color: #1e293b;">${item.category}</div>`;
-      if (item.badgeText) {
-        categoryHtml += `<span style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; font-weight: 700; margin-top: 3px; display: inline-block;">${item.badgeText}</span>`;
-      }
-
-      const costFormatted = typeof item.costPerUnit === 'string' && (item.costPerUnit.includes('%') || item.costPerUnit === '-')
-        ? item.costPerUnit
-        : formatCurrencyRupees(item.costPerUnit);
-
-      return `
-        <tr style="border-bottom: 1px solid #f1f5f9; background: ${idx % 2 === 0 ? '#ffffff' : '#fafcff'}; transition: background 0.15s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${idx % 2 === 0 ? '#ffffff' : '#fafcff'}'">
-          <td style="padding: 12px 14px; text-align: center; font-weight: 700; color: #64748b;">${idx + 1}</td>
-          <td style="padding: 12px 16px;">${categoryHtml}</td>
-          <td style="padding: 12px 16px; color: #475569; font-weight: 600;">${item.subcategory || '-'}</td>
-          <td style="padding: 12px 14px; color: #334155; font-weight: 600;">${item.quantity !== undefined ? item.quantity : '-'}</td>
-          <td style="padding: 12px 14px; color: #334155; font-weight: 600;">${item.duration !== undefined ? item.duration : '-'}</td>
-          <td style="padding: 12px 14px; color: #475569;">${item.unitType || '-'}</td>
-          <td style="padding: 12px 16px; font-weight: 700; color: #1e293b;">${costFormatted}</td>
-          <td style="padding: 12px 16px; font-weight: 800; color: #1e293b;">${formatCurrencyRupees(item.amount)}</td>
-          <td style="padding: 12px 14px; text-align: center;">
-            ${item.category.toLowerCase().includes('overhead')
-              ? `<span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: #f1f5f9; color: #64748b; font-size: 13px; border: 1px solid #e2e8f0;" title="Default overhead cost (Required for every project)"><i class="pi pi-lock"></i></span>`
-              : `<button type="button" onclick="window.removeBudgetLineItem(${idx})"
-                  style="background: #ffffff; border: 1.5px solid #fee2e2; color: #ef4444; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s ease;"
-                  onmouseover="this.style.background='#fee2e2'; this.style.borderColor='#fca5a5';"
-                  onmouseout="this.style.background='#ffffff'; this.style.borderColor='#fee2e2';"
-                  title="Delete line item">
-                  <i class="pi pi-trash" style="font-size: 13px;"></i>
-                </button>`}
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    if (tfoot) {
-      tfoot.innerHTML = `
-        <tr style="border-top: 2px solid #cbd5e1; background: #f8fafc;">
-          <td colspan="7" style="padding: 14px 16px; font-size: 0.85rem; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.03em;">
-            Total Estimated Project Budget (${currentBudgetLineItems.length} Line Items)
-          </td>
-          <td style="padding: 14px 16px; font-size: 1.05rem; font-weight: 900; color: #15803d; white-space: nowrap;">
-            ${formatCurrencyRupees(totalAmount)}
-          </td>
-          <td></td>
-        </tr>
-      `;
-    }
-  }
-
-  window.saveBudgetForSelectedProject = function () {
-    if (!currentBudgetProject) {
-      alert('No project selected.');
-      return;
-    }
-
-    ensureOverheadAtEnd(currentBudgetLineItems);
-
-    let grandTotal = 0;
-    currentBudgetLineItems.forEach(i => {
-      grandTotal += (parseFloat(i.amount) || 0);
-    });
-
-    const budgetData = {
-      items: currentBudgetLineItems,
-      summary: {
-        totalEstimatedCost: grandTotal,
-        subTotal: grandTotal,
-        overheadsPct: 15,
-        overheadsAmount: 0,
-        status: 'Submitted',
-        lastSaved: new Date().toLocaleDateString('en-GB')
-      },
-      totalEstimatedCost: grandTotal
-    };
-
-    Store.updateProjectBudgetDetails(currentBudgetProject.id, budgetData);
-
-    // Also update project's sanctioned budget in store
-    const projects = Store.getProjects();
-    const p = projects.find(x => x.id === currentBudgetProject.id);
-    if (p) {
-      p.budgetSanctioned = grandTotal;
-      Store.updateProject(p);
-    }
-
-    showToast(`Budget of ${formatCurrencyRupees(grandTotal)} saved successfully for "${currentBudgetProject.name}"!`);
-    window.switchProjectTab('list');
-  };
-
-  // ══════════════════════════════════════════════
-  //  VIEW BUDGET POP-UP MODAL
-  // ══════════════════════════════════════════════
-  window.openViewBudgetModal = function (projectId) {
-    const project = Store.getProjects().find(p => p.id === projectId);
-    if (!project) return;
-
-    const modal = document.getElementById('viewBudgetModal');
-    if (!modal) return;
-
-    const titleEl = document.getElementById('viewBudgetModalProjectName');
-    const metaEl = document.getElementById('viewBudgetModalProjectMeta');
-    const kpiEl = document.getElementById('viewBudgetModalKpiRow');
-    const tbody = document.getElementById('viewBudgetModalTbody');
-    const tfoot = document.getElementById('viewBudgetModalTfoot');
-    const editBtn = document.getElementById('viewBudgetModalEditBtn');
-
-    if (titleEl) titleEl.textContent = `Project Budget: ${project.name}`;
-    if (metaEl) metaEl.textContent = `Financial Year: ${project.financialYear || '2026–2027'} | Code: ${project.id || project.code}`;
-
-    const items = getNormalizedProjectBudgetItems(project);
-    let totalAmt = 0;
-    items.forEach(i => { totalAmt += (parseFloat(i.amount) || 0); });
-
-    if (kpiEl) {
-      const budgetDisplayLakhs = (totalAmt / 100000).toFixed(2);
-      kpiEl.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Budget:</span>
-          <span style="font-size: 1.15rem; font-weight: 900; color: #15803d; background: #f0fdf4; border: 1.5px solid #bbf7d0; padding: 4px 12px; border-radius: 8px;">
-            ${formatCurrencyRupees(totalAmt)} (${budgetDisplayLakhs} Lakhs)
-          </span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 14px;">
-          <span style="font-size: 0.82rem; font-weight: 700; color: #334155; background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 6px;">
-            <i class="pi pi-list" style="color: #1837d4; margin-right: 4px;"></i>${items.length} Line Items
-          </span>
-          <span style="font-size: 0.82rem; font-weight: 700; color: #334155; background: #ffffff; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 6px;">
-            <i class="pi pi-clock" style="color: #1837d4; margin-right: 4px;"></i>${project.durationMonths || 12} Months
-          </span>
-        </div>
-      `;
-    }
-
-    if (tbody) {
-      if (items.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="8" style="text-align: center; padding: 24px; color: #94a3b8; font-weight: 600;">
-              No budget items recorded for this project yet. Click "Modify Budget" to add items.
-            </td>
-          </tr>
-        `;
-        if (tfoot) tfoot.innerHTML = '';
-      } else {
-        tbody.innerHTML = items.map((item, idx) => {
-          let categoryHtml = `<div style="font-weight: 700; color: #1e293b;">${item.category}</div>`;
-          if (item.badgeText) {
-            categoryHtml += `<span style="background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; font-weight: 700; margin-top: 3px; display: inline-block;">${item.badgeText}</span>`;
-          }
-
-          const costFormatted = typeof item.costPerUnit === 'string' && (item.costPerUnit.includes('%') || item.costPerUnit === '-')
-            ? item.costPerUnit
-            : formatCurrencyRupees(item.costPerUnit);
-
-          return `
-            <tr style="border-bottom: 1px solid #f1f5f9; background: ${idx % 2 === 0 ? '#ffffff' : '#fafcff'};">
-              <td style="padding: 10px 14px; text-align: center; font-weight: 700; color: #64748b;">${idx + 1}</td>
-              <td style="padding: 10px 16px;">${categoryHtml}</td>
-              <td style="padding: 10px 16px; color: #475569; font-weight: 600;">${item.subcategory || '-'}</td>
-              <td style="padding: 10px 14px; color: #334155; font-weight: 600;">${item.quantity !== undefined ? item.quantity : '-'}</td>
-              <td style="padding: 10px 14px; color: #334155; font-weight: 600;">${item.duration !== undefined ? item.duration : '-'}</td>
-              <td style="padding: 10px 14px; color: #475569;">${item.unitType || '-'}</td>
-              <td style="padding: 10px 16px; font-weight: 700; color: #1e293b;">${costFormatted}</td>
-              <td style="padding: 10px 16px; font-weight: 800; color: #1e293b;">${formatCurrencyRupees(item.amount)}</td>
-            </tr>
-          `;
-        }).join('');
-
-        if (tfoot) {
-          tfoot.innerHTML = `
-            <tr style="border-top: 2px solid #cbd5e1; background: #f8fafc;">
-              <td colspan="7" style="padding: 12px 16px; font-size: 0.85rem; font-weight: 800; color: #0f172a; text-transform: uppercase;">
-                Total Estimated Cost
-              </td>
-              <td style="padding: 12px 16px; font-size: 1.05rem; font-weight: 900; color: #15803d; white-space: nowrap;">
-                ${formatCurrencyRupees(totalAmt)}
-              </td>
-            </tr>
-          `;
-        }
-      }
-    }
-
-    if (editBtn) {
-      editBtn.onclick = function () {
-        window.closeViewBudgetModal();
-        window.openAddBudgetForProject(projectId);
-      };
-    }
-
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  };
-
-  window.closeViewBudgetModal = function () {
-    const modal = document.getElementById('viewBudgetModal');
-    if (modal) {
-      modal.style.display = 'none';
-      document.body.style.overflow = '';
-    }
-  };
-
-  // ══════════════════════════════════════════════
-  //  EDIT PROJECT OPTIONS MODAL (Basic details, Budget, Assignee)
-  // ══════════════════════════════════════════════
-  let currentEditProjectId = null;
-
-  window.openProjectEditOptionsModal = function (projectId) {
-    currentEditProjectId = projectId;
-    const project = Store.getProjects().find(p => p.id === projectId);
-    const titleEl = document.getElementById('editOptionsModalProjectName');
-    if (titleEl && project) {
-      titleEl.textContent = `Edit: ${project.name}`;
-    }
-
-    const modal = document.getElementById('projectEditOptionsModal');
-    if (modal) {
-      modal.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    }
-  };
-
-  window.closeProjectEditOptionsModal = function () {
-    const modal = document.getElementById('projectEditOptionsModal');
-    if (modal) {
-      modal.style.display = 'none';
-      document.body.style.overflow = '';
-    }
-  };
-
-  window.handleEditOptionSelect = function (option) {
-    const pId = currentEditProjectId;
-    window.closeProjectEditOptionsModal();
-
-    if (!pId) return;
-
-    if (option === 'basic') {
-      window.openCreateProjectModal(pId);
-    } else if (option === 'budget') {
-      window.switchProjectTab('budget', pId);
-    } else if (option === 'assignee') {
-      window.openAssigneeModal(pId);
-    }
-  };
-
-  // Modal Backdrop & Escape Key Listeners
-  const modalEl = document.getElementById('createProjectModal');
-  if (modalEl) {
-    modalEl.addEventListener('click', function (e) {
-      if (e.target === modalEl) {
-        window.closeCreateProjectModal();
-      }
-    });
-  }
-
-  const vbModalEl = document.getElementById('viewBudgetModal');
-  if (vbModalEl) {
-    vbModalEl.addEventListener('click', function (e) {
-      if (e.target === vbModalEl) {
-        window.closeViewBudgetModal();
-      }
-    });
-  }
-
-  const peoModalEl = document.getElementById('projectEditOptionsModal');
-  if (peoModalEl) {
-    peoModalEl.addEventListener('click', function (e) {
-      if (e.target === peoModalEl) {
-        window.closeProjectEditOptionsModal();
-      }
-    });
-  }
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-      window.closeCreateProjectModal();
-      window.closeViewBudgetModal();
-      window.closeTeamDetailsModal();
-      window.closeAssigneeModal();
-      window.closeProjectEditOptionsModal();
     }
   });
 
@@ -1826,9 +1352,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initial load execution
-  if (typeof initBudgetDeskControls === 'function') {
-    initBudgetDeskControls();
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      window.closeAssigneeModal();
+      window.closeAddBudgetModal();
+    }
+  });
+
+  // -------------------------------------------------------------
+  // Initial Route Load
+  // -------------------------------------------------------------
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get('view');
+  const pid = params.get('projectId') || params.get('id');
+
+  if (view === 'create') {
+    window.switchView('create');
+  } else if (view === 'budget') {
+    window.switchView('budget', pid || 'ABC');
+  } else if (view === 'edit') {
+    window.switchView('edit', pid || 'ABC');
+  } else {
+    // Default to Projects List view with avatar circles
+    window.switchView('list');
   }
-  window.switchProjectTab('list');
 });

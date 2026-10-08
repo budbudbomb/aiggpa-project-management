@@ -1109,7 +1109,7 @@ function showToast(message) {
     applySidebarState(newState);
     try {
       localStorage.setItem(COLLAPSE_KEY, newState ? 'true' : 'false');
-    } catch (e) {}
+    } catch (e) { }
     return newState;
   }
 
@@ -1121,14 +1121,14 @@ function showToast(message) {
     if (localStorage.getItem(COLLAPSE_KEY) === 'true') {
       applySidebarState(true);
     }
-  } catch (e) {}
+  } catch (e) { }
 
   document.addEventListener('DOMContentLoaded', () => {
     try {
       if (localStorage.getItem(COLLAPSE_KEY) === 'true') {
         applySidebarState(true);
       }
-    } catch (e) {}
+    } catch (e) { }
 
     // Global keyboard shortcut: Ctrl+B or Cmd+B to toggle sidebar
     document.addEventListener('keydown', (e) => {
