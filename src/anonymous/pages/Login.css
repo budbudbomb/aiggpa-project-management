@@ -1,0 +1,315 @@
+@import url('https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700;800&display=swap');
+
+/* Mukta Devanagari Font Rule for Hindi Mode */
+.lang-hi,
+.lang-hi * {
+  font-family: 'Mukta', sans-serif !important;
+}
+
+/* AIGGPA Login Page - Locked 100vh (Zero Scrollbar on Normal Screens, Auto Scroll on Short Screens <= 720px) */
+
+.aiggpa-login-bg-page {
+  height: 100vh;
+  max-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-image: url('/login_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Enable Vertical Scrollbar ONLY on short height viewports (<= 720px) to prevent content cutoff */
+@media (max-height: 720px) {
+  .aiggpa-login-bg-page {
+    height: auto;
+    min-height: 100vh;
+    max-height: none;
+    overflow-y: auto;
+    padding-bottom: 3.5rem;
+  }
+}
+
+.dark .aiggpa-login-bg-page {
+  background-image: url('/login_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Ambient CSS Light Glow Orbs */
+.aiggpa-login-glow-orb-1 {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(29, 78, 216, 0.12) 0%, rgba(37, 99, 235, 0) 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.aiggpa-login-glow-orb-2 {
+  position: absolute;
+  bottom: -10%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.1) 0%, rgba(29, 78, 216, 0) 70%);
+  filter: blur(80px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Right Glassmorphism Form Card - Mobile Optimized Padding */
+.aiggpa-form-card {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 1.5rem;
+  padding: 1.25rem 1.125rem;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+@media (min-width: 640px) {
+  .aiggpa-form-card {
+    border-radius: 1.5rem;
+    padding: 2rem;
+  }
+}
+
+.dark .aiggpa-form-card {
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(51, 65, 85, 0.7);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Balanced Royal Blue Overrides for Login Button on Login Page */
+.aiggpa-form-card button[type="submit"] {
+  background-color: #1d4ed8 !important;
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 20px -5px rgba(29, 78, 216, 0.3) !important;
+}
+
+.aiggpa-form-card button[type="submit"]:hover {
+  background-color: #1e40af !important;
+  background: #1e40af !important;
+  border-color: #1e40af !important;
+}
+
+/* PrimeReact Checkbox Royal Blue Override */
+.aiggpa-form-card .p-checkbox .p-checkbox-box.p-highlight {
+  background: #1d4ed8 !important;
+  border-color: #1d4ed8 !important;
+}
+
+.aiggpa-form-card .p-checkbox .p-checkbox-box:hover {
+  border-color: #1d4ed8 !important;
+}
+
+/* Floating Toast Notification */
+.login-toast-error {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  border-radius: 0.875rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.25);
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 420px;
+}
+
+.dark .login-toast-error {
+  background-color: rgba(69, 10, 10, 0.95);
+  border-color: #991b1b;
+  color: #fca5a5;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   5 LOGIN PAGE LAYOUTS & INFOGRAPHIC CSS STYLES
+   ========================================================================== */
+
+/* ERP Modules Infographic Container & Pills (Layout 2) */
+.aiggpa-modules-infographic-container {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 1.25rem;
+  padding: 0.875rem 1rem;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
+  transition: all 0.3s ease;
+}
+
+.dark .aiggpa-modules-infographic-container {
+  background: rgba(15, 23, 42, 0.75);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
+}
+
+.aiggpa-module-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.45rem 0.625rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: default;
+}
+
+.dark .aiggpa-module-pill {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(51, 65, 85, 0.8);
+}
+
+.aiggpa-module-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -4px rgba(37, 99, 235, 0.18);
+  background: rgba(255, 255, 255, 1);
+}
+
+.dark .aiggpa-module-pill:hover {
+  background: rgba(30, 41, 59, 1);
+  box-shadow: 0 6px 16px -4px rgba(0, 0, 0, 0.5);
+}
+
+/* Hero Banner & 3D Ecosystem (Layout 3) */
+.aiggpa-hero-banner {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  border-radius: 1.125rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 12px 30px -5px rgba(29, 78, 216, 0.2);
+  background: #0f172a;
+}
+
+@media (min-width: 1280px) {
+  .aiggpa-hero-banner {
+    height: 155px;
+  }
+}
+
+.aiggpa-hero-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aiggpa-hero-banner:hover .aiggpa-hero-banner-img {
+  transform: scale(1.04);
+}
+
+.aiggpa-hero-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.15) 0%, rgba(15, 23, 42, 0.88) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0.875rem 1.125rem;
+}
+
+/* Pillar Card Grid (Layout 3) */
+.aiggpa-pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.625rem;
+}
+
+.aiggpa-pillar-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 0.875rem;
+  padding: 0.625rem 0.75rem;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .aiggpa-pillar-card {
+  background: rgba(15, 23, 42, 0.88);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.aiggpa-pillar-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px -4px rgba(29, 78, 216, 0.2);
+  border-color: rgba(59, 130, 246, 0.6);
+}
+
+.aiggpa-module-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.625rem;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.dark .aiggpa-module-chip {
+  background: rgba(30, 41, 59, 0.75);
+  border-color: rgba(51, 65, 85, 0.75);
+}
+
+.aiggpa-module-chip:hover,
+.aiggpa-module-chip.active {
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.2);
+}
+
+.dark .aiggpa-module-chip:hover,
+.dark .aiggpa-module-chip.active {
+  background: rgba(30, 41, 59, 1);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.3);
+}
+

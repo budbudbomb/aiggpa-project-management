@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "types": ["vite/client"],
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Path Aliases */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "shared/*": ["src/shared/*"],
+      "config/*": ["src/config/*"],
+      "apis/*": ["src/apis/*"],
+      "services/*": ["src/services/*"],
+      "types/*": ["src/types/*"],
+      "demo/*": ["src/demo/*"],
+      "auth": ["src/auth/index.tsx"],
+      "auth/*": ["src/auth/*"],
+      "anonymous": ["src/anonymous/index.tsx"],
+      "anonymous/*": ["src/anonymous/*"]
+    }
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,1362 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-2xs: 0.625rem;
+  --font-2xs--line-height: 0.875rem;
+}
+
+/* ── Universal Font Family: Inter Across All Pages and Elements ── */
+:root {
+  --font-sans: 'Inter', sans-serif;
+}
+
+html,
+body,
+#root {
+  font-family: 'Inter', sans-serif;
+  color: #0f172a;
+}
+
+*,
+*::before,
+*::after {
+  font-family: 'Inter', sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* ── Icon Fonts Protection: Ensure icon font families and pseudo-elements are never overridden by Inter ── */
+.pi,
+.pi::before,
+.pi::after,
+[class^="pi-"],
+[class*=" pi-"],
+[class^="pi-"]::before,
+[class*=" pi-"]::before {
+  font-family: 'primeicons' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  display: inline-block;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Global Typography Hierarchy (Unified Across All Views) ── */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: 'Inter', sans-serif !important;
+  font-style: normal !important;
+  color: #0f172a !important;
+  letter-spacing: -0.015em;
+  text-decoration: none !important;
+}
+
+/* Page Title: Inter, 600, ~24px (1.5rem), #0F172A */
+h1, .h1, .page-title {
+  font-size: 1.5rem !important; /* 24px */
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  color: #0f172a !important;
+  margin-top: 0;
+}
+
+/* Section Heading: Inter, 600, 18px (1.125rem), #0F172A */
+h2, .h2, .section-title, .section-heading {
+  font-size: 1.125rem !important; /* 18px */
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+  color: #0f172a !important;
+}
+
+/* Card Heading: Inter, 600, 16px (1rem), #0F172A */
+h3, .h3, .card-title, .card-heading {
+  font-size: 1rem !important; /* 16px */
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  color: #0f172a !important;
+}
+
+/* Sub-card Heading: Inter, 600, 14px (0.875rem), #0F172A */
+h4, .h4, .subcard-title {
+  font-size: 0.875rem !important; /* 14px */
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  color: #0f172a !important;
+}
+
+/* Labels: Inter, 500, 14px, #475569 */
+label, .form-label, .control-label {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.875rem !important; /* 14px */
+  font-weight: 500 !important;
+  color: #475569 !important;
+  line-height: 1.4 !important;
+  font-style: normal !important;
+}
+
+/* Body Text: Inter, 400, 14px, #475569 */
+p, .body-text, .text-body {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.875rem !important; /* 14px */
+  font-weight: 400 !important;
+  color: #475569 !important;
+  line-height: 1.5 !important;
+  font-style: normal !important;
+}
+
+/* Helper / Supporting Text: Inter, 400, 12-13px, #64748B */
+.helper-text, .support-text, .text-muted, .page-subtitle, .page-description {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.8125rem !important; /* 13px */
+  font-weight: 400 !important;
+  color: #64748b !important;
+  line-height: 1.4 !important;
+  font-style: normal !important;
+}
+
+/* Headings should NOT be italic anywhere in the application */
+h1 *, h2 *, h3 *, h4 *, h5 *, h6 * {
+  font-style: normal !important;
+  text-decoration: none !important;
+}
+
+/* Force Inter on ALL PrimeReact UI components and form elements across all views */
+.p-component,
+.p-component *,
+.p-inputtext,
+.p-dropdown,
+.p-dropdown *,
+.p-dropdown-panel *,
+.p-multiselect,
+.p-multiselect-panel *,
+.p-calendar,
+.p-datepicker *,
+.p-inputnumber,
+.p-inputnumber *,
+.p-button,
+.p-button *,
+.p-datatable,
+.p-datatable *,
+.p-paginator,
+.p-paginator *,
+.p-dialog,
+.p-dialog *,
+.p-tabview,
+.p-tabview *,
+.p-card,
+.p-card *,
+.p-panel,
+.p-panel *,
+.p-menu,
+.p-menu *,
+.p-sidebar,
+.p-sidebar *,
+.p-tooltip,
+.p-badge,
+.p-tag {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Mukta Devanagari font retained specifically for Hindi language mode */
+.lang-hi,
+.lang-hi * {
+  font-family: 'Mukta', 'Inter', sans-serif !important;
+}
+
+/* ── Modern Thin Scrollbar Customization (Always visible, highlighted on hover) ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-primary) 30%, transparent)
+    transparent;
+}
+
+*:hover {
+  scrollbar-color: color-mix(in srgb, var(--color-primary) 60%, transparent)
+    transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+  transition: background-color 0.2s ease;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-primary) !important;
+}
+
+/* Sidebar Custom Slim Scrollbar Utilities */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-primary) 25%, transparent)
+    transparent;
+}
+.scrollbar-thin:hover {
+  scrollbar-color: color-mix(in srgb, var(--color-primary) 60%, transparent)
+    transparent;
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  border-radius: 9999px;
+}
+.scrollbar-thin:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-primary) 60%, transparent);
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary) !important;
+}
+
+.scrollbar-thin-white {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+.scrollbar-thin-white:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.45) transparent;
+}
+.scrollbar-thin-white::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.scrollbar-thin-white::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin-white::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+}
+.scrollbar-thin-white:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.45);
+}
+.scrollbar-thin-white::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* Scrollbar None Utility to hide scrollbars while preserving scroll functionality */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+:root {
+  /* =========================================================================
+     AIGGPA UI Theme — Mandatory Design System Tokens
+     ========================================================================= */
+  --primary-indigo: #2D247D;
+  --primary-indigo-dark: #1E1B4B;
+  --primary-indigo-hover: #17143B;
+
+  --primary-blue: #2563EB;
+  --primary-blue-hover: #1D4ED8;
+  --primary-blue-light: #EFF6FF;
+  --primary-blue-border: #BFDBFE;
+
+  --page-bg: #F3F4F8;
+  --surface: #FFFFFF;
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --text-light: #94A3B8;
+
+  --border: #E2E8F0;
+  --border-subtle: #F1F5F9;
+
+  --success: #059669;
+  --success-bg: #ECFDF5;
+  --success-soft: #D1FAE5;
+
+  --warning: #D97706;
+  --warning-bg: #FFFBEB;
+  --warning-soft: #FEF3C7;
+
+  --error: #DC2626;
+  --error-bg: #FEF2F2;
+  --error-soft: #FEE2E2;
+
+  --info: #2563EB;
+  --info-bg: #EFF6FF;
+
+  /* ERP & Application Canvas Tokens */
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-primary-light: #EFF6FF;
+  --color-primary-ring: rgba(37, 99, 235, 0.15);
+
+  --bg-canvas: #F3F4F8;
+  --bg-surface: #FFFFFF;
+  --bg-surface-subtle: #F8FAFC;
+  --border-subtle: #F1F5F9;
+  --border-card: #E2E8F0;
+  --text-navy: #0F172A;
+  --text-slate: #64748B;
+
+  /* Refined 12px Squircle Radius */
+  --radius-preset: 0.75rem;
+
+  /* Layered Shadow System */
+  --shadow-subtle: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+  --shadow-hover: 0 4px 14px -2px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.02);
+  --shadow-elevated: 0 10px 25px -5px rgba(15, 23, 42, 0.07), 0 8px 10px -6px rgba(15, 23, 42, 0.02);
+  --shadow-overlay: 0 20px 25px -5px rgba(15, 23, 42, 0.09), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+
+  /* Clean White Enterprise Surface Tokens */
+  --glass-bg: #ffffff;
+  --glass-bg-subtle: #f8fafc;
+  --glass-border: #e2e8f0;
+  --glass-border-subtle: #f1f5f9;
+  --glass-shadow: var(--shadow-subtle);
+  --glass-shadow-hover: var(--shadow-hover);
+  --glass-blur: blur(8px);
+
+  /* Form Popup Panels Global Width Control */
+  --panel-min-width: auto;
+  --panel-max-width: 450px;
+}
+
+.dark {
+  --bg-canvas: #090d16;
+  --bg-surface: #0f172a;
+  --bg-surface-subtle: #1e293b;
+  --border-subtle: #1e293b;
+  --border-card: #1e293b;
+  --text-navy: #f8fafc;
+  --text-slate: #94a3b8;
+
+  --glass-bg: #0f172a;
+  --glass-bg-subtle: #1e293b;
+  --glass-border: #1e293b;
+  --glass-border-subtle: #334155;
+  --glass-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  --glass-shadow-hover: 0 6px 16px -2px rgba(0, 0, 0, 0.5);
+  --glass-blur: blur(10px);
+}
+
+/* Glassmorphism Utility Classes */
+.glass-panel {
+  background-color: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-panel-subtle {
+  background-color: var(--glass-bg-subtle);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border-subtle);
+}
+
+/* Explicit Utility for 10px Subtitle Fonts */
+.text-2xs {
+  font-size: 0.625rem !important;
+  line-height: 0.875rem !important;
+}
+
+/* Dynamic Primary Accent Color Overrides */
+.bg-indigo-800,
+.bg-indigo-700,
+.bg-indigo-600,
+.bg-indigo-500,
+.bg-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.hover\:bg-indigo-900:hover,
+.hover\:bg-indigo-800:hover,
+.hover\:bg-indigo-700:hover,
+.hover\:bg-indigo-600:hover,
+.hover\:bg-primary-hover:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+
+.text-indigo-850,
+.text-indigo-700,
+.text-indigo-600,
+.text-indigo-500,
+.text-primary {
+  color: var(--color-primary) !important;
+}
+
+.hover\:text-indigo-600:hover,
+.hover\:text-primary:hover {
+  color: var(--color-primary) !important;
+}
+
+.border-indigo-800,
+.border-indigo-700,
+.border-indigo-600,
+.border-indigo-500,
+.border-primary {
+  border-color: var(--color-primary) !important;
+}
+
+.border-primary-light,
+.border-primary\/20 {
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 30%,
+    transparent
+  ) !important;
+}
+.dark .border-primary-light,
+.dark .border-primary\/20 {
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 40%,
+    transparent
+  ) !important;
+}
+
+.bg-primary-light,
+.bg-primary\/10 {
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary) 12%,
+    transparent
+  ) !important;
+}
+.dark .bg-primary-light,
+.dark .bg-primary\/10 {
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary) 22%,
+    transparent
+  ) !important;
+}
+
+.bg-primary-lighter {
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary) 45%,
+    #ffffff
+  ) !important;
+}
+.dark .bg-primary-lighter {
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary) 60%,
+    transparent
+  ) !important;
+}
+
+/* Sidebar Soft Primary Tint Variant */
+.bg-sidebar-tinted {
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary) 18%,
+    #ffffff
+  ) !important;
+}
+.dark .bg-sidebar-tinted {
+  background-color: color-mix(
+    in srgb,
+    var(--color-primary) 22%,
+    #090d16
+  ) !important;
+}
+
+/* Dynamic Border Radius Preset Overrides */
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl {
+  border-radius: var(--radius-preset) !important;
+}
+
+/* Custom PrimeReact Form Inputs Integration Overrides (No PrimeFlex) */
+.p-dropdown,
+.p-multiselect,
+.p-calendar {
+  @apply flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-xs transition-all duration-200 text-slate-900 dark:text-slate-100 w-full;
+  border-radius: var(--radius-preset) !important;
+}
+
+.p-dropdown:not(.p-disabled):hover,
+.p-multiselect:not(.p-disabled):hover,
+.p-calendar:not(.p-disabled):hover {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.06) !important;
+}
+
+.p-dropdown:not(.p-disabled).p-focus,
+.p-multiselect:not(.p-disabled).p-focus,
+.p-calendar:not(.p-disabled).p-focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent) !important;
+  outline: none;
+}
+
+.p-dropdown .p-dropdown-label {
+  @apply px-3.5 py-2 text-sm font-medium text-slate-800 dark:text-slate-200 flex-1 truncate text-left;
+}
+
+.p-dropdown,
+.p-multiselect {
+  position: relative !important;
+  width: 100% !important;
+}
+
+.p-dropdown .p-dropdown-trigger,
+.p-multiselect .p-multiselect-trigger {
+  @apply ml-auto px-3 text-slate-400 dark:text-slate-500 transition-colors cursor-pointer flex items-center justify-center shrink-0;
+}
+
+.p-dropdown .p-dropdown-trigger:hover,
+.p-multiselect .p-multiselect-trigger:hover {
+  color: var(--color-primary, #1d4ed8);
+}
+
+/* Popup Overlay Panels Standard Width & Precise Under-Input Anchor */
+.p-dropdown-panel,
+.p-multiselect-panel {
+  @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden z-50 text-slate-900 dark:text-slate-100;
+  box-sizing: border-box !important;
+  max-width: min(92vw, 460px) !important;
+}
+
+.p-dropdown > .p-dropdown-panel,
+.p-multiselect > .p-multiselect-panel {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  transform: none !important;
+  z-index: 1000 !important;
+}
+
+/* Dropdown & MultiSelect Header Filter Search Bar */
+.p-dropdown-panel .p-dropdown-header,
+.p-multiselect-panel .p-multiselect-header {
+  @apply p-2.5 bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2;
+}
+
+.p-dropdown-panel .p-dropdown-filter-container,
+.p-multiselect-panel .p-multiselect-filter-container {
+  @apply relative flex items-center w-full;
+}
+
+.p-dropdown-panel .p-dropdown-filter-container .p-dropdown-filter,
+.p-multiselect-panel .p-multiselect-filter-container .p-multiselect-filter {
+  @apply w-full pl-3 pr-8 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white shadow-2xs transition-all;
+  outline: none !important;
+}
+
+.p-dropdown-panel .p-dropdown-filter-container .p-dropdown-filter:focus,
+.p-multiselect-panel
+  .p-multiselect-filter-container
+  .p-multiselect-filter:focus {
+  border-color: var(--color-primary, #6366f1) !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15) !important;
+}
+
+.p-dropdown-panel .p-dropdown-filter-container .p-dropdown-filter-icon,
+.p-dropdown-panel .p-dropdown-filter-container .p-icon,
+.p-multiselect-panel .p-multiselect-filter-container .p-multiselect-filter-icon,
+.p-multiselect-panel .p-multiselect-filter-container .p-icon {
+  @apply absolute right-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none;
+}
+
+.p-dropdown-panel .p-dropdown-items-wrapper,
+.p-multiselect-panel .p-multiselect-items-wrapper {
+  max-height: 240px !important;
+  @apply overflow-y-auto;
+}
+
+.p-dropdown-panel .p-dropdown-items,
+.p-multiselect-panel .p-multiselect-items {
+  @apply py-1 divide-y divide-slate-100/60 dark:divide-slate-800/60;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item {
+  @apply px-3.5 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer block leading-relaxed wrap-break-word transition-colors duration-150;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item:hover,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item:hover {
+  background-color: var(--color-primary-light, rgba(29, 78, 216, 0.08)) !important;
+  color: var(--color-primary, #1d4ed8) !important;
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight,
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
+  background-color: var(--color-primary-light, rgba(29, 78, 216, 0.08)) !important;
+  color: var(--color-primary, #1d4ed8) !important;
+  font-weight: 600 !important;
+}
+
+.p-multiselect-panel .p-checkbox .p-checkbox-box {
+  @apply w-4 h-4 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 flex items-center justify-center transition-all;
+}
+
+.p-multiselect-panel .p-checkbox .p-checkbox-box.p-highlight,
+.p-multiselect-panel
+  .p-multiselect-item.p-highlight
+  .p-checkbox
+  .p-checkbox-box {
+  background-color: var(--color-primary, #4f46e5) !important;
+  border-color: var(--color-primary, #4f46e5) !important;
+  color: #ffffff !important;
+}
+
+.p-multiselect-panel .p-checkbox .p-checkbox-box .p-checkbox-icon {
+  @apply text-[10px] text-white;
+}
+
+.p-dropdown-panel .p-dropdown-empty-message,
+.p-multiselect-panel .p-multiselect-empty-message {
+  @apply px-4 py-4 text-xs font-medium text-slate-400 dark:text-slate-500 text-center;
+}
+
+/* MultiSelect Chips & Panel Comprehensive Styling System */
+.p-multiselect .p-multiselect-label {
+  @apply px-3 py-1 text-xs font-semibold text-slate-800 dark:text-slate-200 flex-1 flex items-center gap-1 flex-wrap text-left min-h-9;
+}
+
+.p-multiselect .p-multiselect-label.p-placeholder {
+  @apply text-slate-400 dark:text-slate-500 font-normal;
+}
+
+/* Chip Tokens */
+.p-multiselect .p-multiselect-token {
+  @apply px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1 transition-all;
+  background-color: var(--color-primary-light, rgba(29, 78, 216, 0.08));
+  color: var(--color-primary, #1d4ed8);
+  border: 1px solid rgba(29, 78, 216, 0.2);
+}
+
+.p-multiselect .p-multiselect-token:hover {
+  background-color: rgba(29, 78, 216, 0.15);
+}
+
+.p-multiselect .p-multiselect-token .p-multiselect-token-icon,
+.p-multiselect .p-multiselect-token svg {
+  @apply w-3 h-3 transition-colors cursor-pointer shrink-0;
+  color: var(--color-primary, #1d4ed8);
+  opacity: 0.75;
+}
+
+.p-multiselect .p-multiselect-token .p-multiselect-token-icon:hover,
+.p-multiselect .p-multiselect-token svg:hover {
+  color: #e11d48;
+  opacity: 1;
+}
+
+/* MultiSelect Header (Filter & Select All Checkbox) */
+.p-multiselect-panel .p-multiselect-header {
+  @apply px-3 py-2 flex items-center justify-between gap-2.5 border-b border-slate-100 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-800/80;
+}
+
+.p-multiselect-panel .p-multiselect-header .p-multiselect-filter-container {
+  @apply flex-1 relative flex items-center;
+}
+
+.p-multiselect-panel .p-multiselect-header .p-multiselect-filter {
+  @apply w-full pl-3 pr-8 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-900 dark:text-white placeholder-slate-400 outline-none;
+}
+
+.p-multiselect-panel .p-multiselect-header .p-multiselect-filter:focus {
+  border-color: var(--color-primary, #1d4ed8);
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.15);
+}
+
+.p-multiselect-panel .p-multiselect-header .p-multiselect-filter-icon {
+  @apply absolute right-2.5 text-slate-400 w-3.5 h-3.5 pointer-events-none;
+}
+
+.p-multiselect-panel .p-multiselect-header .p-multiselect-close {
+  @apply p-1 rounded-lg text-slate-400 transition-colors cursor-pointer border-none bg-transparent outline-none;
+}
+
+.p-multiselect-panel .p-multiselect-header .p-multiselect-close:hover {
+  color: var(--color-primary, #1d4ed8);
+  background-color: var(--surface-hover, #f1f5f9);
+}
+
+/* Single Checkbox styling inside MultiSelect items & Header */
+.p-checkbox-input,
+.p-checkbox input,
+.p-multiselect-header .p-checkbox input {
+  display: none !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+
+.p-checkbox {
+  @apply relative inline-flex items-center justify-center shrink-0 cursor-pointer select-none;
+}
+
+.p-checkbox .p-checkbox-box {
+  @apply w-4 h-4 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 flex items-center justify-center transition-all duration-150;
+}
+
+.p-checkbox .p-checkbox-box.p-highlight {
+  background-color: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: #ffffff !important;
+}
+
+/* Calendar DatePicker & TimePicker Input & Icon Styling */
+.p-calendar .p-inputtext {
+  @apply px-3.5 py-2 text-sm bg-transparent text-slate-900 dark:text-slate-100 border-none outline-none flex-1 w-full font-medium text-left;
+}
+
+.p-calendar .p-datepicker-trigger {
+  @apply ml-auto px-3 text-slate-400 dark:text-slate-500 transition-colors cursor-pointer flex items-center justify-center shrink-0;
+}
+
+.p-calendar .p-datepicker-trigger:hover {
+  color: var(--color-primary, #1d4ed8);
+}
+
+/* DatePicker & TimePicker Theme Integration Overrides */
+.p-datepicker {
+  @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-4 text-slate-900 dark:text-slate-100 z-50;
+  min-width: auto !important;
+  max-width: min(var(--panel-max-width, 450px), calc(100vw - 1rem)) !important;
+}
+
+.p-datepicker .p-datepicker-header {
+  @apply flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800 text-slate-900 dark:text-slate-100 font-semibold;
+}
+
+.p-datepicker .p-datepicker-header .p-datepicker-title {
+  @apply flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100;
+}
+
+.p-datepicker .p-datepicker-header button {
+  @apply p-1.5 rounded-lg text-slate-500 dark:text-slate-400 transition-colors cursor-pointer border-none bg-transparent outline-none;
+}
+
+.p-datepicker .p-datepicker-header button:hover {
+  background-color: var(--surface-hover, #f1f5f9);
+}
+
+.p-datepicker table {
+  @apply w-full border-collapse;
+}
+
+.p-datepicker table th {
+  @apply p-2 text-center text-xs font-semibold text-slate-500 dark:text-slate-400;
+}
+
+.p-datepicker table td {
+  @apply p-1 text-center;
+}
+
+.p-datepicker table td > a,
+.p-datepicker table td > span {
+  @apply w-8 h-8 mx-auto rounded-lg flex items-center justify-center text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer transition-colors;
+}
+
+.p-datepicker table td > a:hover,
+.p-datepicker table td > span:hover {
+  background-color: var(--color-primary-light, rgba(29, 78, 216, 0.08));
+  color: var(--color-primary, #1d4ed8);
+}
+
+.p-datepicker table td > a.p-highlight,
+.p-datepicker table td > span.p-highlight,
+.p-monthpicker .p-monthpicker-month.p-highlight,
+.p-yearpicker .p-yearpicker-year.p-highlight {
+  background-color: var(--color-primary) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.p-monthpicker .p-monthpicker-month,
+.p-yearpicker .p-yearpicker-year {
+  @apply p-2 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 cursor-pointer text-center transition-colors;
+}
+
+.p-monthpicker .p-monthpicker-month:hover,
+.p-yearpicker .p-yearpicker-year:hover {
+  background-color: var(--color-primary-light, rgba(29, 78, 216, 0.08));
+  color: var(--color-primary, #1d4ed8);
+}
+
+/* TimePicker Specific Overlay & Controls Styling */
+.p-datepicker.p-datepicker-timeonly {
+  @apply p-4 rounded-xl shadow-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800;
+  width: auto !important;
+  min-width: 220px !important;
+  max-width: 320px !important;
+}
+
+.p-datepicker .p-timepicker {
+  @apply flex items-center justify-center gap-4 py-2 text-slate-800 dark:text-slate-200 font-semibold text-base select-none;
+}
+
+.p-datepicker .p-timepicker > div {
+  @apply flex flex-col items-center gap-1.5;
+}
+
+.p-datepicker .p-timepicker button {
+  @apply w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 dark:text-slate-400 border-none bg-transparent outline-none cursor-pointer text-sm transition-all duration-150;
+}
+
+.p-datepicker .p-timepicker button:hover {
+  background-color: var(--color-primary-light, rgba(29, 78, 216, 0.08));
+  color: var(--color-primary, #1d4ed8);
+}
+
+.p-datepicker .p-timepicker span {
+  @apply text-base font-semibold text-slate-900 dark:text-slate-100 px-0.5;
+}
+
+.p-datepicker .p-timepicker .p-ampm-picker button,
+.p-datepicker .p-timepicker > button {
+  @apply px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer;
+  background-color: var(--color-primary-light, rgba(29, 78, 216, 0.08));
+  color: var(--color-primary, #1d4ed8);
+  border: 1px solid rgba(29, 78, 216, 0.2);
+}
+
+.p-datepicker .p-timepicker .p-ampm-picker button:hover,
+.p-datepicker .p-timepicker > button:hover {
+  background-color: rgba(29, 78, 216, 0.2);
+}
+
+/* ── Unified Dialog / Modal Consistent Styling ── */
+.p-dialog {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.03) !important;
+  font-family: 'Inter', sans-serif !important;
+  overflow: hidden !important;
+}
+
+.p-dialog .p-dialog-header {
+  background: #ffffff !important;
+  padding: 18px 24px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.p-dialog .p-dialog-title {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 1.125rem !important; /* 18px */
+  font-weight: 600 !important;
+  color: #0f172a !important;
+  line-height: 1.35 !important;
+  font-style: normal !important;
+}
+
+.p-dialog .p-dialog-content {
+  background: #ffffff !important;
+  padding: 24px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.875rem !important;
+  color: #475569 !important;
+}
+
+.p-dialog .p-dialog-footer {
+  background: #f8fafc !important;
+  padding: 16px 24px !important;
+  border-top: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+}
+
+.p-dialog .p-dialog-header-icons .p-dialog-header-close {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  color: #64748b !important;
+  border: none !important;
+  background: transparent !important;
+  transition: all 0.15s ease !important;
+}
+
+.p-dialog .p-dialog-header-icons .p-dialog-header-close:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* ── Unified Empty State Styling (No Italic) ── */
+.p-datatable-emptymessage td,
+.p-datatable-emptymessage span,
+.empty-state {
+  font-family: 'Inter', sans-serif !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  font-size: 0.875rem !important;
+  color: #64748b !important;
+  text-align: center !important;
+  padding: 32px 16px !important;
+}
+
+/* ── Unified Status Badges & Semantic Indicators ── */
+.badge-success, .status-pill-success, .badge-active, .badge-approved, .badge-completed {
+  background-color: #ecfdf5 !important;
+  color: #059669 !important;
+  border: 1px solid #a7f3d0 !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.badge-warning, .status-pill-warning, .badge-pending {
+  background-color: #fffbeb !important;
+  color: #d97706 !important;
+  border: 1px solid #fde68a !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.badge-danger, .badge-error, .status-pill-danger, .badge-rejected, .badge-failed {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+  border: 1px solid #fecaca !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.badge-info, .status-pill-info, .badge-primary {
+  background-color: #eff6ff !important;
+  color: #2563eb !important;
+  border: 1px solid #bfdbfe !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.badge-neutral, .status-pill-neutral {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+/* PrimeReact DataTable Nexus SaaS Styling Overrides */
+.p-datatable {
+  @apply w-full overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-none;
+  border-radius: 12px !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  color: #0f172a !important;
+  background-color: #f8fafc !important;
+  padding: 12px 16px !important;
+  font-size: 0.8125rem !important; /* 13px */
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid #e2e8f0 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.dark .p-datatable .p-datatable-thead > tr > th {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-bottom-color: #334155 !important;
+}
+
+.p-datatable .p-datatable-thead > tr > th,
+.p-datatable .p-datatable-thead > tr > th *,
+.p-datatable thead th,
+.p-datatable thead th *,
+.p-column-title,
+.p-column-title *,
+.p-column-header-content,
+.p-column-header-content *,
+.p-sortable-column,
+.p-sortable-column * {
+  font-weight: 600 !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.p-datatable .p-datatable-tbody > tr {
+  background-color: #ffffff !important;
+  transition: background-color 0.15s ease;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background-color: #f8fafc !important;
+}
+
+.p-datatable .p-datatable-tbody > tr.p-highlight {
+  background-color: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr {
+  background-color: #0f172a !important;
+  border-bottom-color: #1e293b !important;
+}
+
+.dark .p-datatable .p-datatable-tbody > tr:hover {
+  background-color: #1e293b !important;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  padding: 12px 16px !important;
+  font-size: 0.875rem !important; /* 14px */
+  color: #475569 !important;
+  font-weight: 400 !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+.p-paginator {
+  @apply bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 px-4 py-3 text-sm text-slate-600 dark:text-slate-400 flex items-center justify-between gap-2;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page {
+  @apply px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 transition-colors;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page:hover {
+  background-color: #f1f5f9;
+}
+
+.p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+  background-color: var(--color-primary) !important;
+  color: #ffffff !important;
+  font-weight: bold;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GRID COMPONENT — Enhanced Styles
+   ═══════════════════════════════════════════════════════════ */
+
+/* Column title hidden in desktop (shown only on mobile) */
+.p-datatable .p-datatable-tbody > tr > td .grid-col-title {
+  display: none;
+}
+
+/* ── Striped rows ────────────────────────────────────────── */
+.p-datatable .p-datatable-tbody > tr:nth-child(even) > td {
+  @apply bg-slate-50/50 dark:bg-slate-800/30;
+}
+
+/* ── Frozen Columns ──────────────────────────────────────── */
+.p-datatable .p-datatable-tbody > tr > td.p-frozen-column {
+  @apply bg-white dark:bg-slate-900 z-10;
+}
+.p-datatable .p-datatable-tbody > tr:nth-child(even) > td.p-frozen-column {
+  @apply bg-slate-50 dark:bg-slate-800;
+}
+.p-datatable .p-datatable-thead > tr > th.p-frozen-column {
+  z-index: 2;
+}
+
+/* ── Sort Icon ───────────────────────────────────────────── */
+.p-datatable .p-sortable-column .p-sortable-column-icon {
+  @apply text-slate-400 dark:text-slate-500 ml-2;
+}
+
+/* ── Paginator Extended ──────────────────────────────────── */
+.p-paginator {
+  @apply flex items-center justify-between gap-3 px-4 py-2.5 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800;
+}
+
+.p-paginator .p-dropdown {
+  @apply h-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xs flex items-center justify-between px-3 cursor-pointer shrink-0;
+  width: 88px !important;
+  min-width: 88px !important;
+  box-sizing: border-box !important;
+}
+
+.p-paginator .p-dropdown .p-dropdown-label,
+.p-paginator .p-dropdown .p-inputtext {
+  @apply text-xs font-bold text-slate-700 dark:text-slate-200 p-0 text-left border-none bg-transparent outline-none shrink-0;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.p-paginator .p-dropdown .p-dropdown-trigger {
+  @apply w-4 h-4 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 ml-1.5 p-0;
+}
+
+.p-paginator .p-dropdown .p-dropdown-trigger-icon,
+.p-paginator .p-dropdown .p-icon,
+.p-paginator .p-dropdown svg {
+  width: 1rem !important;
+  height: 1rem !important;
+  color: #475569 !important;
+  fill: currentColor !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.dark .p-paginator .p-dropdown .p-dropdown-trigger-icon,
+.dark .p-paginator .p-dropdown .p-icon,
+.dark .p-paginator .p-dropdown svg {
+  color: #cbd5e1 !important;
+  fill: currentColor !important;
+}
+
+.p-paginator .p-paginator-current {
+  @apply text-xs text-slate-500 dark:text-slate-400 font-semibold ml-1.5 mr-auto;
+}
+
+.p-paginator .p-paginator-pages {
+  @apply flex items-center gap-1;
+}
+
+.p-paginator .p-paginator-first,
+.p-paginator .p-paginator-prev,
+.p-paginator .p-paginator-next,
+.p-paginator .p-paginator-last {
+  @apply w-7 h-7 bg-transparent border-none text-slate-500 dark:text-slate-400 text-sm rounded-md transition-colors cursor-pointer;
+}
+
+.p-paginator .p-paginator-first:hover,
+.p-paginator .p-paginator-prev:hover,
+.p-paginator .p-paginator-next:hover,
+.p-paginator .p-paginator-last:hover {
+  color: var(--color-primary) !important;
+  @apply bg-transparent;
+}
+
+/* ── View Toggle Button ──────────────────────────────────── */
+.grid-view-toggle-btn {
+  @apply inline-flex items-center justify-center w-9 h-9 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 transition-all duration-200 cursor-pointer shrink-0;
+}
+
+.grid-view-toggle-btn:hover {
+  background-color: var(--surface-hover, #f1f5f9);
+}
+
+/* ── Card View Grid ──────────────────────────────────────── */
+.grid-card-container {
+  @apply w-full;
+}
+
+.grid-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.grid-card-item {
+  @apply bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 flex flex-col justify-between gap-4 transition-all duration-200 cursor-default;
+  border-top: 3px solid var(--color-primary);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.grid-card-item:hover {
+  @apply -translate-y-0.5;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+}
+
+.grid-card-body {
+  @apply flex flex-col gap-2;
+}
+
+.grid-card-row {
+  @apply flex justify-between items-start gap-3 pb-1.5 border-b border-dashed border-slate-100 dark:border-slate-700/60 text-sm min-w-0;
+}
+
+.grid-card-row:last-child {
+  @apply border-b-0;
+}
+
+.grid-card-label {
+  @apply font-semibold text-slate-500 dark:text-slate-400 min-w-20 sm:min-w-28 max-w-[45%] text-left leading-snug wrap-break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.grid-card-value {
+  @apply flex-1 min-w-0 text-slate-800 dark:text-slate-200 text-right;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.grid-card-actions {
+  @apply flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60;
+}
+
+/* ── Card View Paginator ─────────────────────────────────── */
+.grid-card-container .p-paginator {
+  @apply border border-slate-200 dark:border-slate-700 rounded-2xl mt-4;
+}
+
+/* ── Mobile Paginator (≤ 640px) ──────────────────────────── */
+@media (max-width: 640px) {
+  .p-datatable .p-paginator,
+  .p-paginator {
+    @apply flex-wrap justify-center gap-2 px-2 py-3;
+  }
+
+  .p-paginator .p-dropdown {
+    order: 1;
+    margin-left: auto;
+    height: 34px !important;
+  }
+
+  .p-paginator .p-paginator-current {
+    order: 2;
+    @apply text-xs whitespace-nowrap ml-2 mr-auto;
+  }
+
+  .p-paginator .p-paginator-first {
+    order: 3;
+    margin-left: auto;
+  }
+  .p-paginator .p-paginator-prev {
+    order: 4;
+  }
+  .p-paginator .p-paginator-pages {
+    order: 5;
+  }
+  .p-paginator .p-paginator-next {
+    order: 6;
+  }
+  .p-paginator .p-paginator-last {
+    order: 7;
+    margin-right: auto;
+  }
+
+  .p-paginator .p-paginator-page {
+    @apply min-w-7 h-7 text-xs;
+  }
+
+  .hide-paginator-mobile .p-paginator {
+    display: none !important;
+  }
+}
+
+/* =========================================================================
+   PRINT
+   Force a light, ink-efficient rendering for the Print action on report
+   pages, regardless of the active theme.
+   ========================================================================= */
+@media print {
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .dark body,
+  body {
+    color: #0f172a !important;
+  }
+
+  .dark {
+    --tw-bg-opacity: 1;
+    background-color: #fff !important;
+    color: #0f172a !important;
+  }
+
+  .dark * {
+    background-color: transparent !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide app chrome, sidebars, toasts and interactive-only affordances */
+  header,
+  nav,
+  aside,
+  [role='navigation'],
+  .p-toast,
+  .p-tooltip,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  main,
+  .p-component {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* Avoid orphaned rows / split cards across pages */
+  table,
+  tr,
+  td,
+  th {
+    page-break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+}
