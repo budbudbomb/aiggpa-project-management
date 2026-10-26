@@ -763,6 +763,49 @@ export const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
           </div>
         </div>
 
+        {/* ── Linked Field Survey & Assignment Mode Banner ── */}
+        {task.surveyId && (
+          <div className="p-3 bg-gradient-to-r from-blue-50/80 to-indigo-50/60 rounded-xl border border-blue-200/90 text-xs space-y-1.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded bg-blue-600 text-white flex items-center justify-center font-bold">
+                  <FileText className="w-3 h-3" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-blue-950">Linked Survey:</span>
+                  <span className="font-semibold text-blue-800">
+                    {task.surveyTitle || task.surveyId}
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 text-[10px] font-mono font-bold">
+                    {task.surveyId}
+                  </span>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-blue-700 bg-white border border-blue-200 px-2 py-0.5 rounded-full">
+                {task.assignmentMode === 'Group'
+                  ? 'Group Task'
+                  : 'Individual Task'}
+              </span>
+            </div>
+
+            <div className="text-[11px] text-slate-600 flex items-center gap-3 pl-7">
+              <span>
+                Mode: <strong>{task.assignmentMode || 'Individual'}</strong>
+              </span>
+              {task.groupName && (
+                <span>
+                  Group Name: <strong>{task.groupName}</strong>
+                </span>
+              )}
+              {task.memberIds && task.memberIds.length > 0 && (
+                <span>
+                  Team Members: <strong>{task.memberIds.length}</strong>
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── Review Feedback Alert Banner (If Changes Requested) ── */}
         {task.status === 'Changes Requested' && task.reviewFeedback && (
           <div className="p-3.5 rounded-xl border border-rose-300 bg-rose-50/90 text-xs text-rose-950 space-y-1.5">

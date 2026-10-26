@@ -911,7 +911,7 @@ export default function QuestionBankPage(): React.ReactElement {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">
-                          Thematic Category
+                          Question Category
                         </label>
                         <select
                           id="qsSingleCat"
@@ -972,7 +972,7 @@ export default function QuestionBankPage(): React.ReactElement {
                         2
                       </span>
                       <h3 className="text-sm font-semibold text-slate-900 m-0">
-                        Answer Format & Type
+                        Question Type
                       </h3>
                     </div>
                     <span className="text-xs text-slate-400">

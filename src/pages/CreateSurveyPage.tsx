@@ -5,6 +5,7 @@ import { usePageStyles } from '../lib/usePageStyles';
 import SurveyStore from '../stores/surveyStore';
 import Store from '../stores/projectStore';
 import { PageContainer } from '../components';
+import { useAuthStore } from '../auth/store/authStore';
 
 type QuestionType =
   | 'single_choice'
@@ -171,6 +172,7 @@ const FORMAT_CARDS: Array<{
 export default function CreateSurveyPage(): React.ReactElement {
   usePageStyles(surveysCss);
   const navigate = useNavigate();
+  const { user: authUser } = useAuthStore();
 
   const today = new Date().toISOString().split('T')[0];
   const threeWeeksLater = new Date(Date.now() + 21 * 86400000)
@@ -455,6 +457,9 @@ export default function CreateSurveyPage(): React.ReactElement {
       documents: attachedFiles,
       questions: finalQuestions,
       submissionStatus: 'draft',
+      createdBy: authUser
+        ? { name: authUser.name, role: authUser.role }
+        : { name: 'Dr. Rajesh Verma', role: 'Chief Program Manager' },
     };
 
     const saved = SurveyStore.saveSurvey(surveyData);

@@ -63,9 +63,7 @@ export function generateDefaultSurveyMilestones(
   const baseDate = new Date(startDateStr);
 
   return masterTemplates.map((tmpl, idx) => {
-    const plannedStart = new Date(
-      baseDate.getTime() + idx * 7 * 86400000
-    )
+    const plannedStart = new Date(baseDate.getTime() + idx * 7 * 86400000)
       .toISOString()
       .split('T')[0];
     const plannedDue = new Date(
@@ -94,6 +92,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
   {
     id: 'survey-01',
     title: 'Block Livelihood Survey — Q3 2026',
+    projectId: 'PRJ-01',
+    projectName: 'DPI-Based Open Networks for Human Capital in Viksit MP 2047',
     description:
       'Quarterly survey to assess household livelihood and employment conditions across all blocks.',
     startDate: '2026-08-01',
@@ -111,7 +111,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-01',
         code: 'MS-SCOPE',
         name: 'Concept Note & Scope Finalization',
-        description: 'Finalize research scope, geographic boundaries, and steering committee sign-off.',
+        description:
+          'Finalize research scope, geographic boundaries, and steering committee sign-off.',
         sequence: 1,
         required: true,
         status: 'Completed',
@@ -130,7 +131,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-02',
         code: 'MS-QNR-DESIGN',
         name: 'Questionnaire Design & Expert Validation',
-        description: 'Author bilingual questions, validate skip logic patterns, and test likert scales.',
+        description:
+          'Author bilingual questions, validate skip logic patterns, and test likert scales.',
         sequence: 2,
         required: true,
         status: 'Completed',
@@ -140,7 +142,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         completedAt: '2026-08-13',
         assignedRole: 'Fellow',
         assignedToName: 'Pooja Sharma',
-        notes: '5-section CAPI questionnaire finalized with Hindi translations.',
+        notes:
+          '5-section CAPI questionnaire finalized with Hindi translations.',
         updatedBy: 'Pooja Sharma (CM Fellow)',
         updatedAt: '2026-08-13',
       },
@@ -149,7 +152,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-03',
         code: 'MS-CAPI-TEST',
         name: 'Pilot Dry Run & CAPI Logic Verification',
-        description: 'Conduct field dry run on 10 households, check tablet offline sync and GPS tags.',
+        description:
+          'Conduct field dry run on 10 households, check tablet offline sync and GPS tags.',
         sequence: 3,
         required: true,
         status: 'Completed',
@@ -159,7 +163,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         completedAt: '2026-08-21',
         assignedRole: 'Intern',
         assignedToName: 'Amit Solanki',
-        notes: '10 mock households surveyed; average duration was 19 minutes per interview.',
+        notes:
+          '10 mock households surveyed; average duration was 19 minutes per interview.',
         updatedBy: 'Amit Solanki (Intern)',
         updatedAt: '2026-08-21',
       },
@@ -168,7 +173,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-04',
         code: 'MS-ENUM-TRAIN',
         name: 'Enumerator Allocation & Field Training',
-        description: 'Assign Interns and Fellows, conduct tablet orientation, and verify village allocations.',
+        description:
+          'Assign Interns and Fellows, conduct tablet orientation, and verify village allocations.',
         sequence: 4,
         required: true,
         status: 'Completed',
@@ -187,7 +193,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-05',
         code: 'MS-MID-COLLECT',
         name: 'Field Enumeration Rollout (50% Target)',
-        description: 'Reach 75 completed household interviews with supervisor randomized spot-checks.',
+        description:
+          'Reach 75 completed household interviews with supervisor randomized spot-checks.',
         sequence: 5,
         required: true,
         status: 'Completed',
@@ -206,7 +213,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-06',
         code: 'MS-COMP-COLLECT',
         name: 'Fieldwork Closure & 100% Target Completion',
-        description: 'Achieve 150 respondent quota across all sampled gram panchayats.',
+        description:
+          'Achieve 150 respondent quota across all sampled gram panchayats.',
         sequence: 6,
         required: true,
         status: 'In Progress',
@@ -215,7 +223,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         actualStartDate: '2026-09-11',
         assignedRole: 'Intern',
         assignedToName: 'Amit Solanki',
-        notes: '112 of 150 target completed (74.7%). Remaining 38 scheduled for next 5 days.',
+        notes:
+          '112 of 150 target completed (74.7%). Remaining 38 scheduled for next 5 days.',
         updatedBy: 'Amit Solanki (Intern)',
         updatedAt: '2026-09-18',
       },
@@ -224,7 +233,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-07',
         code: 'MS-DATA-CLEAN',
         name: 'Data Cleaning, Anonymization & Validation',
-        description: 'Statistical anomaly detection, missing-value imputation, and PII anonymization.',
+        description:
+          'Statistical anomaly detection, missing-value imputation, and PII anonymization.',
         sequence: 7,
         required: true,
         status: 'Blocked',
@@ -232,7 +242,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         plannedDueDate: '2026-09-28',
         assignedRole: 'Fellow',
         assignedToName: 'Pooja Sharma',
-        blockerReason: 'Cellular network blackspot in 3 tribal panchayats delayed automatic CAPI sync; physical memory cards being dispatched to Block Development Office.',
+        blockerReason:
+          'Cellular network blackspot in 3 tribal panchayats delayed automatic CAPI sync; physical memory cards being dispatched to Block Development Office.',
         updatedBy: 'Pooja Sharma (CM Fellow)',
         updatedAt: '2026-09-19',
       },
@@ -241,7 +252,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-08',
         code: 'MS-FINAL-REPORT',
         name: 'Analytical Report & Policy Recommendations',
-        description: 'Synthesize cross-tabulated tables and policy briefs for Directorate.',
+        description:
+          'Synthesize cross-tabulated tables and policy briefs for Directorate.',
         sequence: 8,
         required: true,
         status: 'Not Started',
@@ -259,8 +271,10 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         submittedToRole: 'fellow',
         feedbackText:
           'High participation from self-help group members. Many households requested dedicated training on poultry farming and tailoring.',
-        challengesFaced: 'Network connectivity was weak in 3 remote gram panchayats.',
-        recommendations: 'Provide offline sync capability and distribute regional flyers.',
+        challengesFaced:
+          'Network connectivity was weak in 3 remote gram panchayats.',
+        recommendations:
+          'Provide offline sync capability and distribute regional flyers.',
         stakeholdersInterviewedCount: 45,
         createdAt: '25 Aug 2026, 02:30 PM',
       },
@@ -272,19 +286,25 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         feedbackText:
           'Reviewed field responses across Ujjain district. Data quality is verified. Interns showed strong community engagement.',
         challengesFaced: 'Heavy monsoon rains delayed visits to 2 panchayats.',
-        recommendations: 'Recommend coordinating with Block Development Officer for SHG linkage.',
+        recommendations:
+          'Recommend coordinating with Block Development Officer for SHG linkage.',
         stakeholdersInterviewedCount: 88,
         createdAt: '28 Aug 2026, 04:00 PM',
       },
       {
         id: 'fb-03',
-        submittedBy: { name: 'Dr. Rajesh Verma', role: 'Chief Program Manager' },
+        submittedBy: {
+          name: 'Dr. Rajesh Verma',
+          role: 'Chief Program Manager',
+        },
         role: 'pc',
         submittedToRole: 'spm_cpm',
         feedbackText:
           'Divisional compilation complete with 112 verified responses. Key livelihood trends highlighted for policy team review.',
-        challengesFaced: 'None at divisional level; cross-verified with district data.',
-        recommendations: 'Fast-track scheme allocation for SHG enterprise loans in Q4.',
+        challengesFaced:
+          'None at divisional level; cross-verified with district data.',
+        recommendations:
+          'Fast-track scheme allocation for SHG enterprise loans in Q4.',
         stakeholdersInterviewedCount: 112,
         createdAt: '02 Sep 2026, 11:00 AM',
       },
@@ -306,7 +326,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
       {
         id: 'q2',
         type: 'likert_scale',
-        question: 'How satisfied is the community with current road connectivity?',
+        question:
+          'How satisfied is the community with current road connectivity?',
         likertConfig: {
           points: 5,
           lowLabel: 'Very Dissatisfied',
@@ -346,8 +367,10 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
       {
         id: 'q5',
         type: 'descriptive',
-        question: 'What are the main development challenges reported by the village head?',
-        placeholder: 'Enter key observations, grievances, or community suggestions…',
+        question:
+          'What are the main development challenges reported by the village head?',
+        placeholder:
+          'Enter key observations, grievances, or community suggestions…',
         required: false,
         allowVoice: true,
         allowVideo: true,
@@ -357,6 +380,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
   {
     id: 'survey-02',
     title: 'Youth Digital Literacy & Employment Assessment',
+    projectId: 'PRJ-02',
+    projectName: 'Fiscal Space Expansion & Revenue Mobilization Framework',
     description:
       'Assess digital skills, smartphone accessibility, and career training requirements for rural youth.',
     startDate: '2026-08-15',
@@ -374,7 +399,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-01',
         code: 'MS-SCOPE',
         name: 'Concept Note & Scope Finalization',
-        description: 'Define youth target demographic (age 18-29) and vocational focus.',
+        description:
+          'Define youth target demographic (age 18-29) and vocational focus.',
         sequence: 1,
         required: true,
         status: 'Completed',
@@ -392,7 +418,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-02',
         code: 'MS-QNR-DESIGN',
         name: 'Questionnaire Design & Expert Validation',
-        description: 'Digital skills assessment battery aligned with MP Rozgar portal.',
+        description:
+          'Digital skills assessment battery aligned with MP Rozgar portal.',
         sequence: 2,
         required: true,
         status: 'Completed',
@@ -410,7 +437,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-03',
         code: 'MS-CAPI-TEST',
         name: 'Pilot Dry Run & CAPI Logic Verification',
-        description: 'Tested across 15 student candidates in Indore college campus.',
+        description:
+          'Tested across 15 student candidates in Indore college campus.',
         sequence: 3,
         required: true,
         status: 'Completed',
@@ -478,7 +506,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         milestoneId: 'MLS-07',
         code: 'MS-DATA-CLEAN',
         name: 'Data Cleaning, Anonymization & Validation',
-        description: 'Verify phone number uniqueness and certificate program interest.',
+        description:
+          'Verify phone number uniqueness and certificate program interest.',
         sequence: 7,
         required: true,
         status: 'Not Started',
@@ -522,7 +551,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         submittedToRole: 'pc',
         feedbackText:
           'Validated youth responses. 72% expressed interest in state government digital certificate courses.',
-        challengesFaced: 'Need coordination with Technical Education department.',
+        challengesFaced:
+          'Need coordination with Technical Education department.',
         recommendations: 'Align curriculum with MP Rozgar portal requirements.',
         stakeholdersInterviewedCount: 84,
         createdAt: '03 Sep 2026, 05:30 PM',
@@ -554,7 +584,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
       {
         id: 'q3',
         type: 'likert_scale',
-        question: 'How confident are you in using digital payment apps (UPI, DBT)?',
+        question:
+          'How confident are you in using digital payment apps (UPI, DBT)?',
         likertConfig: {
           points: 5,
           lowLabel: 'Not Confident',
@@ -583,6 +614,8 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
   {
     id: 'survey-03',
     title: 'Primary Healthcare Center Accessibility Audit',
+    projectId: 'PRJ-01',
+    projectName: 'DPI-Based Open Networks for Human Capital in Viksit MP 2047',
     description:
       'Evaluating medicine availability, doctor attendance, and ambulance response time in rural PHCs.',
     startDate: '2026-09-01',
@@ -727,14 +760,19 @@ const SurveyStore = {
       const list: AdminSurvey[] = JSON.parse(data);
 
       // Safe backward-compatibility auto-migration:
-      // If any existing stored survey lacks milestones, attach generated defaults
+      // If any existing stored survey lacks milestones or projectId, attach defaults
       let modified = false;
       const upgraded = list.map(s => {
+        const matchDefault = DEFAULT_SURVEYS.find(ds => ds.id === s.id);
         if (!s.milestones || s.milestones.length === 0) {
-          const matchDefault = DEFAULT_SURVEYS.find(ds => ds.id === s.id);
           s.milestones =
             matchDefault?.milestones ||
             generateDefaultSurveyMilestones(s.startDate || '2026-08-01');
+          modified = true;
+        }
+        if (!s.projectId && matchDefault?.projectId) {
+          s.projectId = matchDefault.projectId;
+          s.projectName = matchDefault.projectName;
           modified = true;
         }
         return s;
@@ -763,6 +801,8 @@ const SurveyStore = {
     const newSurvey: AdminSurvey = {
       id: surveyData.id || `survey-${Date.now()}`,
       title: surveyData.title || 'Untitled Survey',
+      projectId: surveyData.projectId,
+      projectName: surveyData.projectName,
       description: surveyData.description || '',
       startDate,
       endDate:
@@ -772,8 +812,11 @@ const SurveyStore = {
       responsesCount: 0,
       status: surveyData.status || 'active',
       submissionStatus: surveyData.submissionStatus || 'draft',
-      createdBy: { name: 'Dr. Rajesh Verma', role: 'Chief Program Manager' },
-      isAllocatedAsTask: false,
+      createdBy: surveyData.createdBy || {
+        name: 'Dr. Rajesh Verma',
+        role: 'Chief Program Manager',
+      },
+      isAllocatedAsTask: surveyData.isAllocatedAsTask || false,
       createdAt: new Date().toISOString(),
       feedbacks: [],
       documents: surveyData.documents || [],

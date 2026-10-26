@@ -74,7 +74,7 @@ export const MilestoneMasterPage: React.FC = () => {
     setSequence(item.sequence);
     setSurveyType(item.surveyType || 'All');
     setTargetDaysOffset(item.targetDaysOffset || 0);
-    setIsRequired(item.isRequired);
+    setIsRequired(item.required ?? item.isRequired ?? true);
     setIsActive(item.isActive);
     setErrorMessage('');
     setIsModalOpen(true);
@@ -101,6 +101,7 @@ export const MilestoneMasterPage: React.FC = () => {
         sequence: Number(sequence) || 1,
         surveyType,
         targetDaysOffset: Number(targetDaysOffset) || 0,
+        required: isRequired,
         isRequired,
         isActive,
       });
@@ -189,17 +190,20 @@ export const MilestoneMasterPage: React.FC = () => {
       key: 'isRequired',
       header: 'Requirement',
       width: '110px',
-      render: row => (
-        <span
-          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-            row.isRequired
-              ? 'bg-amber-50 text-amber-800 border border-amber-200'
-              : 'bg-slate-50 text-slate-600 border border-slate-200'
-          }`}
-        >
-          {row.isRequired ? 'Mandatory' : 'Optional'}
-        </span>
-      ),
+      render: row => {
+        const isReq = row.required ?? row.isRequired;
+        return (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+              isReq
+                ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                : 'bg-slate-50 text-slate-600 border border-slate-200'
+            }`}
+          >
+            {isReq ? 'Mandatory' : 'Optional'}
+          </span>
+        );
+      },
     },
     {
       key: 'isActive',
@@ -207,8 +211,7 @@ export const MilestoneMasterPage: React.FC = () => {
       width: '100px',
       render: row => (
         <StatusBadge
-          status={row.isActive ? 'Active' : 'Inactive'}
-          variant={row.isActive ? 'success' : 'neutral'}
+          status={row.isActive ? 'active' : 'inactive'}
         />
       ),
     },
@@ -219,13 +222,13 @@ export const MilestoneMasterPage: React.FC = () => {
       render: row => (
         <div className="flex items-center gap-1">
           <ActionIconButton
-            icon={Edit3}
+            icon={<Edit3 className="w-3.5 h-3.5" />}
             title="Edit Milestone"
             onClick={() => openEditModal(row)}
             className="text-slate-600 hover:text-blue-600"
           />
           <ActionIconButton
-            icon={row.isActive ? XCircle : CheckCircle2}
+            icon={row.isActive ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
             title={row.isActive ? 'Deactivate' : 'Activate'}
             onClick={() => handleToggleActive(row)}
             className={row.isActive ? 'text-slate-400 hover:text-rose-600' : 'text-slate-400 hover:text-emerald-600'}
@@ -239,15 +242,15 @@ export const MilestoneMasterPage: React.FC = () => {
     <PageContainer>
       <PageHeader
         title="Survey Milestone Master"
-        description="Standardize research survey lifecycles, operational progress checkpoints, and delivery milestones."
+        subtitle="Standardize research survey lifecycles, operational progress checkpoints, and delivery milestones."
         breadcrumbs={[
-          { label: 'Master Data', path: '/masters/employees' },
+          { label: 'Master Data', href: '/masters/employees' },
           { label: 'Milestone Master' },
         ]}
         actions={
           <AppButton
             variant="primary"
-            icon={Plus}
+            leftIcon={<Plus className="w-4 h-4" />}
             onClick={openCreateModal}
           >
             Add Milestone
@@ -277,7 +280,7 @@ export const MilestoneMasterPage: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editingMilestone ? 'Edit Survey Milestone' : 'Define Survey Milestone'}
-        size="md"
+        maxWidth="lg"
       >
         <form onSubmit={handleSave} className="space-y-4">
           {errorMessage && (
@@ -329,7 +332,7 @@ export const MilestoneMasterPage: React.FC = () => {
             <SelectField
               label="Applicable Survey Scope"
               value={surveyType || 'All'}
-              onChange={e => setSurveyType(e.target.value as MilestoneMasterItem['surveyType'])}
+              onChange={val => setSurveyType(val as MilestoneMasterItem['surveyType'])}
               options={[
                 { value: 'All', label: 'All Survey Types' },
                 { value: 'Baseline', label: 'Baseline Surveys' },
@@ -353,7 +356,7 @@ export const MilestoneMasterPage: React.FC = () => {
             <SelectField
               label="Requirement Level"
               value={isRequired ? 'true' : 'false'}
-              onChange={e => setIsRequired(e.target.value === 'true')}
+              onChange={val => setIsRequired(val === 'true')}
               options={[
                 { value: 'true', label: 'Mandatory Milestone' },
                 { value: 'false', label: 'Optional Checkpoint' },
@@ -363,7 +366,7 @@ export const MilestoneMasterPage: React.FC = () => {
             <SelectField
               label="Active Status"
               value={isActive ? 'true' : 'false'}
-              onChange={e => setIsActive(e.target.value === 'true')}
+              onChange={val => setIsActive(val === 'true')}
               options={[
                 { value: 'true', label: 'Active (Available for Surveys)' },
                 { value: 'false', label: 'Inactive (Archived)' },

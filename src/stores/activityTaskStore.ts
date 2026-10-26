@@ -144,6 +144,15 @@ export interface ActivityTask {
   createdAt: string;
   updatedAt: string;
 
+  // Linked Survey Association (optional)
+  surveyId?: string;
+  surveyTitle?: string;
+
+  // Assignment Mode: Individual vs Group
+  assignmentMode?: 'Individual' | 'Group';
+  groupName?: string;
+  memberIds?: string[];
+
   // Structured hierarchy-based evidence collection & submission versioning
   evidenceRequirements: EvidenceRequirement[];
   currentEvidenceDraft?: EvidenceItem[];
@@ -852,6 +861,9 @@ export const DEFAULT_TASKS: ActivityTask[] = [
       'Conduct on-ground pilot survey across 30 respondent households in Ashta and Ichhawar blocks. Audit GPS location stamps and verify response completeness.',
     projectId: 'PRJ-01',
     projectName: 'DPI-Based Open Networks for Human Capital in Viksit MP 2047',
+    surveyId: 'survey-01',
+    surveyTitle: 'Block Livelihood Survey — Q3 2026',
+    assignmentMode: 'Individual',
     creatorId: 'EMP-FL-01',
     creatorName: 'Aakash Mehta',
     creatorRole: 'Fellow',
@@ -1773,11 +1785,17 @@ export const ActivityTaskStore = {
       setStored(STORAGE_KEYS.TASKS, DEFAULT_TASKS);
       return DEFAULT_TASKS;
     }
-    // Backward-compatibility migration: ensure evidenceRequirements, currentEvidenceDraft, and submissions exist
+    // Backward-compatibility migration: ensure evidenceRequirements, currentEvidenceDraft, submissions, and survey fields exist
     return list.map(t => {
       const defaultTask = DEFAULT_TASKS.find(dt => dt.id === t.id);
       return {
         ...t,
+        surveyId: t.surveyId || defaultTask?.surveyId,
+        surveyTitle: t.surveyTitle || defaultTask?.surveyTitle,
+        assignmentMode:
+          t.assignmentMode || defaultTask?.assignmentMode || 'Individual',
+        groupName: t.groupName || defaultTask?.groupName,
+        memberIds: t.memberIds || defaultTask?.memberIds,
         evidenceRequirements:
           t.evidenceRequirements || defaultTask?.evidenceRequirements || [],
         currentEvidenceDraft:
@@ -1785,6 +1803,10 @@ export const ActivityTaskStore = {
         submissions: t.submissions || defaultTask?.submissions || [],
       };
     });
+  },
+
+  getTasksForSurvey(surveyId: string): ActivityTask[] {
+    return this.getTasks().filter(t => t.surveyId === surveyId);
   },
 
   saveTasks(tasks: ActivityTask[]): void {

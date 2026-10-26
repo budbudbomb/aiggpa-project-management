@@ -859,6 +859,7 @@ export interface MilestoneMasterItem {
   surveyType: 'all' | 'household' | 'facility' | 'evaluation' | string;
   targetDaysOffset: number; // Duration offset from survey start date
   required: boolean;
+  isRequired?: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;

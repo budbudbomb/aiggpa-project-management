@@ -33,7 +33,11 @@ import {
   Sliders,
   CheckCircle2,
   Info,
+  Users,
+  AlertCircle,
 } from 'lucide-react';
+import SurveyStore from '../../stores/surveyStore';
+import type { AdminSurvey } from '../../stores/types';
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -41,6 +45,7 @@ interface CreateTaskModalProps {
   currentUser: Employee;
   onTaskCreated: (taskId: string) => void;
   onOpenRelationshipsModal: () => void;
+  preselectedSurveyId?: string | null;
 }
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
@@ -49,10 +54,12 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   currentUser,
   onTaskCreated,
   onOpenRelationshipsModal,
+  preselectedSurveyId,
 }) => {
   const projects = projectStore.getProjects();
   const eligibleAssignees = ActivityTaskStore.getEligibleAssignees(currentUser);
   const allEmployees = ActivityTaskStore.getEmployees();
+  const surveys = SurveyStore.getSurveys();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -61,6 +68,17 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [assigneeId, setAssigneeId] = useState(eligibleAssignees[0]?.id || '');
   const [reviewerId, setReviewerId] = useState(currentUser.id);
   const [priority, setPriority] = useState<TaskPriority>('Medium');
+
+  // Linked Survey State
+  const [linkedSurveyId, setLinkedSurveyId] = useState<string>('');
+  const [surveyError, setSurveyError] = useState<string | null>(null);
+
+  // Assignment Mode State: Individual vs Group
+  const [assignmentMode, setAssignmentMode] = useState<'Individual' | 'Group'>(
+    'Individual'
+  );
+  const [groupName, setGroupName] = useState('');
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
   const activities = MasterStore.getActivities(projectId);
   const projectAllocations = MasterStore.getProjectAllocations(projectId);
@@ -93,6 +111,46 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
   const [requiresReview, setRequiresReview] = useState(true);
   const [labelsInput, setLabelsInput] = useState('');
   const [attachmentsInput, setAttachmentsInput] = useState('');
+
+  // Selected survey computed object
+  const selectedSurvey: AdminSurvey | null = useMemo(() => {
+    if (!linkedSurveyId) return null;
+    return surveys.find(s => s.id === linkedSurveyId) || null;
+  }, [linkedSurveyId, surveys]);
+
+  // Synchronize when modal opens or preselectedSurveyId changes
+  useEffect(() => {
+    if (isOpen) {
+      if (preselectedSurveyId) {
+        const found = surveys.find(s => s.id === preselectedSurveyId);
+        if (found) {
+          setLinkedSurveyId(found.id);
+          setSurveyError(null);
+          setTitle(`Field Survey: ${found.title}`);
+          if (found.projectId) {
+            setProjectId(found.projectId);
+          }
+          // Pre-populate standard survey evidence pack
+          applyEvidencePreset('survey');
+        } else {
+          setLinkedSurveyId('');
+          setSurveyError(
+            `Specified Survey ID "${preselectedSurveyId}" was not found.`
+          );
+        }
+      } else {
+        setLinkedSurveyId('');
+        setSurveyError(null);
+      }
+    }
+  }, [isOpen, preselectedSurveyId]);
+
+  // When selectedSurvey changes and has a project, enforce lock
+  useEffect(() => {
+    if (selectedSurvey?.projectId) {
+      setProjectId(selectedSurvey.projectId);
+    }
+  }, [selectedSurvey]);
 
   // Checklist
   const [checklist, setChecklist] = useState<TaskChecklistItem[]>([
@@ -334,9 +392,22 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
     }
     if (!projectId) {
       newErrors.project = 'Project is required';
+    } else if (
+      selectedSurvey?.projectId &&
+      projectId !== selectedSurvey.projectId
+    ) {
+      newErrors.project = `Project must match the linked survey's project (${selectedSurvey.projectName || selectedSurvey.projectId})`;
     }
+
+    if (assignmentMode === 'Group' && !groupName.trim()) {
+      newErrors.groupName = 'Group / Field Team Name is required for group tasks';
+    }
+
     if (!assigneeId) {
-      newErrors.assignee = 'Assignee is required';
+      newErrors.assignee =
+        assignmentMode === 'Group'
+          ? 'Designated Team Lead is required'
+          : 'Assignee is required';
     }
     if (requiresReview && !reviewerId) {
       newErrors.reviewer = 'Designated reviewer is required';
@@ -373,11 +444,21 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       .map(s => s.trim())
       .filter(Boolean);
 
+    const groupMembers =
+      assignmentMode === 'Group'
+        ? Array.from(new Set([assigneeId, ...selectedMemberIds]))
+        : undefined;
+
     const created = ActivityTaskStore.createTask({
       title: title.trim(),
       description: description.trim(),
       projectId,
       projectName: assignedProject.name,
+      surveyId: linkedSurveyId || undefined,
+      surveyTitle: selectedSurvey ? selectedSurvey.title : undefined,
+      assignmentMode,
+      groupName: assignmentMode === 'Group' ? groupName.trim() : undefined,
+      memberIds: groupMembers,
       activityId: activityId || undefined,
       activityName: linkedActivity ? linkedActivity.name : undefined,
       creatorId: currentUser.id,
@@ -396,7 +477,12 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       requiresReview,
       reviewStatus: null,
       reviewFeedback: null,
-      labels: labels.length > 0 ? labels : ['General'],
+      labels:
+        labels.length > 0
+          ? labels
+          : linkedSurveyId
+            ? ['Field Survey']
+            : ['General'],
       attachments,
       checklist,
       comments: [],
@@ -404,6 +490,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       currentEvidenceDraft: [],
       submissions: [],
     });
+
+    if (linkedSurveyId) {
+      SurveyStore.updateSurvey(linkedSurveyId, { isAllocatedAsTask: true });
+    }
 
     onTaskCreated(created.id);
     onClose();
@@ -534,17 +624,140 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           rows={3}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* ── Section B: Linked Field Survey ── */}
+        {surveyError && (
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{surveyError}</span>
+            </div>
+            <AppButton
+              variant="ghost"
+              size="xs"
+              onClick={() => setSurveyError(null)}
+            >
+              Dismiss
+            </AppButton>
+          </div>
+        )}
+
+        {selectedSurvey ? (
+          <div className="p-3 bg-blue-50/70 border border-blue-200/90 rounded-xl space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-blue-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                  <FileText className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-blue-950 block">
+                    Linked Field Survey
+                  </span>
+                  <span className="text-[11px] text-blue-800 font-semibold">
+                    {selectedSurvey.title}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded border border-blue-200">
+                  {selectedSurvey.id}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLinkedSurveyId('');
+                    setSurveyError(null);
+                  }}
+                  className="text-slate-400 hover:text-rose-600 text-[11px] font-semibold px-1.5 py-0.5 rounded hover:bg-white transition-colors"
+                >
+                  Unlink
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] bg-white p-2 rounded-lg border border-blue-100">
+              <div>
+                <span className="text-slate-400 block text-[10px] font-semibold uppercase">
+                  Survey Project
+                </span>
+                <span className="text-slate-800 font-bold truncate block">
+                  {selectedSurvey.projectName ||
+                    selectedSurvey.projectId ||
+                    'Unassigned'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] font-semibold uppercase">
+                  Target Response
+                </span>
+                <span className="text-slate-800 font-bold block">
+                  {selectedSurvey.participantsRequired || 100} respondents
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] font-semibold uppercase">
+                  Survey Dates
+                </span>
+                <span className="text-slate-800 font-bold block truncate">
+                  {selectedSurvey.startDate || '—'} &rarr;{' '}
+                  {selectedSurvey.endDate || '—'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] font-semibold uppercase">
+                  Questionnaire
+                </span>
+                <span className="text-slate-800 font-bold block">
+                  {selectedSurvey.questions?.length || 0} Questions
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
           <SelectField
-            label="Project / Scheme"
-            required
-            options={projectOptions}
-            value={projectId}
+            label="Link to Field Survey (Optional)"
+            options={[
+              { value: '', label: '-- No Survey (Ordinary Task) --' },
+              ...surveys.map(s => ({
+                value: s.id,
+                label: `[${s.id}] ${s.title}${s.projectId ? ` (${s.projectId})` : ''}`,
+              })),
+            ]}
+            value={linkedSurveyId}
             onChange={val => {
-              setProjectId(val);
-              setActivityId('');
+              setLinkedSurveyId(val);
+              setSurveyError(null);
+              const s = surveys.find(item => item.id === val);
+              if (s?.projectId) {
+                setProjectId(s.projectId);
+              }
             }}
+            helperText="Optionally link this task to a field survey to monitor field team execution"
           />
+        )}
+
+        {/* ── Section C: Project Association ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <SelectField
+              label="Project / Scheme"
+              required
+              options={projectOptions}
+              value={projectId}
+              onChange={val => {
+                if (!selectedSurvey?.projectId) {
+                  setProjectId(val);
+                  setActivityId('');
+                }
+              }}
+              disabled={Boolean(selectedSurvey?.projectId)}
+              errorMessage={errors.project}
+              helperText={
+                selectedSurvey?.projectId
+                  ? `🔒 Locked to survey project (${selectedSurvey.projectName || selectedSurvey.projectId})`
+                  : undefined
+              }
+            />
+          </div>
 
           <SelectField
             label="Activity / Milestone (WBS)"
@@ -554,6 +767,101 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
             helperText="Link task to project milestone WBS"
           />
         </div>
+
+        {/* ── Section D: Assignment Mode & Team Selection ── */}
+        <div className="space-y-2 pt-1">
+          <label className="block text-xs font-semibold text-slate-700">
+            Task Assignment Mode *
+          </label>
+          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setAssignmentMode('Individual')}
+              className={`py-1.5 px-3 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                assignmentMode === 'Individual'
+                  ? 'bg-white text-blue-700 shadow-sm border border-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Individual Task</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAssignmentMode('Group')}
+              className={`py-1.5 px-3 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                assignmentMode === 'Group'
+                  ? 'bg-white text-blue-700 shadow-sm border border-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Group Task (Team Unit)</span>
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-500 m-0">
+            {assignmentMode === 'Individual'
+              ? 'Creates an independent task assigned to a single team member.'
+              : 'Creates one canonical task assigned to a team unit where the designated Lead submits deliverables on behalf of the group.'}
+          </p>
+        </div>
+
+        {assignmentMode === 'Group' && (
+          <div className="space-y-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <TextField
+              label="Group / Field Team Name"
+              required
+              value={groupName}
+              onChange={e => setGroupName(e.target.value)}
+              placeholder="e.g., Ujjain Block Field Enumeration Team Alpha"
+              errorMessage={errors.groupName}
+            />
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                Include Group Members (From Subordinates)
+              </label>
+              <div className="p-2.5 bg-white rounded-lg border border-slate-200 max-h-36 overflow-y-auto space-y-1.5">
+                {eligibleAssignees.map(emp => (
+                  <label
+                    key={emp.id}
+                    className="flex items-center gap-2 text-xs text-slate-700 cursor-pointer hover:bg-slate-50 p-1.5 rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={
+                        selectedMemberIds.includes(emp.id) ||
+                        emp.id === assigneeId
+                      }
+                      disabled={emp.id === assigneeId}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setSelectedMemberIds(prev => [...prev, emp.id]);
+                        } else {
+                          setSelectedMemberIds(prev =>
+                            prev.filter(id => id !== emp.id)
+                          );
+                        }
+                      }}
+                      className="rounded border-slate-300 text-blue-600"
+                    />
+                    <span className="font-semibold text-slate-800">
+                      {emp.name}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      ({emp.role} — {emp.designation})
+                    </span>
+                    {emp.id === assigneeId && (
+                      <span className="ml-auto text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                        Designated Lead
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {eligibleAssignees.length === 0 ? (
           <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-800 flex items-center justify-between">
@@ -571,7 +879,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
           </div>
         ) : (
           <SelectField
-            label="Assignee (Eligible Subordinates)"
+            label={
+              assignmentMode === 'Group'
+                ? 'Designated Team Lead (Primary Submitter) *'
+                : 'Assignee (Eligible Subordinates) *'
+            }
             required
             options={assigneeOptions}
             value={assigneeId}
@@ -583,7 +895,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               }
             }}
             errorMessage={errors.assignee}
-            helperText="⭐ Indicates team member allocated on Project Roster"
+            helperText={
+              assignmentMode === 'Group'
+                ? 'The Team Lead is accountable for submitting deliverables and evidence for verification'
+                : '⭐ Indicates team member allocated on Project Roster'
+            }
           />
         )}
 

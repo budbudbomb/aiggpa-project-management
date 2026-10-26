@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../shared/components/panels';
 import {
   ActivityTaskStore,
@@ -41,9 +42,21 @@ export default function ActivitiesPage(): React.ReactElement {
   }, [authUser, version]);
 
   // Modals state
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [preselectedSurveyId, setPreselectedSurveyId] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isRelationshipsOpen, setIsRelationshipsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<ActivityTask | null>(null);
+
+  // Consume surveyId parameter when navigated from Survey Studio
+  useEffect(() => {
+    const surveyIdParam = searchParams.get('surveyId');
+    if (surveyIdParam) {
+      setPreselectedSurveyId(surveyIdParam);
+      setIsCreateOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // View mode: Kanban vs List
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
@@ -357,7 +370,10 @@ export default function ActivitiesPage(): React.ReactElement {
                 variant="primary"
                 size="sm"
                 leftIcon={<Plus className="w-3.5 h-3.5" />}
-                onClick={() => setIsCreateOpen(true)}
+                onClick={() => {
+                  setPreselectedSurveyId(null);
+                  setIsCreateOpen(true);
+                }}
               >
                 Create Task
               </AppButton>
@@ -967,10 +983,15 @@ export default function ActivitiesPage(): React.ReactElement {
       {canCreate && (
         <CreateTaskModal
           isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
+          onClose={() => {
+            setIsCreateOpen(false);
+            setPreselectedSurveyId(null);
+          }}
           currentUser={currentUser}
+          preselectedSurveyId={preselectedSurveyId}
           onTaskCreated={taskId => {
             showToast(`Task ${taskId} created successfully.`);
+            setPreselectedSurveyId(null);
           }}
           onOpenRelationshipsModal={() => {
             setIsCreateOpen(false);

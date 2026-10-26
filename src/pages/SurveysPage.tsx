@@ -4,9 +4,13 @@ import surveysCss from '../styles/surveys.css?inline';
 import { usePageStyles } from '../lib/usePageStyles';
 import { useStoreData } from '../lib/storeEvents';
 import SurveyStore from '../stores/surveyStore';
+import {
+  ActivityTaskStore,
+  type ActivityTask,
+} from '../stores/activityTaskStore';
 import type { AdminSurvey, SurveyQuestion } from '../stores/types';
 import { PageContainer, PageHeader, AppButton } from '../components';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, CheckSquare, ExternalLink } from 'lucide-react';
 
 function formatDate(dStr?: string): string {
   if (!dStr) return '';
@@ -97,9 +101,14 @@ export default function SurveysPage(): React.ReactElement {
   const [currentFilter, setCurrentFilter] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [modalTab, setModalTab] = useState<'questions' | 'feedback'>(
+  const [modalTab, setModalTab] = useState<'questions' | 'feedback' | 'tasks'>(
     'questions'
   );
+
+  const selectedSurveyTasks = useMemo(() => {
+    if (!selectedId) return [];
+    return ActivityTaskStore.getTasksForSurvey(selectedId);
+  }, [selectedId, version]);
 
   const allSurveys: AdminSurvey[] = useMemo(() => {
     void version;
@@ -373,6 +382,7 @@ export default function SurveysPage(): React.ReactElement {
             const percent = Math.min(100, Math.round((resCount / req) * 100));
             const questionCount = survey.questions?.length || 0;
             const feedbackCount = survey.feedbacks?.length || 0;
+            const linkedTasks = ActivityTaskStore.getTasksForSurvey(survey.id);
             const badge = getBadgeConfig(
               survey.submissionStatus,
               survey.status
@@ -394,6 +404,31 @@ export default function SurveysPage(): React.ReactElement {
                       <span>{badge.label}</span>
                     </span>
                     <div className="survey-card-meta">
+                      {linkedTasks.length > 0 && (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            background: '#eff6ff',
+                            color: '#1d4ed8',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: 999,
+                            border: '1px solid #bfdbfe',
+                          }}
+                        >
+                          <i
+                            className="pi pi-check-square"
+                            style={{ fontSize: 9 }}
+                          />
+                          <span>
+                            {linkedTasks.length} Task
+                            {linkedTasks.length > 1 ? 's' : ''}
+                          </span>
+                        </span>
+                      )}
                       {feedbackCount > 0 && (
                         <span className="review-pill">
                           <i
@@ -459,19 +494,18 @@ export default function SurveysPage(): React.ReactElement {
                   <div
                     style={{ display: 'flex', alignItems: 'center', gap: 8 }}
                   >
-                    {!survey.isAllocatedAsTask &&
-                      (survey.responsesCount || 0) === 0 && (
-                        <Link
-                          to={`/activities?surveyId=${survey.id}&title=${encodeURIComponent(survey.title)}`}
-                          className="btn-card-allocate"
-                        >
-                          <span>Allocate</span>
-                          <i
-                            className="pi pi-arrow-right"
-                            style={{ fontSize: 10 }}
-                          />
-                        </Link>
-                      )}
+                    <Link
+                      to={`/activities?surveyId=${survey.id}&title=${encodeURIComponent(survey.title)}`}
+                      className="btn-card-allocate"
+                    >
+                      <span>
+                        {linkedTasks.length > 0 ? '+ Allocate Task' : 'Allocate'}
+                      </span>
+                      <i
+                        className="pi pi-arrow-right"
+                        style={{ fontSize: 10 }}
+                      />
+                    </Link>
                     <div
                       className="btn-card-dashboard"
                       style={{
@@ -577,7 +611,7 @@ export default function SurveysPage(): React.ReactElement {
               style={tabBtnStyle(modalTab === 'questions')}
               onClick={() => setModalTab('questions')}
             >
-              Questionnaire Form
+              Questionnaire ({selectedSurvey?.questions?.length || 0})
             </button>
             <button
               type="button"
@@ -585,7 +619,15 @@ export default function SurveysPage(): React.ReactElement {
               style={tabBtnStyle(modalTab === 'feedback')}
               onClick={() => setModalTab('feedback')}
             >
-              Supervisor Reviews & Feedback
+              Reviews ({selectedSurvey?.feedbacks?.length || 0})
+            </button>
+            <button
+              type="button"
+              id="modalTabTasks"
+              style={tabBtnStyle(modalTab === 'tasks')}
+              onClick={() => setModalTab('tasks')}
+            >
+              Linked Tasks ({selectedSurveyTasks.length})
             </button>
           </div>
 
@@ -874,6 +916,323 @@ export default function SurveysPage(): React.ReactElement {
                     )}
                   </div>
                 ))
+              )}
+            </div>
+
+            {/* ── Linked Tasks Content Tab ── */}
+            <div
+              id="modalTasksContent"
+              style={{ display: modalTab === 'tasks' ? 'block' : 'none' }}
+            >
+              {selectedSurveyTasks.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: 'center',
+                    padding: '36px 16px',
+                    background: '#f8fafc',
+                    borderRadius: 12,
+                    border: '1px dashed #cbd5e1',
+                  }}
+                >
+                  <i
+                    className="pi pi-list-check"
+                    style={{
+                      fontSize: '1.8rem',
+                      color: '#94a3b8',
+                      display: 'block',
+                      marginBottom: 8,
+                    }}
+                  />
+                  <h4
+                    style={{
+                      fontSize: '0.92rem',
+                      fontWeight: 700,
+                      color: '#1e293b',
+                      margin: '0 0 4px',
+                    }}
+                  >
+                    No Tasks Allocated Yet
+                  </h4>
+                  <p
+                    style={{
+                      fontSize: '0.78rem',
+                      color: '#64748b',
+                      maxWidth: 380,
+                      margin: '0 auto 16px',
+                    }}
+                  >
+                    This survey does not have any operational tasks linked to
+                    field staff or groups yet.
+                  </p>
+                  <Link
+                    to={`/activities?surveyId=${selectedSurvey?.id}&title=${encodeURIComponent(selectedSurvey?.title || '')}`}
+                    className="btn-create-survey-main"
+                    style={{ display: 'inline-flex' }}
+                  >
+                    <i className="pi pi-plus" />
+                    <span>Allocate First Task</span>
+                  </Link>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: 4,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '0.78rem',
+                        color: '#64748b',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {selectedSurveyTasks.length} Operational Task
+                      {selectedSurveyTasks.length > 1 ? 's' : ''} Linked
+                    </span>
+                    <Link
+                      to={`/activities?surveyId=${selectedSurvey?.id}&title=${encodeURIComponent(selectedSurvey?.title || '')}`}
+                      style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: '#2563eb',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <i className="pi pi-plus" style={{ fontSize: 10 }} />
+                      <span>Allocate Another Task</span>
+                    </Link>
+                  </div>
+
+                  {selectedSurveyTasks.map(task => (
+                    <div
+                      key={task.id}
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: 12,
+                        padding: '12px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                        }}
+                      >
+                        <div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              marginBottom: 4,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                background: '#f1f5f9',
+                                color: '#475569',
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                fontFamily: 'monospace',
+                              }}
+                            >
+                              {task.id}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                padding: '2px 8px',
+                                borderRadius: 999,
+                                background:
+                                  task.status === 'Completed'
+                                    ? '#dcfce7'
+                                    : task.status === 'In Review'
+                                      ? '#fef3c7'
+                                      : '#eff6ff',
+                                color:
+                                  task.status === 'Completed'
+                                    ? '#15803d'
+                                    : task.status === 'In Review'
+                                      ? '#b45309'
+                                      : '#1d4ed8',
+                              }}
+                            >
+                              {task.status}
+                            </span>
+                            {task.assignmentMode === 'Group' && (
+                              <span
+                                style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  background: '#ede9fe',
+                                  color: '#6d28d9',
+                                  padding: '2px 8px',
+                                  borderRadius: 999,
+                                }}
+                              >
+                                Group ({task.groupName || 'Team'})
+                              </span>
+                            )}
+                          </div>
+                          <h4
+                            style={{
+                              fontSize: '0.88rem',
+                              fontWeight: 700,
+                              color: '#0f172a',
+                              margin: 0,
+                            }}
+                          >
+                            {task.title}
+                          </h4>
+                        </div>
+                        <Link
+                          to="/activities"
+                          style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            color: '#2563eb',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            padding: '4px 8px',
+                            borderRadius: 6,
+                            background: '#eff6ff',
+                          }}
+                        >
+                          <span>Open Board</span>
+                          <i
+                            className="pi pi-arrow-up-right"
+                            style={{ fontSize: 9 }}
+                          />
+                        </Link>
+                      </div>
+
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns:
+                            'repeat(auto-fit, minmax(130px, 1fr))',
+                          gap: 8,
+                          fontSize: '0.75rem',
+                          background: '#f8fafc',
+                          padding: '8px 12px',
+                          borderRadius: 8,
+                        }}
+                      >
+                        <div>
+                          <span
+                            style={{
+                              color: '#94a3b8',
+                              fontSize: '0.68rem',
+                              display: 'block',
+                              fontWeight: 600,
+                            }}
+                          >
+                            ASSIGNEE
+                          </span>
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color: '#334155',
+                            }}
+                          >
+                            {task.assigneeName}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              color: '#64748b',
+                              display: 'block',
+                            }}
+                          >
+                            ({task.assigneeRole})
+                          </span>
+                        </div>
+                        <div>
+                          <span
+                            style={{
+                              color: '#94a3b8',
+                              fontSize: '0.68rem',
+                              display: 'block',
+                              fontWeight: 600,
+                            }}
+                          >
+                            REVIEWER
+                          </span>
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color: '#334155',
+                            }}
+                          >
+                            {task.reviewerName}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              color: '#64748b',
+                              display: 'block',
+                            }}
+                          >
+                            ({task.reviewerRole})
+                          </span>
+                        </div>
+                        <div>
+                          <span
+                            style={{
+                              color: '#94a3b8',
+                              fontSize: '0.68rem',
+                              display: 'block',
+                              fontWeight: 600,
+                            }}
+                          >
+                            PRIORITY &amp; DUE DATE
+                          </span>
+                          <span
+                            style={{
+                              fontWeight: 600,
+                              color: '#334155',
+                            }}
+                          >
+                            {task.priority} Priority
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              color: '#64748b',
+                              display: 'block',
+                            }}
+                          >
+                            Due: {task.dueDate}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
