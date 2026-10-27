@@ -11,6 +11,12 @@
   <link rel="stylesheet" href="https://unpkg.com/primeicons/primeicons.css">
   <link rel="stylesheet" href="css/design-system.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get('projectId') || params.get('id');
+    const targetUrl = 'create-project.html?view=budget' + (pid ? '&projectId=' + encodeURIComponent(pid) : '');
+    window.location.replace(targetUrl);
+  </script>
 </head>
 
 <body>
