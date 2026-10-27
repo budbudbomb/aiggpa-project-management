@@ -14,6 +14,9 @@ import TaskCard from './activities/TaskCard';
 import CreateTaskModal from './activities/CreateTaskModal';
 import TaskDetailsModal from './activities/TaskDetailsModal';
 import RelationshipsModal from './activities/RelationshipsModal';
+import TaskReadReceiptsModal from './activities/TaskReadReceiptsModal';
+import SubtaskMeetingDetailsModal from './activities/SubtaskMeetingDetailsModal';
+import SurveyStore from '../stores/surveyStore';
 import { PageContainer, AppButton } from '../components';
 import {
   Plus,
@@ -25,6 +28,10 @@ import {
   CheckSquare,
   Eye,
   ShieldAlert,
+  ChevronRight,
+  Trash2,
+  ExternalLink,
+  Video,
 } from 'lucide-react';
 
 export default function ActivitiesPage(): React.ReactElement {
@@ -43,10 +50,118 @@ export default function ActivitiesPage(): React.ReactElement {
 
   // Modals state
   const [searchParams, setSearchParams] = useSearchParams();
-  const [preselectedSurveyId, setPreselectedSurveyId] = useState<string | null>(null);
+  const [preselectedSurveyId, setPreselectedSurveyId] = useState<string | null>(
+    null
+  );
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isRelationshipsOpen, setIsRelationshipsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<ActivityTask | null>(null);
+  const [readReceiptsTask, setReadReceiptsTask] =
+    useState<ActivityTask | null>(null);
+  const [expandedTaskIds, setExpandedTaskIds] = useState<string[]>([]);
+  const [meetingModalTaskId, setMeetingModalTaskId] = useState<string | null>(
+    null
+  );
+
+  type QuickSubtaskState = {
+    type: 'standard' | 'survey' | 'meeting';
+    title: string;
+    surveyId: string;
+    meetingUrl: string;
+    meetingDuration: string;
+    meetingDescription: string;
+    assigneeName: string;
+    dueDate: string;
+    priority: string;
+  };
+  const [quickSubtaskMap, setQuickSubtaskMap] = useState<
+    Record<string, QuickSubtaskState>
+  >({});
+
+  const getQuickState = (
+    taskId: string,
+    fallbackTask?: ActivityTask
+  ): QuickSubtaskState => {
+    return (
+      quickSubtaskMap[taskId] || {
+        type: 'standard',
+        title: '',
+        surveyId: '',
+        meetingUrl: '',
+        meetingDuration: '30 mins',
+        meetingDescription: '',
+        assigneeName: fallbackTask?.assigneeName || '',
+        dueDate:
+          fallbackTask?.dueDate || new Date().toISOString().split('T')[0],
+        priority: 'Medium',
+      }
+    );
+  };
+
+  const updateQuickState = (
+    taskId: string,
+    patch: Partial<QuickSubtaskState>,
+    fallbackTask?: ActivityTask
+  ) => {
+    setQuickSubtaskMap(prev => ({
+      ...prev,
+      [taskId]: { ...getQuickState(taskId, fallbackTask), ...patch },
+    }));
+  };
+
+  const toggleTaskExpand = (taskId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setExpandedTaskIds(prev =>
+      prev.includes(taskId)
+        ? prev.filter(id => id !== taskId)
+        : [...prev, taskId]
+    );
+  };
+
+  const handleQuickSubtaskSubmit = (task: ActivityTask) => {
+    const state = getQuickState(task.id, task);
+    const text =
+      state.type === 'survey'
+        ? state.surveyId
+          ? `Survey: ${state.surveyId}`
+          : ''
+        : state.title;
+
+    if (!text || !text.trim()) {
+      showToast(
+        state.type === 'survey'
+          ? 'Please select a survey'
+          : 'Please enter subtask title'
+      );
+      return;
+    }
+
+    ActivityTaskStore.addChecklistItem(
+      task.id,
+      {
+        text: text.trim(),
+        type: state.type,
+        surveyId: state.surveyId,
+        meetingUrl: state.meetingUrl,
+        meetingDuration: state.meetingDuration,
+        meetingDescription: state.meetingDescription,
+        assigneeName: state.assigneeName || task.assigneeName,
+        dueDate: state.dueDate || task.dueDate,
+        priority: state.priority || 'Medium',
+        status: 'In Progress',
+      },
+      { id: currentUser.id, name: currentUser.name, role: currentUser.role }
+    );
+
+    updateQuickState(task.id, {
+      title: '',
+      surveyId: '',
+      meetingUrl: '',
+      meetingDuration: '30 mins',
+      meetingDescription: '',
+    });
+    showToast('Subtask added successfully');
+  };
 
   // Consume surveyId parameter when navigated from Survey Studio
   useEffect(() => {
@@ -94,6 +209,11 @@ export default function ActivitiesPage(): React.ReactElement {
   const projects = useMemo(() => {
     void version;
     return projectStore.getProjects();
+  }, [version]);
+
+  const surveys = useMemo(() => {
+    void version;
+    return SurveyStore.getSurveys();
   }, [version]);
 
   const reviewQueueCount = useMemo(() => {
@@ -827,6 +947,7 @@ export default function ActivitiesPage(): React.ReactElement {
                         onOpenDetails={t => setSelectedTask(t)}
                         onStatusChange={handleCardStatusChange}
                         onDragStart={handleDragStart}
+                        onOpenReadReceipts={t => setReadReceiptsTask(t)}
                       />
                     ))
                   )}
@@ -838,7 +959,7 @@ export default function ActivitiesPage(): React.ReactElement {
       )}
 
       {/* ══════════════════════════════════════════════════════════════════
-          VIEW 2: LIST / TABLE VIEW
+          VIEW 2: LIST / TABLE VIEW (With Expandable Subtasks & Quick-Add)
       ══════════════════════════════════════════════════════════════════ */}
       {viewMode === 'list' && (
         <div className="mt-4 bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
@@ -857,15 +978,15 @@ export default function ActivitiesPage(): React.ReactElement {
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                   <tr>
-                    <th className="py-3 px-4 w-24">Task ID</th>
+                    <th className="py-3 px-3 w-8"></th>
+                    <th className="py-3 px-3 w-24">Task ID</th>
                     <th className="py-3 px-4">Title &amp; Project</th>
                     <th className="py-3 px-4 w-40">Assignee</th>
-                    <th className="py-3 px-4 w-36">Creator</th>
-                    <th className="py-3 px-4 w-28">Priority</th>
                     <th className="py-3 px-4 w-32">Due Date</th>
-                    <th className="py-3 px-4 w-36">Status</th>
-                    <th className="py-3 px-4 w-28">Checklist</th>
-                    <th className="py-3 px-4 w-20 text-center">Actions</th>
+                    <th className="py-3 px-4 w-28">Priority</th>
+                    <th className="py-3 px-4 w-32">Status</th>
+                    <th className="py-3 px-4 w-24">Checklist</th>
+                    <th className="py-3 px-4 w-24 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -875,121 +996,538 @@ export default function ActivitiesPage(): React.ReactElement {
                       t.dueDate &&
                       new Date(t.dueDate) <
                         new Date(new Date().setHours(0, 0, 0, 0));
+                    const isExpanded = expandedTaskIds.includes(t.id);
+                    const qState = getQuickState(t.id, t);
 
                     return (
-                      <tr
-                        key={t.id}
-                        onClick={() => setSelectedTask(t)}
-                        className="hover:bg-slate-50/70 cursor-pointer"
-                      >
-                        <td className="py-3 px-4 font-bold text-blue-600">
-                          {t.id}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-800 line-clamp-1">
-                            {t.title}
-                          </div>
-                          <div className="text-[11px] text-slate-400 truncate">
-                            {t.projectName}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="font-medium text-slate-800">
-                            {t.assigneeName}
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            {t.assigneeRole}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="font-medium text-slate-700">
-                            {t.creatorName}
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            {t.creatorRole}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              t.priority === 'Critical'
-                                ? 'bg-rose-50 text-rose-700'
-                                : t.priority === 'High'
-                                  ? 'bg-amber-50 text-amber-700'
-                                  : t.priority === 'Medium'
-                                    ? 'bg-blue-50 text-blue-700'
-                                    : 'bg-slate-50 text-slate-600'
-                            }`}
+                      <React.Fragment key={t.id}>
+                        {/* Parent Task Row */}
+                        <tr
+                          onClick={() => setSelectedTask(t)}
+                          className={`hover:bg-slate-50/70 cursor-pointer transition-colors ${
+                            isExpanded ? 'bg-slate-50/40' : ''
+                          }`}
+                        >
+                          {/* Chevron Expand Column */}
+                          <td
+                            className="py-3 px-2 text-center"
+                            onClick={e => toggleTaskExpand(t.id, e)}
                           >
-                            {t.priority}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 font-medium">
-                          <span
-                            className={
-                              isOverdue
-                                ? 'text-rose-600 font-bold'
-                                : 'text-slate-600'
-                            }
-                          >
-                            {isOverdue && '⚠️ '}
-                            {t.dueDate}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              t.status === 'Completed'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : t.status === 'In Review'
-                                  ? 'bg-indigo-100 text-indigo-800'
-                                  : t.status === 'Changes Requested'
-                                    ? 'bg-rose-100 text-rose-800'
-                                    : t.status === 'In Progress'
-                                      ? 'bg-blue-100 text-blue-800'
-                                      : 'bg-slate-100 text-slate-700'
-                            }`}
-                          >
-                            {t.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-slate-500">
-                          <div className="flex items-center gap-1.5">
-                            <span>
-                              {t.checklist.filter(c => c.completed).length}/
-                              {t.checklist.length}
+                            <button
+                              type="button"
+                              className={`p-1 rounded hover:bg-slate-200 text-slate-400 cursor-pointer transition-transform ${
+                                isExpanded ? 'rotate-90 text-blue-600' : ''
+                              }`}
+                              title={
+                                isExpanded
+                                  ? 'Collapse subtasks'
+                                  : `Expand subtasks (${t.checklist.length})`
+                              }
+                            >
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+
+                          {/* Task ID */}
+                          <td className="py-3 px-3 font-bold text-blue-600 whitespace-nowrap">
+                            {t.id}
+                          </td>
+
+                          {/* Title & Project */}
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-slate-800 line-clamp-1">
+                                {t.title}
+                              </span>
+                              {t.surveyId && (
+                                <span className="px-1.5 py-0.2 bg-amber-50 text-amber-800 rounded text-[9px] font-bold border border-amber-200">
+                                  Survey
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-400 truncate">
+                              {t.projectName}
+                            </div>
+                          </td>
+
+                          {/* Assignee */}
+                          <td className="py-3 px-4">
+                            <div className="font-medium text-slate-800">
+                              {t.assigneeName}
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              {t.assigneeRole}
+                            </div>
+                          </td>
+
+                          {/* Due Date */}
+                          <td className="py-3 px-4 font-medium whitespace-nowrap">
+                            <span
+                              className={
+                                isOverdue
+                                  ? 'text-rose-600 font-bold'
+                                  : 'text-slate-600'
+                              }
+                            >
+                              {isOverdue && '⚠️ '}
+                              {t.dueDate}
                             </span>
-                            {t.checklist.some(c => c.type === 'meeting') && (
-                              <span
-                                className="px-1 py-0.2 bg-blue-50 text-blue-700 rounded text-[9px] font-bold border border-blue-200/60"
-                                title="Contains meeting subtasks"
-                              >
-                                📅
+                          </td>
+
+                          {/* Priority */}
+                          <td className="py-3 px-4">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                t.priority === 'Critical'
+                                  ? 'bg-rose-50 text-rose-700'
+                                  : t.priority === 'High'
+                                    ? 'bg-amber-50 text-amber-700'
+                                    : t.priority === 'Medium'
+                                      ? 'bg-blue-50 text-blue-700'
+                                      : 'bg-slate-50 text-slate-600'
+                              }`}
+                            >
+                              {t.priority}
+                            </span>
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3 px-4">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                t.status === 'Completed'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : t.status === 'In Review'
+                                    ? 'bg-indigo-100 text-indigo-800'
+                                    : t.status === 'Changes Requested'
+                                      ? 'bg-rose-100 text-rose-800'
+                                      : t.status === 'In Progress'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-slate-100 text-slate-700'
+                              }`}
+                            >
+                              {t.status}
+                            </span>
+                          </td>
+
+                          {/* Checklist Stats */}
+                          <td className="py-3 px-4 text-slate-500 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <span>
+                                {t.checklist.filter(c => c.completed).length}/
+                                {t.checklist.length}
                               </span>
-                            )}
-                            {t.checklist.some(c => c.type === 'survey') && (
-                              <span
-                                className="px-1 py-0.2 bg-amber-50 text-amber-800 rounded text-[9px] font-bold border border-amber-200/60"
-                                title="Contains survey subtasks"
-                              >
-                                📋
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <button
-                            type="button"
-                            onClick={e => {
-                              e.stopPropagation();
-                              setSelectedTask(t);
-                            }}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded cursor-pointer"
+                              {t.checklist.some(c => c.type === 'meeting') && (
+                                <span
+                                  className="px-1 py-0.2 bg-blue-50 text-blue-700 rounded text-[9px] font-bold border border-blue-200/60"
+                                  title="Contains meeting subtasks"
+                                >
+                                  📅
+                                </span>
+                              )}
+                              {t.checklist.some(c => c.type === 'survey') && (
+                                <span
+                                  className="px-1 py-0.2 bg-amber-50 text-amber-800 rounded text-[9px] font-bold border border-amber-200/60"
+                                  title="Contains survey subtasks"
+                                >
+                                  📋
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Actions */}
+                          <td
+                            className="py-3 px-4 text-center whitespace-nowrap"
+                            onClick={e => e.stopPropagation()}
                           >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedTask(t)}
+                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded cursor-pointer transition-colors"
+                                title="View Task Details"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setReadReceiptsTask(t)}
+                                className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded cursor-pointer transition-colors"
+                                title="View Member Read Receipts"
+                              >
+                                <Users className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  if (
+                                    window.confirm(
+                                      `Are you sure you want to delete task ${t.id}?`
+                                    )
+                                  ) {
+                                    ActivityTaskStore.deleteTask(t.id);
+                                    showToast(`Task ${t.id} removed.`);
+                                  }
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
+                                title="Delete Task"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Expandable Subtask Rows & Inline Quick-Add */}
+                        {isExpanded && (
+                          <>
+                            {/* Existing Subtasks */}
+                            {t.checklist.map(item => (
+                              <tr
+                                key={item.id}
+                                className="bg-slate-50/70 hover:bg-slate-100/60 border-b border-slate-100 text-xs transition-colors"
+                              >
+                                <td></td>
+                                <td className="py-2.5 px-3 text-slate-400 text-right font-mono text-[11px]">
+                                  ↳
+                                </td>
+                                <td className="py-2.5 px-4">
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={item.completed}
+                                      onChange={() =>
+                                        ActivityTaskStore.toggleChecklistItem(
+                                          t.id,
+                                          item.id,
+                                          {
+                                            id: currentUser.id,
+                                            name: currentUser.name,
+                                            role: currentUser.role,
+                                          }
+                                        )
+                                      }
+                                      className="w-4 h-4 rounded text-blue-600 border-slate-300 cursor-pointer focus:ring-0"
+                                    />
+                                    {item.type === 'meeting' && (
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                        📅 Meeting
+                                      </span>
+                                    )}
+                                    {item.type === 'survey' && (
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                        📋 Survey
+                                      </span>
+                                    )}
+                                    {(!item.type ||
+                                      item.type === 'standard') && (
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200/70 text-slate-700">
+                                        📌 Standard
+                                      </span>
+                                    )}
+                                    <span
+                                      className={`font-medium ${
+                                        item.completed
+                                          ? 'line-through text-slate-400'
+                                          : 'text-slate-800'
+                                      }`}
+                                    >
+                                      {item.text}
+                                    </span>
+                                    {item.meetingUrl && (
+                                      <a
+                                        href={item.meetingUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded border border-blue-200 ml-1 cursor-pointer"
+                                        title={`Join Meeting (${item.meetingDuration || '30 mins'})`}
+                                      >
+                                        <Video className="w-3 h-3 text-blue-600" />
+                                        <span>Join</span>
+                                        <ExternalLink className="w-2.5 h-2.5 text-blue-500" />
+                                      </a>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-4 text-slate-600 text-[11px]">
+                                  {item.assigneeName || t.assigneeName}
+                                </td>
+                                <td className="py-2.5 px-4 text-slate-500 text-[11px] whitespace-nowrap">
+                                  {item.dueDate || t.dueDate}
+                                </td>
+                                <td className="py-2.5 px-4">
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">
+                                    {item.priority || 'Medium'}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-4">
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                      item.completed
+                                        ? 'bg-emerald-100 text-emerald-800'
+                                        : 'bg-blue-100 text-blue-800'
+                                    }`}
+                                  >
+                                    {item.completed
+                                      ? 'Completed'
+                                      : 'In Progress'}
+                                  </span>
+                                </td>
+                                <td></td>
+                                <td className="py-2.5 px-4 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      ActivityTaskStore.deleteChecklistItem(
+                                        t.id,
+                                        item.id,
+                                        {
+                                          id: currentUser.id,
+                                          name: currentUser.name,
+                                          role: currentUser.role,
+                                        }
+                                      )
+                                    }
+                                    className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded cursor-pointer transition-colors"
+                                    title="Delete subtask"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+
+                            {/* Inline Quick-Add Subtask Row */}
+                            <tr className="bg-slate-50/50 border-b-2 border-dashed border-slate-200 text-xs">
+                              <td></td>
+                              <td className="py-2 px-3 text-slate-400 text-right font-mono text-[11px]">
+                                ↳
+                              </td>
+                              <td className="py-2 px-4">
+                                <div className="flex flex-col gap-1.5">
+                                  {/* Subtask Type Selector Pills */}
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                                      Type:
+                                    </span>
+                                    <div className="inline-flex bg-slate-200/60 p-0.5 rounded-lg border border-slate-200 gap-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          updateQuickState(
+                                            t.id,
+                                            { type: 'standard' },
+                                            t
+                                          )
+                                        }
+                                        className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                                          qState.type === 'standard'
+                                            ? 'bg-white text-blue-700 shadow-2xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                      >
+                                        📌 Standard
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          updateQuickState(
+                                            t.id,
+                                            { type: 'survey' },
+                                            t
+                                          )
+                                        }
+                                        className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                                          qState.type === 'survey'
+                                            ? 'bg-white text-amber-700 shadow-2xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                      >
+                                        📋 Survey
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          updateQuickState(
+                                            t.id,
+                                            { type: 'meeting' },
+                                            t
+                                          )
+                                        }
+                                        className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                                          qState.type === 'meeting'
+                                            ? 'bg-white text-blue-700 shadow-2xs'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                      >
+                                        📅 Meeting
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Dynamic Input / Survey Select / Meeting Details */}
+                                  <div className="flex items-center gap-2">
+                                    {qState.type === 'survey' ? (
+                                      <select
+                                        value={qState.surveyId}
+                                        onChange={e =>
+                                          updateQuickState(
+                                            t.id,
+                                            { surveyId: e.target.value },
+                                            t
+                                          )
+                                        }
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleQuickSubtaskSubmit(t);
+                                          }
+                                        }}
+                                        className="w-full text-xs bg-white border border-amber-300 rounded-md px-2.5 py-1 text-amber-900 font-semibold focus:outline-none focus:ring-1 focus:ring-amber-500"
+                                      >
+                                        <option value="">
+                                          -- Select a Survey --
+                                        </option>
+                                        {surveys.map(s => (
+                                          <option key={s.id} value={s.name}>
+                                            📋 {s.name} ({s.id})
+                                          </option>
+                                        ))}
+                                      </select>
+                                    ) : (
+                                      <input
+                                        type="text"
+                                        value={qState.title}
+                                        onChange={e =>
+                                          updateQuickState(
+                                            t.id,
+                                            { title: e.target.value },
+                                            t
+                                          )
+                                        }
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleQuickSubtaskSubmit(t);
+                                          }
+                                        }}
+                                        placeholder={
+                                          qState.type === 'meeting'
+                                            ? 'Meeting agenda / title... (press Enter to save)'
+                                            : 'Add a subtask... (press Enter to save)'
+                                        }
+                                        className="w-full text-xs bg-white border border-slate-300 rounded-md px-2.5 py-1 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-600 font-medium"
+                                      />
+                                    )}
+
+                                    {qState.type === 'meeting' && (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setMeetingModalTaskId(t.id)
+                                        }
+                                        className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold border cursor-pointer transition-colors ${
+                                          qState.meetingUrl
+                                            ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                            : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                                        }`}
+                                        title="Configure meeting link & duration"
+                                      >
+                                        <Video className="w-3 h-3" />
+                                        <span>
+                                          {qState.meetingUrl
+                                            ? 'Details Added'
+                                            : 'Details'}
+                                        </span>
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Assignee */}
+                              <td className="py-2 px-4">
+                                <select
+                                  value={
+                                    qState.assigneeName || t.assigneeName
+                                  }
+                                  onChange={e =>
+                                    updateQuickState(
+                                      t.id,
+                                      { assigneeName: e.target.value },
+                                      t
+                                    )
+                                  }
+                                  className="w-full text-[11px] bg-white border border-slate-300 rounded px-1.5 py-1 text-slate-700"
+                                >
+                                  {employees.map(emp => (
+                                    <option key={emp.id} value={emp.name}>
+                                      {emp.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              {/* Due Date */}
+                              <td className="py-2 px-4">
+                                <input
+                                  type="date"
+                                  value={qState.dueDate}
+                                  onChange={e =>
+                                    updateQuickState(
+                                      t.id,
+                                      { dueDate: e.target.value },
+                                      t
+                                    )
+                                  }
+                                  className="w-full text-[11px] bg-white border border-slate-300 rounded px-1.5 py-1 text-slate-700"
+                                />
+                              </td>
+
+                              {/* Priority */}
+                              <td className="py-2 px-4">
+                                <select
+                                  value={qState.priority}
+                                  onChange={e =>
+                                    updateQuickState(
+                                      t.id,
+                                      { priority: e.target.value },
+                                      t
+                                    )
+                                  }
+                                  className="w-full text-[11px] bg-white border border-slate-300 rounded px-1.5 py-1 text-slate-700"
+                                >
+                                  <option value="High">High</option>
+                                  <option value="Medium">Medium</option>
+                                  <option value="Low">Low</option>
+                                </select>
+                              </td>
+
+                              {/* Status preview */}
+                              <td className="py-2 px-4 text-slate-400 text-[11px]">
+                                In Progress
+                              </td>
+
+                              {/* Empty Checklist cell */}
+                              <td></td>
+
+                              {/* Add Button */}
+                              <td className="py-2 px-4 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickSubtaskSubmit(t)}
+                                  className="w-7 h-7 bg-blue-600 hover:bg-blue-700 text-white rounded-full inline-flex items-center justify-center cursor-pointer shadow-xs transition-transform hover:scale-105"
+                                  title="Add subtask (Enter)"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          </>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
@@ -1038,6 +1576,40 @@ export default function ActivitiesPage(): React.ReactElement {
         onClose={() => setIsRelationshipsOpen(false)}
         currentUser={currentUser}
       />
+
+      {/* Task Read Receipts Modal */}
+      <TaskReadReceiptsModal
+        task={readReceiptsTask}
+        isOpen={Boolean(readReceiptsTask)}
+        onClose={() => setReadReceiptsTask(null)}
+        onTaskUpdated={updatedTask => {
+          setReadReceiptsTask(updatedTask);
+        }}
+      />
+
+      {/* Subtask Meeting Details Modal for Inline Quick-Add */}
+      {meetingModalTaskId && (
+        <SubtaskMeetingDetailsModal
+          isOpen={Boolean(meetingModalTaskId)}
+          initialData={{
+            meetingUrl: getQuickState(meetingModalTaskId).meetingUrl,
+            meetingDuration:
+              getQuickState(meetingModalTaskId).meetingDuration,
+            meetingDescription:
+              getQuickState(meetingModalTaskId).meetingDescription,
+          }}
+          onClose={() => setMeetingModalTaskId(null)}
+          onSave={details => {
+            updateQuickState(meetingModalTaskId, {
+              meetingUrl: details.meetingUrl,
+              meetingDuration: details.meetingDuration,
+              meetingDescription: details.meetingDescription,
+            });
+            setMeetingModalTaskId(null);
+            showToast('Meeting details attached to quick subtask');
+          }}
+        />
+      )}
     </PageContainer>
   );
 }

@@ -33,6 +33,14 @@ export interface Employee {
 
 export type SubtaskType = 'standard' | 'survey' | 'meeting';
 
+export interface TaskAssigneeReadStatus {
+  id?: string;
+  name: string;
+  role?: string;
+  read?: boolean;
+  readAt?: string | null;
+}
+
 export interface TaskChecklistItem {
   id: string;
   text: string;
@@ -42,6 +50,10 @@ export interface TaskChecklistItem {
   meetingUrl?: string;
   meetingDuration?: string;
   meetingDescription?: string;
+  assigneeName?: string;
+  dueDate?: string;
+  priority?: TaskPriority | string;
+  status?: string;
 }
 
 export interface TaskComment {
@@ -159,6 +171,7 @@ export interface ActivityTask {
   assignmentMode?: 'Individual' | 'Group';
   groupName?: string;
   memberIds?: string[];
+  assignees?: TaskAssigneeReadStatus[];
 
   // Structured hierarchy-based evidence collection & submission versioning
   evidenceRequirements: EvidenceRequirement[];
@@ -2727,6 +2740,10 @@ export const ActivityTaskStore = {
       meetingUrl?: string;
       meetingDuration?: string;
       meetingDescription?: string;
+      assigneeName?: string;
+      dueDate?: string;
+      priority?: TaskPriority | string;
+      status?: string;
     },
     actor: { id: string; name: string; role: string }
   ): ActivityTask | null {
@@ -2747,6 +2764,10 @@ export const ActivityTaskStore = {
       meetingUrl: itemData.meetingUrl || '',
       meetingDuration: itemData.meetingDuration || '',
       meetingDescription: itemData.meetingDescription || '',
+      assigneeName: itemData.assigneeName || '',
+      dueDate: itemData.dueDate || '',
+      priority: itemData.priority || 'Medium',
+      status: itemData.status || 'In Progress',
     };
 
     task.checklist.push(newItem);
@@ -2803,6 +2824,38 @@ export const ActivityTaskStore = {
 
     this.saveTasks(list);
     return task;
+  },
+
+  toggleAssigneeReadStatus(
+    taskId: string,
+    memberIdx: number
+  ): ActivityTask | null {
+    const list = this.getTasks();
+    const task = list.find(t => t.id === taskId);
+    if (!task) return null;
+
+    if (!Array.isArray(task.assignees) || task.assignees.length === 0) {
+      task.assignees = [
+        {
+          id: task.assigneeId,
+          name: task.assigneeName,
+          role: task.assigneeRole,
+          read: task.status === 'Completed' || task.status === 'In Review',
+          readAt: task.status === 'Completed' ? 'Today, 10:45 AM' : null,
+        },
+      ];
+    }
+
+    if (task.assignees[memberIdx]) {
+      const a = task.assignees[memberIdx];
+      a.read = !a.read;
+      a.readAt = a.read
+        ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : null;
+      this.saveTasks(list);
+      return task;
+    }
+    return null;
   },
 
   addComment(

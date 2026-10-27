@@ -359,6 +359,7 @@ export default function CreateProjectPage(): React.ReactElement {
   const toastTimer = useRef<number | null>(null);
 
   const [budgetModalOpen, setBudgetModalOpen] = useState(false);
+  const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [mbCategory, setMbCategory] = useState('');
   const [mbSubCategory, setMbSubCategory] = useState('');
   const [mbUnitType, setMbUnitType] = useState('Months');
@@ -568,6 +569,109 @@ export default function CreateProjectPage(): React.ReactElement {
     );
     Store.updateProject(p);
     showToast('Budget line item removed.');
+  };
+
+  const handleClearAllBudget = (): void => {
+    const p = activeProject;
+    if (!p) return;
+    const hasItems = (p.budgetHeads || []).some(
+      h => h.subItems && h.subItems.length > 0
+    );
+    if (!hasItems) {
+      showToast('Budget list is already empty.');
+      return;
+    }
+    if (
+      window.confirm(
+        'Are you sure you want to clear all budget line items for this project?'
+      )
+    ) {
+      (p.budgetHeads || []).forEach(h => {
+        h.subItems = [];
+        h.headTotal = 0;
+      });
+      p.budgetSanctioned = 0;
+      if (p.budgetSummary) {
+        p.budgetSummary.subTotal = 0;
+        p.budgetSummary.totalEstimatedCost = 0;
+      }
+      Store.updateProject(p);
+      showToast('Budget items cleared.');
+    }
+  };
+
+  const handleSaveBudgetDraft = (): void => {
+    const p = activeProject;
+    if (!p) {
+      showToast('Please select a project first!');
+      return;
+    }
+    const hasItems = (p.budgetHeads || []).some(
+      h => h.subItems && h.subItems.length > 0
+    );
+    if (!hasItems) {
+      showToast('Budget list is empty. Add items before saving.');
+      return;
+    }
+
+    const nowTime = new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    p.budgetSummary = {
+      subTotal: subTotal,
+      overheadsPct: 15,
+      overheadsAmount: overheadAmount,
+      totalEstimatedCost: totalBudget,
+      status: 'Draft',
+      lastSaved: nowTime,
+    };
+    p.budgetSanctioned = totalBudget;
+    Store.updateProject(p);
+    showToast(
+      `Draft estimation for "${p.name || p.id}" saved (${formatINR(totalBudget)})!`
+    );
+  };
+
+  const handleOpenSubmitConfirm = (): void => {
+    const p = activeProject;
+    if (!p) {
+      showToast('Please select a project first!');
+      return;
+    }
+    const hasItems = (p.budgetHeads || []).some(
+      h => h.subItems && h.subItems.length > 0
+    );
+    if (!hasItems) {
+      showToast('Budget list is empty. Add items before submitting.');
+      return;
+    }
+    setSubmitConfirmOpen(true);
+  };
+
+  const handleConfirmSubmitBudget = (): void => {
+    const p = activeProject;
+    if (!p) return;
+
+    const nowTime = new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    p.budgetSummary = {
+      subTotal: subTotal,
+      overheadsPct: 15,
+      overheadsAmount: overheadAmount,
+      totalEstimatedCost: totalBudget,
+      status: 'Submitted',
+      lastSaved: nowTime,
+    };
+    p.budgetSanctioned = totalBudget;
+    p.status = 'In Review';
+    Store.updateProject(p);
+    setSubmitConfirmOpen(false);
+    showToast(
+      `Budget Estimation for "${p.name || p.id}" submitted for approval (${formatINR(totalBudget)})!`
+    );
   };
 
   const toggleCollapse = (headKey: string): void => {
@@ -1458,6 +1562,92 @@ export default function CreateProjectPage(): React.ReactElement {
                 (100%)
               </span>
             </div>
+          </div>
+
+          {/* BUDGET ACTION BAR */}
+          <div
+            className="budget-action-bar"
+            style={{
+              marginTop: 24,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: 12,
+              padding: '16px 24px',
+              background: '#ffffff',
+              borderRadius: 12,
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+            }}
+          >
+            <button
+              type="button"
+              className="btn btn-secondary"
+              id="btnClearBudget"
+              onClick={handleClearAllBudget}
+              style={{
+                background: '#ffffff',
+                color: '#ef4444',
+                border: '1.5px solid #fecaca',
+                fontWeight: 700,
+                height: 42,
+                padding: '0 20px',
+                fontSize: '0.88rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                cursor: 'pointer',
+                borderRadius: 8,
+              }}
+            >
+              <i className="pi pi-trash" /> Clear
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              id="btnSaveBudgetDraft"
+              onClick={handleSaveBudgetDraft}
+              style={{
+                background: '#ffffff',
+                color: '#1d4ed8',
+                border: '1.5px solid #bfdbfe',
+                fontWeight: 700,
+                height: 42,
+                padding: '0 20px',
+                fontSize: '0.88rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                cursor: 'pointer',
+                borderRadius: 8,
+                boxShadow: '0 2px 4px rgba(29,78,216,0.05)',
+              }}
+            >
+              <i className="pi pi-save" /> Save Draft
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              id="btnSaveBudgetSubmit"
+              onClick={handleOpenSubmitConfirm}
+              style={{
+                fontWeight: 800,
+                height: 42,
+                padding: '0 24px',
+                fontSize: '0.88rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                borderRadius: 8,
+                background: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                boxShadow: '0 4px 10px rgba(37,99,235,0.2)',
+              }}
+            >
+              <i className="pi pi-send" /> Submit Budget
+            </button>
           </div>
         </div>
       </div>
@@ -2681,6 +2871,229 @@ export default function CreateProjectPage(): React.ReactElement {
             >
               <i className="pi pi-check-circle" />
               <span>Save Assignees</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* FINAL SUBMIT CONFIRMATION MODAL */}
+      <div
+        id="submitConfirmModal"
+        style={{
+          display: submitConfirmOpen ? 'flex' : 'none',
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.6)',
+          zIndex: 9999,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backdropFilter: 'blur(2px)',
+        }}
+        onClick={() => setSubmitConfirmOpen(false)}
+      >
+        <div
+          style={{
+            background: '#ffffff',
+            width: '100%',
+            maxWidth: 480,
+            borderRadius: 14,
+            boxShadow: '0 20px 35px rgba(0,0,0,0.25)',
+            overflow: 'hidden',
+            border: '1px solid #cbd5e1',
+            margin: 16,
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div
+            style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid #f1f5f9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i
+                className="pi pi-send"
+                style={{ color: '#2563eb', fontSize: '1.1rem' }}
+              />
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: '1.05rem',
+                  fontWeight: 800,
+                  color: '#0f172a',
+                }}
+              >
+                Submit Budget Estimation
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSubmitConfirmOpen(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: 16,
+                color: '#94a3b8',
+                cursor: 'pointer',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          <div style={{ padding: '18px 20px' }}>
+            <p
+              style={{
+                fontSize: '0.86rem',
+                color: '#475569',
+                margin: '0 0 14px 0',
+              }}
+            >
+              Are you sure you want to finalize and submit this budget
+              estimation? Below is the final summary:
+            </p>
+
+            <div
+              style={{
+                background: '#f8fafc',
+                border: '1.5px solid #e2e8f0',
+                borderRadius: 10,
+                padding: '14px 16px',
+                fontSize: '0.85rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>
+                  Selected Project:
+                </span>
+                <strong
+                  id="modalProjectName"
+                  style={{
+                    color: '#0f172a',
+                    maxWidth: 250,
+                    textAlign: 'right',
+                  }}
+                >
+                  {activeProject
+                    ? `${activeProject.name} (${activeProject.id})`
+                    : activeProjectId}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>
+                  Total Line Items:
+                </span>
+                <strong id="modalTotalItems" style={{ color: '#0f172a' }}>
+                  {heads.reduce(
+                    (acc, h) => acc + (h.subItems ? h.subItems.length : 0),
+                    0
+                  )}{' '}
+                  items
+                </strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>
+                  Direct Heads Subtotal:
+                </span>
+                <strong id="modalSubtotal" style={{ color: '#0f172a' }}>
+                  {formatINR(subTotal)}
+                </strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>
+                  Institutional Overheads:
+                </span>
+                <strong id="modalOverheads" style={{ color: '#2563eb' }}>
+                  {formatINR(overheadAmount)} {overheadPctText}
+                </strong>
+              </div>
+              <div
+                style={{
+                  borderTop: '1.5px solid #e2e8f0',
+                  paddingTop: 8,
+                  marginTop: 2,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 800,
+                    color: '#15803d',
+                    textTransform: 'uppercase',
+                    fontSize: '0.78rem',
+                  }}
+                >
+                  Total Estimated Cost:
+                </span>
+                <strong
+                  id="modalGrandTotal"
+                  style={{
+                    color: '#15803d',
+                    fontSize: '1.18rem',
+                    fontWeight: 900,
+                  }}
+                >
+                  {formatINR(totalBudget)}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: '12px 20px',
+              background: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 10,
+            }}
+          >
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setSubmitConfirmOpen(false)}
+              style={{
+                height: 36,
+                padding: '0 16px',
+                fontWeight: 700,
+                fontSize: '0.84rem',
+                background: '#ffffff',
+                border: '1.5px solid #cbd5e1',
+                borderRadius: 8,
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleConfirmSubmitBudget}
+              style={{
+                height: 36,
+                padding: '0 18px',
+                fontWeight: 800,
+                fontSize: '0.84rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+              }}
+            >
+              <i className="pi pi-check" /> Confirm &amp; Submit
             </button>
           </div>
         </div>

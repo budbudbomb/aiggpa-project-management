@@ -19,6 +19,7 @@ interface TaskCardProps {
   onOpenDetails: (task: ActivityTask) => void;
   onStatusChange: (task: ActivityTask, newStatus: TaskStatus) => void;
   onDragStart: (e: React.DragEvent, task: ActivityTask) => void;
+  onOpenReadReceipts?: (task: ActivityTask) => void;
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -27,6 +28,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onOpenDetails,
   onStatusChange,
   onDragStart,
+  onOpenReadReceipts,
 }) => {
   const isOverdue =
     task.status !== 'Completed' &&
@@ -243,10 +245,16 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
       {/* Bottom row: Assignee Avatar + Due date */}
       <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-        {/* Assignee */}
+        {/* Assignee (Click to view read receipts) */}
         <div
-          className="flex items-center gap-1.5 min-w-0"
-          title={`Assignee: ${task.assigneeName} (${task.assigneeRole})`}
+          onClick={e => {
+            if (onOpenReadReceipts) {
+              e.stopPropagation();
+              onOpenReadReceipts(task);
+            }
+          }}
+          className="flex items-center gap-1.5 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+          title={`Assignee: ${task.assigneeName} (${task.assigneeRole}) - Click to view read receipts`}
         >
           <div
             className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"

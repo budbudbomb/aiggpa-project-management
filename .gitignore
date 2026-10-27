@@ -7,3 +7,7 @@ yarn-error.log*
 .idea/
 .vscode/
 *.local
+.agent
+dist/
+*.tsbuildinfo
+docs/
