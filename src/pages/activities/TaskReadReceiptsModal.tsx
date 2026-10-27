@@ -3,7 +3,7 @@ import { Eye, Clock, Check, X, AlignLeft } from 'lucide-react';
 import ActivityTaskStore, {
   ActivityTask,
   TaskAssigneeReadStatus,
-} from '../../stores/activityTaskStore';
+} from '@/stores/activityTaskStore';
 
 interface TaskReadReceiptsModalProps {
   task: ActivityTask | null;
@@ -48,8 +48,7 @@ export default function TaskReadReceiptsModal({
             name: task.assigneeName,
             role: task.assigneeRole,
             read: task.status === 'Completed' || task.status === 'In Review',
-            readAt:
-              task.status === 'Completed' ? 'Today, 10:45 AM' : null,
+            readAt: task.status === 'Completed' ? 'Today, 10:45 AM' : null,
           },
         ];
 
@@ -97,10 +96,7 @@ export default function TaskReadReceiptsModal({
             >
               {task.id}: {task.title}
             </h2>
-            <p
-              id="mrrTaskSubtitle"
-              className="text-xs text-slate-500 mt-0.5"
-            >
+            <p id="mrrTaskSubtitle" className="text-xs text-slate-500 mt-0.5">
               Project: {task.projectName} · Due: {task.dueDate} · Priority:{' '}
               {task.priority}
             </p>

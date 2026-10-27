@@ -2850,7 +2850,10 @@ export const ActivityTaskStore = {
       const a = task.assignees[memberIdx];
       a.read = !a.read;
       a.readAt = a.read
-        ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        ? new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })
         : null;
       this.saveTasks(list);
       return task;

@@ -56,8 +56,9 @@ export default function ActivitiesPage(): React.ReactElement {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isRelationshipsOpen, setIsRelationshipsOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<ActivityTask | null>(null);
-  const [readReceiptsTask, setReadReceiptsTask] =
-    useState<ActivityTask | null>(null);
+  const [readReceiptsTask, setReadReceiptsTask] = useState<ActivityTask | null>(
+    null
+  );
   const [expandedTaskIds, setExpandedTaskIds] = useState<string[]>([]);
   const [meetingModalTaskId, setMeetingModalTaskId] = useState<string | null>(
     null
@@ -1450,9 +1451,7 @@ export default function ActivitiesPage(): React.ReactElement {
                               {/* Assignee */}
                               <td className="py-2 px-4">
                                 <select
-                                  value={
-                                    qState.assigneeName || t.assigneeName
-                                  }
+                                  value={qState.assigneeName || t.assigneeName}
                                   onChange={e =>
                                     updateQuickState(
                                       t.id,
@@ -1593,8 +1592,7 @@ export default function ActivitiesPage(): React.ReactElement {
           isOpen={Boolean(meetingModalTaskId)}
           initialData={{
             meetingUrl: getQuickState(meetingModalTaskId).meetingUrl,
-            meetingDuration:
-              getQuickState(meetingModalTaskId).meetingDuration,
+            meetingDuration: getQuickState(meetingModalTaskId).meetingDuration,
             meetingDescription:
               getQuickState(meetingModalTaskId).meetingDescription,
           }}
