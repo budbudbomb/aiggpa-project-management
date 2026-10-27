@@ -105,7 +105,7 @@ function calculateDuration(fromStr: string, toStr: string): number {
 }
 
 function normalizeEditDate(d: string | number | null | undefined): string {
-  if (!d) return '2026-09-28';
+  if (!d) return '';
   const str = String(d);
   if (str.includes('/')) {
     const parts = str.split('/');
@@ -140,7 +140,7 @@ interface AssigneeEntry {
 }
 
 function getProjectAssignees(p: Project): AssigneeEntry[] {
-  let list: AssigneeEntry[] = [];
+  const list: AssigneeEntry[] = [];
   if (
     p.team &&
     Array.isArray(p.team.assignedDetails) &&
@@ -171,7 +171,7 @@ function getProjectAssignees(p: Project): AssigneeEntry[] {
 
   if (list.length === 0) {
     if (p.id === 'PRJ-01' || p.code === 'PRJ-01') {
-      list = [
+      return [
         { name: 'Dr. Rameshwar Singh', role: 'Senior Advisor' },
         { name: 'Priya Patel', role: 'Research Associate' },
         { name: 'Sunita Meena', role: 'Fellow' },
@@ -181,7 +181,7 @@ function getProjectAssignees(p: Project): AssigneeEntry[] {
         { name: 'Rajesh Kumar', role: 'Field Investigator' },
       ];
     } else if (p.id === 'PRJ-02' || p.code === 'PRJ-02') {
-      list = [
+      return [
         { name: 'Dr. Ananya Joshi', role: 'Lead / Advisor' },
         { name: 'Kavita Joshi', role: 'Research Associate' },
         { name: 'Rohan Sharma', role: 'Research Associate' },
@@ -192,23 +192,12 @@ function getProjectAssignees(p: Project): AssigneeEntry[] {
         { name: 'Deepak Chouhan', role: 'Field Investigator' },
       ];
     } else if (p.id === 'PRJ-03' || p.code === 'PRJ-03') {
-      list = [
+      return [
         { name: 'Prof. Manish Gupta', role: 'Advisor' },
         { name: 'Siddharth Sen', role: 'Research Associate' },
         { name: 'Aakash Rathore', role: 'Field Investigator' },
         { name: 'Megha Patidar', role: 'Field Investigator' },
         { name: 'Nikhil Jain', role: 'Field Investigator' },
-      ];
-    } else {
-      list = [
-        { name: 'Dr. Alok Verma', role: 'Senior Advisor' },
-        { name: 'Dr. Neha Saxena', role: 'Lead Policy Fellow' },
-        { name: 'Kavita Solanki', role: 'Research Associate' },
-        { name: 'Rahul Verma', role: 'Data Analyst' },
-        { name: 'Rajesh Kumar', role: 'Field Investigator' },
-        { name: 'Sunita Chouhan', role: 'Field Investigator' },
-        { name: 'Vikas Sharma', role: 'Field Investigator' },
-        { name: 'Amit Verma', role: 'Field Investigator' },
       ];
     }
   }
@@ -239,10 +228,10 @@ function createEmptyForm(): ProjectForm {
     scheme: '',
     financialYear: '',
     fundingPattern: '',
-    fromDate: '2026-10-06',
-    toDate: '2026-10-06',
+    fromDate: '',
+    toDate: '',
     duration: '0',
-    prcDate: '2026-10-06',
+    prcDate: '',
   };
 }
 
@@ -347,8 +336,14 @@ export default function CreateProjectPage(): React.ReactElement {
       : 'list';
 
   const [lastBudgetId, setLastBudgetId] = useState<string | null>(null);
-  const editingPid = paramId || paramProjectId || 'ABC';
-  const activeProjectId = paramProjectId || paramId || lastBudgetId || 'ABC';
+  const editingPid =
+    paramId ||
+    paramProjectId ||
+    (mode === 'create' ? '' : projects[0]?.id || '');
+  const activeProjectId =
+    mode === 'create'
+      ? lastBudgetId || ''
+      : paramProjectId || paramId || lastBudgetId || projects[0]?.id || '';
 
   const [activeTab, setActiveTabState] = useState<ProjectTab>(() => {
     if (viewParam === 'budget') return 'budget';
@@ -381,12 +376,15 @@ export default function CreateProjectPage(): React.ReactElement {
     setActiveTabState(tab);
     const next = new URLSearchParams(params);
     next.set('tab', tab);
-    if (tab === 'budget') {
+    if (mode === 'create') {
+      next.set('view', 'create');
+      if (activeProjectId) next.set('projectId', activeProjectId);
+    } else if (tab === 'budget') {
       next.set('view', 'budget');
       if (activeProjectId) next.set('projectId', activeProjectId);
     } else {
-      next.set('view', mode === 'create' ? 'create' : 'edit');
-      if (activeProjectId && mode !== 'create') next.set('id', activeProjectId);
+      next.set('view', 'edit');
+      if (activeProjectId) next.set('id', activeProjectId);
     }
     setParams(next, { replace: true });
   };
@@ -424,10 +422,10 @@ export default function CreateProjectPage(): React.ReactElement {
   const [hoverEmpName, setHoverEmpName] = useState('');
   const empWrapRef = useRef<HTMLDivElement>(null);
 
-  const activeProject = useMemo(
-    () => projects.find(p => p.id === activeProjectId) || projects[0],
-    [projects, activeProjectId]
-  );
+  const activeProject = useMemo(() => {
+    if (!activeProjectId) return null;
+    return projects.find(p => p.id === activeProjectId) || null;
+  }, [projects, activeProjectId]);
   const heads = activeProject?.budgetHeads || [];
 
   const showToast = (msg: string): void => {
@@ -453,7 +451,11 @@ export default function CreateProjectPage(): React.ReactElement {
 
   useEffect(() => {
     if (mode === 'create') {
-      setForm(createEmptyForm());
+      if (!lastBudgetId) {
+        setForm(createEmptyForm());
+        setAssignProjectId('');
+        setAssignTeam([]);
+      }
       return;
     }
     if (mode !== 'edit') return;
@@ -465,25 +467,28 @@ export default function CreateProjectPage(): React.ReactElement {
       id: p.id,
       name: p.name || '',
       localName: p.localName || p.name?.toLowerCase() || '',
-      department: p.department || 'Center 11',
-      scheme: p.scheme || 'Atal Bihari Vajpayee Institute of GG',
-      financialYear: p.financialYear || '2018-2019',
-      fundingPattern: p.fundingPattern || 'Internal',
-      fromDate: normalizeEditDate(p.fromDate || '2026-09-28'),
-      toDate: normalizeEditDate(p.toDate || '2026-09-28'),
+      department: p.department || '',
+      scheme: p.scheme || '',
+      financialYear: p.financialYear || '',
+      fundingPattern: p.fundingPattern || '',
+      fromDate: normalizeEditDate(p.fromDate || ''),
+      toDate: normalizeEditDate(p.toDate || ''),
       duration: p.durationMonths !== undefined ? String(p.durationMonths) : '0',
-      prcDate: normalizeEditDate(p.prcDate || '2026-09-28'),
+      prcDate: normalizeEditDate(p.prcDate || ''),
     });
     setAssignProjectId(p.id);
     loadAssignTeam(p.id);
-  }, [mode, editingPid]);
+  }, [mode, editingPid, lastBudgetId]);
 
   useEffect(() => {
     if (activeProjectId) {
       setAssignProjectId(activeProjectId);
       loadAssignTeam(activeProjectId);
+    } else if (mode === 'create') {
+      setAssignProjectId('');
+      setAssignTeam([]);
     }
-  }, [activeProjectId]);
+  }, [activeProjectId, mode]);
 
   useEffect(() => {
     const open = budgetModalOpen || assignOpen;
@@ -530,9 +535,13 @@ export default function CreateProjectPage(): React.ReactElement {
       const tab = targetTab || 'general';
       next.set('tab', tab);
       setActiveTabState(tab);
+      setLastBudgetId(null);
+      setAssignProjectId('');
+      setAssignTeam([]);
+      setForm(createEmptyForm());
       setParams(next, { replace: true });
     } else if (v === 'edit') {
-      const targetId = pid || 'ABC';
+      const targetId = pid || activeProjectId || projects[0]?.id || '';
       next.set('view', 'edit');
       next.set('id', targetId);
       next.set('projectId', targetId);
@@ -544,7 +553,7 @@ export default function CreateProjectPage(): React.ReactElement {
       loadAssignTeam(targetId);
       setParams(next, { replace: true });
     } else if (v === 'budget') {
-      const bid = pid || activeProjectId;
+      const bid = pid || activeProjectId || projects[0]?.id || '';
       next.set('view', 'budget');
       next.set('projectId', bid);
       next.set('tab', 'budget');
@@ -872,8 +881,20 @@ export default function CreateProjectPage(): React.ReactElement {
       return;
     }
 
-    const p = activeProject;
-    if (!p) return;
+    let p = activeProject;
+    if (!p) {
+      if (!form.name.trim()) {
+        alert(
+          'Please enter a Project Name in General Details first before adding budget items.'
+        );
+        switchTab('general');
+        return;
+      }
+      const savedPid = saveProjectData(false);
+      if (!savedPid) return;
+      p = Store.getProjects().find(x => x.id === savedPid) || null;
+      if (!p) return;
+    }
     if (!p.budgetHeads) p.budgetHeads = [];
 
     let head = p.budgetHeads.find(h =>
@@ -918,6 +939,10 @@ export default function CreateProjectPage(): React.ReactElement {
     setPosCount('1');
     setSelectedEmps([]);
     setEmpMenuOpen(false);
+    if (!pid) {
+      setAssignTeam([]);
+      return;
+    }
     const project = Store.getProjects().find(p => p.id === pid);
     if (!project) {
       setAssignTeam([]);
@@ -931,6 +956,10 @@ export default function CreateProjectPage(): React.ReactElement {
       return;
     }
     const defaults = getProjectAssignees(project);
+    if (!defaults || defaults.length === 0) {
+      setAssignTeam([]);
+      return;
+    }
     const groups: Record<string, string[]> = {};
     defaults.forEach(d => {
       const role = d.role || 'Field Investigator';
@@ -960,6 +989,14 @@ export default function CreateProjectPage(): React.ReactElement {
   };
 
   const handleAssignProjectChange = (value: string): void => {
+    if (!value) {
+      setAssignProjectId('');
+      setAssignTeam([]);
+      const next = new URLSearchParams(params);
+      next.delete('projectId');
+      setParams(next, { replace: true });
+      return;
+    }
     setAssignProjectId(value);
     setLastBudgetId(value);
     loadAssignTeam(value);
@@ -1006,12 +1043,24 @@ export default function CreateProjectPage(): React.ReactElement {
   };
 
   const saveTeam = (): void => {
-    if (!assignProjectId) {
-      alert('Please select a project.');
-      return;
+    let targetPid = assignProjectId || activeProjectId;
+    let project = targetPid
+      ? Store.getProjects().find(p => p.id === targetPid)
+      : null;
+    if (!project) {
+      if (!form.name.trim()) {
+        alert(
+          'Please enter a Project Name in General Details first before allocating team members.'
+        );
+        switchTab('general');
+        return;
+      }
+      const savedPid = saveProjectData(false);
+      if (!savedPid) return;
+      targetPid = savedPid;
+      project = Store.getProjects().find(p => p.id === savedPid);
+      if (!project) return;
     }
-    const project = Store.getProjects().find(p => p.id === assignProjectId);
-    if (!project) return;
 
     let sa = 0;
     let ra = 0;
@@ -1685,6 +1734,14 @@ export default function CreateProjectPage(): React.ReactElement {
               value={budgetSelectValue}
               onChange={e => handleBudgetProjectChange(e.target.value)}
             >
+              {mode === 'create' &&
+                !projects.some(p => p.id === activeProjectId) && (
+                  <option value="">
+                    {form.name.trim()
+                      ? `(Draft) ${form.name.trim()}`
+                      : '(Draft) New Project Proposal'}
+                  </option>
+                )}
               {projects.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.name} ({p.code || p.id})
@@ -1753,7 +1810,35 @@ export default function CreateProjectPage(): React.ReactElement {
                   <th style={{ textAlign: 'center', width: 90 }}>Action</th>
                 </tr>
               </thead>
-              <tbody id="budgetTableBody">{tableRows}</tbody>
+              <tbody id="budgetTableBody">
+                {tableRows.length > 0 ? (
+                  tableRows
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      style={{
+                        textAlign: 'center',
+                        padding: '40px 16px',
+                        color: '#64748b',
+                        fontWeight: 500,
+                      }}
+                    >
+                      <i
+                        className="pi pi-inbox"
+                        style={{
+                          fontSize: '2rem',
+                          marginBottom: 8,
+                          display: 'block',
+                          color: '#94a3b8',
+                        }}
+                      />
+                      No budget line items added yet. Click &quot;Add
+                      Budget&quot; to allocate heads.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
             </table>
           </div>
 
@@ -1993,6 +2078,16 @@ export default function CreateProjectPage(): React.ReactElement {
               value={assignProjectId || activeProjectId}
               onChange={e => handleAssignProjectChange(e.target.value)}
             >
+              {mode === 'create' &&
+                !projects.some(
+                  p => p.id === (assignProjectId || activeProjectId)
+                ) && (
+                  <option value="">
+                    {form.name.trim()
+                      ? `(Draft) ${form.name.trim()}`
+                      : '(Draft) New Project Proposal'}
+                  </option>
+                )}
               {projects.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.code ? `[${p.code}] ` : ''}
