@@ -92,16 +92,59 @@ function formatINR(val: string | number): string {
   );
 }
 
+function getFinancialYearDateRange(
+  fyStr?: string,
+  fyList?: Array<{ code: string; startDate?: string; endDate?: string }>
+): { minDate: string; maxDate: string } | null {
+  if (!fyStr) return null;
+  if (fyList) {
+    const found = fyList.find(f => f.code === fyStr);
+    if (found && found.startDate && found.endDate) {
+      return { minDate: found.startDate, maxDate: found.endDate };
+    }
+  }
+  const m = fyStr.match(/(\d{4})[^\d]+(\d{2,4})/);
+  if (m) {
+    const startYear = parseInt(m[1], 10);
+    const endYear =
+      m[2].length === 2
+        ? Math.floor(startYear / 100) * 100 + parseInt(m[2], 10)
+        : parseInt(m[2], 10);
+    return {
+      minDate: `${startYear}-04-01`,
+      maxDate: `${endYear}-03-31`,
+    };
+  }
+  return null;
+}
+
 function calculateDuration(fromStr: string, toStr: string): number {
   if (!fromStr || !toStr) return 0;
   const d1 = new Date(fromStr);
   const d2 = new Date(toStr);
   if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return 0;
-  const diffTime = d2.getTime() - d1.getTime();
-  if (diffTime < 0) return 0;
-  const days = diffTime / (1000 * 60 * 60 * 24);
-  const months = Math.round(days / 30.4375);
-  return Math.max(0, months);
+  if (d2 < d1) return 0;
+
+  let months =
+    (d2.getFullYear() - d1.getFullYear()) * 12 +
+    (d2.getMonth() - d1.getMonth());
+  const d1Day = d1.getDate();
+  const d2Day = d2.getDate();
+  const lastDayOfD2Month = new Date(
+    d2.getFullYear(),
+    d2.getMonth() + 1,
+    0
+  ).getDate();
+
+  if (d1Day === 1 && d2Day === lastDayOfD2Month) {
+    months += 1;
+  } else if (d2Day >= d1Day) {
+    months += 1;
+  } else if (d2Day >= 15) {
+    months += 1;
+  }
+
+  return Math.max(1, months);
 }
 
 function normalizeEditDate(d: string | number | null | undefined): string {
@@ -569,8 +612,36 @@ export default function CreateProjectPage(): React.ReactElement {
     }
   };
 
+  const selectedFyRange = useMemo(() => {
+    return getFinancialYearDateRange(form.financialYear, financialYears);
+  }, [form.financialYear, financialYears]);
+
   const setField = (key: keyof ProjectForm, value: string): void => {
     setForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleFinancialYearChange = (val: string): void => {
+    const range = getFinancialYearDateRange(val, financialYears);
+    setForm(prev => {
+      let from = prev.fromDate;
+      let to = prev.toDate;
+      if (range) {
+        if (from && (from < range.minDate || from > range.maxDate)) {
+          from = '';
+        }
+        if (to && (to < range.minDate || to > range.maxDate)) {
+          to = '';
+        }
+      }
+      const dur = from && to ? String(calculateDuration(from, to)) : '0';
+      return {
+        ...prev,
+        financialYear: val,
+        fromDate: from,
+        toDate: to,
+        duration: dur,
+      };
+    });
   };
 
   const handleDateChange = (
@@ -578,8 +649,18 @@ export default function CreateProjectPage(): React.ReactElement {
     value: string
   ): void => {
     setForm(prev => {
-      const updated = { ...prev, [key]: value };
+      let updatedVal = value;
+      if (key === 'fromDate' || key === 'toDate') {
+        if (selectedFyRange) {
+          if (value && value < selectedFyRange.minDate) updatedVal = selectedFyRange.minDate;
+          if (value && value > selectedFyRange.maxDate) updatedVal = selectedFyRange.maxDate;
+        }
+      }
+      const updated = { ...prev, [key]: updatedVal };
       if (key !== 'prcDate') {
+        if (updated.fromDate && updated.toDate && updated.toDate < updated.fromDate) {
+          updated.toDate = updated.fromDate;
+        }
         updated.duration = String(
           calculateDuration(updated.fromDate, updated.toDate)
         );
@@ -1583,7 +1664,7 @@ export default function CreateProjectPage(): React.ReactElement {
                   className="erp-form-select"
                   required
                   value={form.financialYear}
-                  onChange={e => setField('financialYear', e.target.value)}
+                  onChange={e => handleFinancialYearChange(e.target.value)}
                 >
                   <option value="">Select Financial Year</option>
                   {financialYears.map(fy => (
@@ -1593,6 +1674,21 @@ export default function CreateProjectPage(): React.ReactElement {
                   ))}
                 </select>
               </div>
+              {selectedFyRange && (
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    color: '#64748b',
+                    marginTop: 4,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  <i className="pi pi-calendar" style={{ fontSize: 10 }} />
+                  FY Window: {selectedFyRange.minDate} to {selectedFyRange.maxDate}
+                </span>
+              )}
             </div>
 
             <div className="erp-form-field">
@@ -1626,11 +1722,18 @@ export default function CreateProjectPage(): React.ReactElement {
                   id="cpFromDate"
                   className="erp-form-input"
                   required
+                  min={selectedFyRange?.minDate}
+                  max={selectedFyRange?.maxDate}
                   value={form.fromDate}
                   onChange={e => handleDateChange('fromDate', e.target.value)}
                 />
                 <i className="pi pi-calendar date-icon" />
               </div>
+              {selectedFyRange && (
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 3 }}>
+                  Allowed: {selectedFyRange.minDate} onwards
+                </span>
+              )}
             </div>
 
             <div className="erp-form-field">
@@ -1643,11 +1746,18 @@ export default function CreateProjectPage(): React.ReactElement {
                   id="cpToDate"
                   className="erp-form-input"
                   required
+                  min={form.fromDate || selectedFyRange?.minDate}
+                  max={selectedFyRange?.maxDate}
                   value={form.toDate}
                   onChange={e => handleDateChange('toDate', e.target.value)}
                 />
                 <i className="pi pi-calendar date-icon" />
               </div>
+              {selectedFyRange && (
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 3 }}>
+                  Up to: {selectedFyRange.maxDate}
+                </span>
+              )}
             </div>
 
             <div className="erp-form-field">
