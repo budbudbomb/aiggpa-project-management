@@ -15,6 +15,7 @@ import type {
 } from '../stores/types';
 
 type ViewMode = 'create' | 'edit' | 'budget' | 'list';
+export type ProjectTab = 'general' | 'budget' | 'assignee';
 
 interface CategoryConf {
   code: string;
@@ -338,6 +339,7 @@ export default function CreateProjectPage(): React.ReactElement {
   const viewParam = params.get('view');
   const paramProjectId = params.get('projectId');
   const paramId = params.get('id');
+  const tabParam = params.get('tab') as ProjectTab | null;
 
   const mode: ViewMode =
     viewParam === 'create' || viewParam === 'edit' || viewParam === 'budget'
@@ -347,6 +349,47 @@ export default function CreateProjectPage(): React.ReactElement {
   const [lastBudgetId, setLastBudgetId] = useState<string | null>(null);
   const editingPid = paramId || paramProjectId || 'ABC';
   const activeProjectId = paramProjectId || paramId || lastBudgetId || 'ABC';
+
+  const [activeTab, setActiveTabState] = useState<ProjectTab>(() => {
+    if (viewParam === 'budget') return 'budget';
+    if (
+      tabParam === 'budget' ||
+      tabParam === 'assignee' ||
+      tabParam === 'general'
+    ) {
+      return tabParam;
+    }
+    return 'general';
+  });
+
+  useEffect(() => {
+    if (viewParam === 'budget' && activeTab !== 'budget') {
+      setActiveTabState('budget');
+    } else if (
+      tabParam &&
+      (tabParam === 'general' ||
+        tabParam === 'budget' ||
+        tabParam === 'assignee')
+    ) {
+      if (activeTab !== tabParam) {
+        setActiveTabState(tabParam);
+      }
+    }
+  }, [viewParam, tabParam, activeTab]);
+
+  const switchTab = (tab: ProjectTab): void => {
+    setActiveTabState(tab);
+    const next = new URLSearchParams(params);
+    next.set('tab', tab);
+    if (tab === 'budget') {
+      next.set('view', 'budget');
+      if (activeProjectId) next.set('projectId', activeProjectId);
+    } else {
+      next.set('view', mode === 'create' ? 'create' : 'edit');
+      if (activeProjectId && mode !== 'create') next.set('id', activeProjectId);
+    }
+    setParams(next, { replace: true });
+  };
 
   const [form, setForm] = useState<ProjectForm>(createEmptyForm);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -377,7 +420,6 @@ export default function CreateProjectPage(): React.ReactElement {
   const [posCount, setPosCount] = useState('1');
   const [selectedEmps, setSelectedEmps] = useState<string[]>([]);
   const [empMenuOpen, setEmpMenuOpen] = useState(false);
-  const [hoverClose, setHoverClose] = useState(false);
   const [hoverTrashIdx, setHoverTrashIdx] = useState(-1);
   const [hoverEmpName, setHoverEmpName] = useState('');
   const empWrapRef = useRef<HTMLDivElement>(null);
@@ -432,7 +474,16 @@ export default function CreateProjectPage(): React.ReactElement {
       duration: p.durationMonths !== undefined ? String(p.durationMonths) : '0',
       prcDate: normalizeEditDate(p.prcDate || '2026-09-28'),
     });
+    setAssignProjectId(p.id);
+    loadAssignTeam(p.id);
   }, [mode, editingPid]);
+
+  useEffect(() => {
+    if (activeProjectId) {
+      setAssignProjectId(activeProjectId);
+      loadAssignTeam(activeProjectId);
+    }
+  }, [activeProjectId]);
 
   useEffect(() => {
     const open = budgetModalOpen || assignOpen;
@@ -457,36 +508,54 @@ export default function CreateProjectPage(): React.ReactElement {
   }, []);
 
   useEffect(() => {
-    if (!assignOpen || !empMenuOpen) return;
+    if (!empMenuOpen) return;
     const handler = (e: MouseEvent): void => {
       const wrap = empWrapRef.current;
       if (wrap && !wrap.contains(e.target as Node)) setEmpMenuOpen(false);
     };
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
-  }, [assignOpen, empMenuOpen]);
+  }, [empMenuOpen]);
 
-  const switchView = (v: ViewMode, pid?: string): void => {
+  const switchView = (
+    v: ViewMode,
+    pid?: string,
+    targetTab?: ProjectTab
+  ): void => {
     const next = new URLSearchParams(params);
     if (v === 'create') {
       next.set('view', 'create');
       next.delete('id');
       next.delete('projectId');
+      const tab = targetTab || 'general';
+      next.set('tab', tab);
+      setActiveTabState(tab);
       setParams(next, { replace: true });
     } else if (v === 'edit') {
+      const targetId = pid || 'ABC';
       next.set('view', 'edit');
-      next.set('id', pid || 'ABC');
-      next.delete('projectId');
+      next.set('id', targetId);
+      next.set('projectId', targetId);
+      const tab = targetTab || 'general';
+      next.set('tab', tab);
+      setActiveTabState(tab);
+      setLastBudgetId(targetId);
+      setAssignProjectId(targetId);
+      loadAssignTeam(targetId);
       setParams(next, { replace: true });
     } else if (v === 'budget') {
       const bid = pid || activeProjectId;
       next.set('view', 'budget');
       next.set('projectId', bid);
+      next.set('tab', 'budget');
+      setActiveTabState('budget');
       setParams(next, { replace: true });
       setLastBudgetId(bid);
     } else {
       next.set('view', 'list');
       next.delete('id');
+      next.delete('projectId');
+      next.delete('tab');
       setParams(next, { replace: true });
     }
   };
@@ -510,13 +579,12 @@ export default function CreateProjectPage(): React.ReactElement {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
+  const saveProjectData = (showNotification = false): string | null => {
     const pName = form.name.trim();
     if (!pName) {
       alert('Please enter a Project Name');
       nameInputRef.current?.focus();
-      return;
+      return null;
     }
 
     const pId = form.id || 'PRJ-' + Date.now().toString().slice(-4);
@@ -542,19 +610,38 @@ export default function CreateProjectPage(): React.ReactElement {
       isSubmitted: true,
       budgetHeads: existing?.budgetHeads || [],
       budgetSummary: existing?.budgetSummary || ({} as BudgetSummary),
+      team: existing?.team || { assignedDetails: [] },
     } as Project;
 
     if (existing) {
       Store.updateProject(projectData);
-      showToast(`Project "${pName}" successfully updated!`);
+      if (showNotification)
+        showToast(`Project "${pName}" successfully updated!`);
     } else {
       Store.addProject(projectData);
-      showToast(`Project "${pName}" proposal created!`);
+      if (showNotification) showToast(`Project "${pName}" proposal created!`);
     }
+
+    setForm(prev => ({ ...prev, id: pId }));
+    setLastBudgetId(pId);
+    setAssignProjectId(pId);
+    return pId;
+  };
+
+  const handleSubmit = (e?: React.FormEvent): void => {
+    if (e) e.preventDefault();
+    const savedId = saveProjectData(true);
+    if (!savedId) return;
 
     window.setTimeout(() => {
       switchView('list');
     }, 700);
+  };
+
+  const handleContinueToBudget = (): void => {
+    const savedId = saveProjectData(true);
+    if (!savedId) return;
+    switchTab('budget');
   };
 
   const deleteBudgetSubItem = (headId: string, subId: string): void => {
@@ -697,6 +784,8 @@ export default function CreateProjectPage(): React.ReactElement {
 
   const handleBudgetProjectChange = (value: string): void => {
     setLastBudgetId(value);
+    setAssignProjectId(value);
+    loadAssignTeam(value);
     const next = new URLSearchParams(params);
     next.set('projectId', value);
     setParams(next, { replace: true });
@@ -858,10 +947,11 @@ export default function CreateProjectPage(): React.ReactElement {
   };
 
   const openAssigneeModal = (pid?: string): void => {
-    const target = pid || projects[0]?.id || '';
+    const target = pid || activeProjectId || projects[0]?.id || '';
     setAssignProjectId(target);
-    setAssignOpen(true);
+    setLastBudgetId(target);
     loadAssignTeam(target);
+    switchView('edit', target, 'assignee');
   };
 
   const closeAssigneeModal = (): void => {
@@ -871,7 +961,11 @@ export default function CreateProjectPage(): React.ReactElement {
 
   const handleAssignProjectChange = (value: string): void => {
     setAssignProjectId(value);
+    setLastBudgetId(value);
     loadAssignTeam(value);
+    const next = new URLSearchParams(params);
+    next.set('projectId', value);
+    setParams(next, { replace: true });
   };
 
   const handleDesigChange = (value: string): void => {
@@ -969,24 +1063,55 @@ export default function CreateProjectPage(): React.ReactElement {
     closeAssigneeModal();
   };
 
-  const headerInfo =
-    mode === 'create'
-      ? {
+  const headerInfo = useMemo(() => {
+    if (mode === 'list') {
+      return {
+        title: 'Projects Master List',
+        subtitle:
+          'Comprehensive repository of sanctioned and proposed projects',
+      };
+    }
+    const isEdit = mode === 'edit';
+    const projName = activeProject?.name ? ` — ${activeProject.name}` : '';
+    if (activeTab === 'budget') {
+      return {
+        title: isEdit
+          ? `Project Budget Estimation${projName}`
+          : 'Add Project Budget',
+        subtitle:
+          'Head-wise itemization, cost calculations & institutional overheads',
+      };
+    }
+    if (activeTab === 'assignee') {
+      return {
+        title: isEdit
+          ? `Project Team Assignees${projName}`
+          : 'Assign Project Team',
+        subtitle:
+          'Allocate designations, required positions, and staff members for the project',
+      };
+    }
+    return isEdit
+      ? { title: `Edit Project${projName}`, subtitle: 'Modify project details' }
+      : {
           title: 'Create Project',
           subtitle: 'Enter project details to create a new project proposal',
-        }
-      : mode === 'edit'
-        ? { title: 'Edit Project', subtitle: 'Modify project details' }
-        : mode === 'budget'
-          ? {
-              title: 'Add Budget',
-              subtitle: 'Allocate project budgets from this page.',
-            }
-          : {
-              title: 'Projects Master List',
-              subtitle:
-                'Comprehensive repository of sanctioned and proposed projects',
-            };
+        };
+  }, [mode, activeTab, activeProject]);
+
+  const isStep1Completed = Boolean(
+    form.name.trim() && form.department && form.scheme && form.financialYear
+  );
+
+  const isStep2Completed = Boolean(
+    heads.some(h => (h.subItems || []).length > 0) ||
+    (activeProject && (activeProject.budgetSanctioned || 0) > 0)
+  );
+
+  const isStep3Completed = Boolean(
+    assignTeam.length > 0 ||
+    (activeProject && getProjectAssignees(activeProject).length > 0)
+  );
 
   const filteredProjects = useMemo(() => {
     const query = listSearch.trim().toLowerCase();
@@ -1222,11 +1347,97 @@ export default function CreateProjectPage(): React.ReactElement {
         </div>
       </div>
 
+      {/* ── 3-Step Stepper Indicator Strip (General, Budget, Assignee) ── */}
+      {mode !== 'list' && (
+        <div className="project-stepper-box">
+          <button
+            type="button"
+            className={`project-step-tab${activeTab === 'general' ? ' active' : isStep1Completed ? ' completed' : ''}`}
+            id="stepTabGeneral"
+            onClick={() => switchTab('general')}
+          >
+            <div className="project-step-num">
+              {isStep1Completed && activeTab !== 'general' ? (
+                <i
+                  className="pi pi-check"
+                  style={{ fontWeight: 900, fontSize: 13 }}
+                />
+              ) : (
+                1
+              )}
+            </div>
+            <div className="project-step-info">
+              <h4>General Details</h4>
+              <p>Project info, timeline &amp; department</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className={`project-step-tab${activeTab === 'budget' ? ' active' : isStep2Completed ? ' completed' : ''}`}
+            id="stepTabBudget"
+            onClick={() => {
+              if (!form.name.trim() && mode === 'create') {
+                showToast('Please enter a Project Name first.');
+                nameInputRef.current?.focus();
+                return;
+              }
+              switchTab('budget');
+            }}
+          >
+            <div className="project-step-num">
+              {isStep2Completed && activeTab !== 'budget' ? (
+                <i
+                  className="pi pi-check"
+                  style={{ fontWeight: 900, fontSize: 13 }}
+                />
+              ) : (
+                2
+              )}
+            </div>
+            <div className="project-step-info">
+              <h4>Budget Allocation</h4>
+              <p>Head-wise itemization &amp; costing</p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className={`project-step-tab${activeTab === 'assignee' ? ' active' : isStep3Completed ? ' completed' : ''}`}
+            id="stepTabAssignee"
+            onClick={() => {
+              if (!form.name.trim() && mode === 'create') {
+                showToast('Please enter a Project Name first.');
+                nameInputRef.current?.focus();
+                return;
+              }
+              switchTab('assignee');
+            }}
+          >
+            <div className="project-step-num">
+              {isStep3Completed && activeTab !== 'assignee' ? (
+                <i
+                  className="pi pi-check"
+                  style={{ fontWeight: 900, fontSize: 13 }}
+                />
+              ) : (
+                3
+              )}
+            </div>
+            <div className="project-step-info">
+              <h4>Team Assignees</h4>
+              <p>Designations &amp; member allocations</p>
+            </div>
+          </button>
+        </div>
+      )}
+
       <div
         id="viewCreateProject"
         className="erp-form-card"
         style={{
-          display: mode === 'create' || mode === 'edit' ? 'block' : 'none',
+          display:
+            mode !== 'list' && activeTab === 'general' ? 'block' : 'none',
         }}
       >
         <form id="erpProjectForm" autoComplete="off" onSubmit={handleSubmit}>
@@ -1423,22 +1634,45 @@ export default function CreateProjectPage(): React.ReactElement {
             </div>
           </div>
 
-          <div className="erp-form-footer">
+          <div className="step-nav-footer">
             <button
-              type="submit"
-              className="btn-erp-submit"
-              id="btnSubmitProject"
+              type="button"
+              className="btn-erp-outline"
+              onClick={() => switchView('list')}
             >
-              <i className="pi pi-send" />
-              <span>Submit</span>
+              <i className="pi pi-arrow-left" />
+              <span>Back to List</span>
             </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button
+                type="submit"
+                className="btn-erp-submit"
+                id="btnSubmitProject"
+              >
+                <i className="pi pi-save" />
+                <span>
+                  {mode === 'edit' ? 'Update Project' : 'Save Project'}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="btn-erp-navy"
+                id="btnContinueToBudget"
+                onClick={handleContinueToBudget}
+              >
+                <span>Continue to Budget</span>
+                <i className="pi pi-arrow-right" />
+              </button>
+            </div>
           </div>
         </form>
       </div>
 
       <div
         id="viewAddBudget"
-        style={{ display: mode === 'budget' ? 'block' : 'none' }}
+        style={{
+          display: mode !== 'list' && activeTab === 'budget' ? 'block' : 'none',
+        }}
       >
         <div className="budget-project-selector-bar">
           <label htmlFor="budgetProjectSelect">
@@ -1647,6 +1881,589 @@ export default function CreateProjectPage(): React.ReactElement {
               }}
             >
               <i className="pi pi-send" /> Submit Budget
+            </button>
+          </div>
+        </div>
+
+        <div
+          className="step-nav-footer"
+          style={{
+            background: '#ffffff',
+            borderRadius: 14,
+            padding: '16px 24px',
+            border: '1px solid #e2e8f0',
+            marginTop: 20,
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+          }}
+        >
+          <button
+            type="button"
+            className="btn-erp-outline"
+            onClick={() => switchTab('general')}
+          >
+            <i className="pi pi-arrow-left" />
+            <span>Back to General Details</span>
+          </button>
+          <button
+            type="button"
+            className="btn-erp-navy"
+            onClick={() => switchTab('assignee')}
+          >
+            <span>Continue to Team Assignees</span>
+            <i className="pi pi-arrow-right" />
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="viewAssignees"
+        className="erp-form-card"
+        style={{
+          display:
+            mode !== 'list' && activeTab === 'assignee' ? 'block' : 'none',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                background: 'linear-gradient(135deg, #1e3a8a, #2563eb)',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.2rem',
+                boxShadow: '0 3px 10px rgba(37, 99, 235, 0.25)',
+              }}
+            >
+              <i className="pi pi-users" />
+            </div>
+            <div>
+              <h3
+                style={{
+                  margin: 0,
+                  fontWeight: 800,
+                  fontSize: '1.15rem',
+                  color: '#0f172a',
+                }}
+              >
+                Team Member Allocations
+              </h3>
+              <p
+                style={{
+                  margin: '2px 0 0 0',
+                  fontSize: '0.8rem',
+                  color: '#64748b',
+                  fontWeight: 500,
+                }}
+              >
+                Allocate designations, required positions, and staff members for
+                the project
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn-erp-outline"
+            onClick={() => switchView('list')}
+          >
+            <i className="pi pi-bars" />
+            <span>View List</span>
+          </button>
+        </div>
+
+        <div className="budget-project-selector-bar">
+          <label htmlFor="assignProjectSelect">
+            Selected Project <span style={{ color: '#ef4444' }}>*</span>
+          </label>
+          <div className="erp-input-wrapper">
+            <select
+              id="assignProjectSelect"
+              className="erp-form-select"
+              value={assignProjectId || activeProjectId}
+              onChange={e => handleAssignProjectChange(e.target.value)}
+            >
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.code ? `[${p.code}] ` : ''}
+                  {p.name || p.id}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: '#f8fafc',
+            border: '1.5px solid #e2e8f0',
+            borderRadius: 12,
+            padding: 20,
+            marginBottom: 24,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          }}
+        >
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1.4fr 110px 2fr auto',
+              gap: 16,
+              alignItems: 'flex-end',
+            }}
+          >
+            <div>
+              <label
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#475569',
+                  marginBottom: 6,
+                  display: 'block',
+                }}
+              >
+                Designation <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <select
+                id="modalTeamDesignationSelect"
+                className="form-control-select"
+                style={{
+                  height: 42,
+                  fontWeight: 600,
+                  width: '100%',
+                  border: '1.5px solid #cbd5e1',
+                  background: '#ffffff',
+                  borderRadius: 8,
+                }}
+                value={desig}
+                onChange={e => handleDesigChange(e.target.value)}
+              >
+                <option value="" disabled>
+                  Select Designation...
+                </option>
+                <option value="Center Head">Center Head</option>
+                <option value="Project Manager">Project Manager</option>
+                <option value="Research Analyst">Research Analyst</option>
+                <option value="Fellow">Fellow</option>
+                <option value="Intern">Intern</option>
+                <option value="Senior Advisor">Senior Advisor</option>
+                <option value="Research Associate">Research Associate</option>
+                <option value="Field Investigator">Field Investigator</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#475569',
+                  marginBottom: 6,
+                  display: 'block',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Positions <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                type="number"
+                id="modalTeamPositionCount"
+                className="form-control-input"
+                min={1}
+                value={posCount}
+                onChange={e => setPosCount(e.target.value)}
+                style={{
+                  height: 42,
+                  fontWeight: 700,
+                  textAlign: 'center',
+                  width: '100%',
+                  border: '1.5px solid #cbd5e1',
+                  background: '#ffffff',
+                  borderRadius: 8,
+                }}
+              />
+            </div>
+
+            <div style={{ position: 'relative' }} ref={empWrapRef}>
+              <label
+                style={{
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  color: '#475569',
+                  marginBottom: 6,
+                  display: 'block',
+                }}
+              >
+                Select Employees <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <div
+                id="modalEmployeeDropdownTrigger"
+                onClick={() => setEmpMenuOpen(o => !o)}
+                style={{
+                  height: 42,
+                  border: '1.5px solid #cbd5e1',
+                  borderRadius: 8,
+                  padding: '0 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  background: '#ffffff',
+                }}
+              >
+                <span
+                  id="modalSelectedEmployeesText"
+                  style={{
+                    fontSize: '0.86rem',
+                    color: '#64748b',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: '90%',
+                  }}
+                >
+                  {empSelectText}
+                </span>
+                <i
+                  className="pi pi-chevron-down"
+                  style={{ color: '#64748b', fontSize: 11 }}
+                />
+              </div>
+
+              <div
+                id="modalEmployeeCheckboxMenu"
+                style={{
+                  display: empMenuOpen ? 'block' : 'none',
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  left: 0,
+                  width: '100%',
+                  background: '#ffffff',
+                  border: '1.5px solid #cbd5e1',
+                  borderRadius: 8,
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
+                  zIndex: 1000,
+                  maxHeight: 200,
+                  overflowY: 'auto',
+                }}
+              >
+                <div
+                  style={{
+                    padding: 12,
+                    fontSize: '0.85rem',
+                    color: '#94a3b8',
+                    textAlign: 'center',
+                    display: desig ? 'none' : 'block',
+                  }}
+                  id="modalEmployeeMenuEmpty"
+                >
+                  Select a designation first
+                </div>
+                <div
+                  id="modalEmployeeMenuList"
+                  style={{
+                    display: desig ? 'block' : 'none',
+                    padding: '6px 0',
+                  }}
+                >
+                  {employeeList.map(emp => (
+                    <label
+                      key={emp}
+                      onMouseEnter={() => setHoverEmpName(emp)}
+                      onMouseLeave={() => setHoverEmpName('')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        transition: 'background 0.1s',
+                        background:
+                          hoverEmpName === emp ? '#f1f5f9' : 'transparent',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        className="modal-emp-checkbox"
+                        checked={selectedEmps.includes(emp)}
+                        onChange={() => toggleEmp(emp)}
+                        style={{
+                          accentColor: '#15803d',
+                          width: 16,
+                          height: 16,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: '0.85rem',
+                          color: '#334155',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {emp}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={addTeamRow}
+                style={{
+                  height: 42,
+                  padding: '0 20px',
+                  fontWeight: 800,
+                  fontSize: '0.84rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  boxShadow: '0 2px 6px rgba(24,55,212,0.2)',
+                  whiteSpace: 'nowrap',
+                  borderRadius: 8,
+                  background: '#1e3a8a',
+                  color: '#ffffff',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <i className="pi pi-plus" /> Add Member
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            border: '1.5px solid #e2e8f0',
+            borderRadius: 12,
+            overflow: 'hidden',
+            background: '#ffffff',
+            marginBottom: 20,
+          }}
+        >
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '0.84rem',
+              textAlign: 'left',
+            }}
+          >
+            <thead
+              style={{
+                background: '#f8fafc',
+                borderBottom: '1.5px solid #e2e8f0',
+              }}
+            >
+              <tr>
+                <th
+                  style={{
+                    padding: '11px 14px',
+                    color: '#475569',
+                    fontWeight: 800,
+                    width: 200,
+                  }}
+                >
+                  Designation
+                </th>
+                <th
+                  style={{
+                    padding: '11px 14px',
+                    color: '#475569',
+                    fontWeight: 800,
+                    width: 100,
+                    textAlign: 'center',
+                  }}
+                >
+                  Positions
+                </th>
+                <th
+                  style={{
+                    padding: '11px 14px',
+                    color: '#475569',
+                    fontWeight: 800,
+                  }}
+                >
+                  Assigned Employees
+                </th>
+                <th
+                  style={{
+                    padding: '11px 14px',
+                    width: 70,
+                    textAlign: 'center',
+                  }}
+                >
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody id="modalAssignedTeamTbody">
+              {assignTeam.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    style={{
+                      textAlign: 'center',
+                      padding: 32,
+                      color: '#94a3b8',
+                      fontWeight: 600,
+                    }}
+                  >
+                    No team members assigned yet. Use the form above to add
+                    members.
+                  </td>
+                </tr>
+              ) : (
+                assignTeam.map((item, idx) => (
+                  <tr
+                    key={`${item.designation}-${idx}`}
+                    style={{ borderBottom: '1px solid #f1f5f9' }}
+                  >
+                    <td
+                      style={{
+                        padding: '12px 14px',
+                        fontWeight: 700,
+                        color: '#0f172a',
+                      }}
+                    >
+                      {item.designation}
+                    </td>
+                    <td
+                      style={{
+                        padding: '12px 14px',
+                        textAlign: 'center',
+                        fontWeight: 800,
+                        color: '#1e3a8a',
+                      }}
+                    >
+                      <span
+                        style={{
+                          background: '#eff6ff',
+                          color: '#1e3a8a',
+                          padding: '3px 10px',
+                          borderRadius: 12,
+                          fontSize: '0.82rem',
+                          fontWeight: 800,
+                        }}
+                      >
+                        {item.positions}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 14px' }}>
+                      {item.employees && item.employees.length > 0 ? (
+                        item.employees.map(emp => (
+                          <span
+                            key={emp}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              background: '#f1f5f9',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: 14,
+                              padding: '3px 10px 3px 6px',
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              color: '#1e293b',
+                              margin: '2px 4px 2px 0',
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 22,
+                                height: 22,
+                                borderRadius: '50%',
+                                background: getAvatarColor(emp),
+                                color: '#fff',
+                                fontSize: '0.65rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              {getInitials(emp)}
+                            </span>
+                            {emp}
+                          </span>
+                        ))
+                      ) : (
+                        <span
+                          style={{
+                            color: '#64748b',
+                            fontSize: '0.8rem',
+                            fontWeight: 500,
+                          }}
+                        >
+                          To be assigned later
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => removeTeamRow(idx)}
+                        onMouseEnter={() => setHoverTrashIdx(idx)}
+                        onMouseLeave={() => setHoverTrashIdx(-1)}
+                        style={{
+                          background:
+                            hoverTrashIdx === idx ? '#fee2e2' : '#fef2f2',
+                          color: '#ef4444',
+                          border: 'none',
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'all 0.15s',
+                        }}
+                        title="Remove Row"
+                      >
+                        <i className="pi pi-trash" style={{ fontSize: 13 }} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="step-nav-footer">
+          <button
+            type="button"
+            className="btn-erp-outline"
+            onClick={() => switchTab('budget')}
+          >
+            <i className="pi pi-arrow-left" />
+            <span>Back to Budget Allocation</span>
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              type="button"
+              className="btn-erp-outline"
+              onClick={() => switchView('list')}
+            >
+              <span>View All Projects</span>
+            </button>
+            <button type="button" className="btn-erp-navy" onClick={saveTeam}>
+              <i className="pi pi-check-circle" />
+              <span>Save Team Assignees</span>
             </button>
           </div>
         </div>
@@ -1976,7 +2793,7 @@ export default function CreateProjectPage(): React.ReactElement {
                             type="button"
                             className="btn-action-edit"
                             title="Edit Project"
-                            onClick={() => switchView('edit', p.id)}
+                            onClick={() => switchView('edit', p.id, 'general')}
                           >
                             <i className="pi pi-pencil" />
                             <span>Edit</span>
@@ -1985,7 +2802,7 @@ export default function CreateProjectPage(): React.ReactElement {
                             type="button"
                             className="btn-action-budget-view"
                             title="Manage Budget"
-                            onClick={() => switchView('budget', p.id)}
+                            onClick={() => switchView('edit', p.id, 'budget')}
                           >
                             <i className="pi pi-wallet" />
                             <span>Budget</span>
@@ -2229,648 +3046,6 @@ export default function CreateProjectPage(): React.ReactElement {
               onClick={submitBudget}
             >
               <span>Add Budget</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div
-        id="assigneeModal"
-        className="cp-modal-overlay"
-        style={{ display: assignOpen ? 'flex' : 'none' }}
-        onClick={e => {
-          if (e.target === e.currentTarget) closeAssigneeModal();
-        }}
-      >
-        <div className="cp-modal-dialog" style={{ maxWidth: 820 }}>
-          <div
-            style={{
-              background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)',
-              padding: '18px 26px',
-              borderBottom: '1.5px solid #e2e8f0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  background: 'linear-gradient(135deg, #1e3a8a, #2563eb)',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.15rem',
-                  boxShadow: '0 3px 10px rgba(37, 99, 235, 0.3)',
-                }}
-              >
-                <i className="pi pi-user-plus" />
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontWeight: 800,
-                    fontSize: '1.1rem',
-                    color: '#0f172a',
-                  }}
-                >
-                  Assign Team Members
-                </div>
-                <div
-                  style={{
-                    fontSize: '0.78rem',
-                    color: '#64748b',
-                    fontWeight: 600,
-                    marginTop: 2,
-                  }}
-                >
-                  Allocate designation-wise positions and assign employees
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={closeAssigneeModal}
-              onMouseEnter={() => setHoverClose(true)}
-              onMouseLeave={() => setHoverClose(false)}
-              style={{
-                border: '1.5px solid ' + (hoverClose ? '#fca5a5' : '#cbd5e1'),
-                background: hoverClose ? '#fee2e2' : '#ffffff',
-                width: 34,
-                height: 34,
-                borderRadius: 8,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: hoverClose ? '#dc2626' : '#64748b',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <i
-                className="pi pi-times"
-                style={{ fontSize: '0.95rem', fontWeight: 'bold' }}
-              />
-            </button>
-          </div>
-
-          <div
-            style={{
-              padding: '24px 28px',
-              maxHeight: 'calc(85vh - 160px)',
-              overflowY: 'auto',
-            }}
-          >
-            <div
-              style={{
-                background: '#f8fafc',
-                border: '1.5px solid #e2e8f0',
-                borderRadius: 12,
-                padding: '14px 18px',
-                marginBottom: 20,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-              }}
-            >
-              <label
-                htmlFor="modalAssignProjectSelect"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontWeight: 800,
-                  color: '#1e3a8a',
-                  fontSize: '0.88rem',
-                  whiteSpace: 'nowrap',
-                  margin: 0,
-                  textTransform: 'uppercase',
-                }}
-              >
-                <i
-                  className="pi pi-folder-open"
-                  style={{ fontSize: '1.1rem', color: '#2563eb' }}
-                />
-                <span>Project:</span>
-              </label>
-              <select
-                id="modalAssignProjectSelect"
-                className="form-control-select"
-                style={{
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
-                  height: 40,
-                  color: '#0f172a',
-                  border: '1.5px solid #93c5fd',
-                  background: '#ffffff',
-                  width: '100%',
-                  cursor: 'pointer',
-                }}
-                value={assignProjectId}
-                onChange={e => handleAssignProjectChange(e.target.value)}
-              >
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.code || p.id} - {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1.5px solid #e2e8f0',
-                borderRadius: 12,
-                padding: 18,
-                marginBottom: 20,
-                boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
-              }}
-            >
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1.4fr 100px 2fr auto',
-                  gap: 14,
-                  alignItems: 'flex-end',
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      color: '#475569',
-                      marginBottom: 6,
-                      display: 'block',
-                    }}
-                  >
-                    Designation <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <select
-                    id="modalTeamDesignationSelect"
-                    className="form-control-select"
-                    style={{
-                      height: 42,
-                      fontWeight: 600,
-                      width: '100%',
-                      border: '1.5px solid #cbd5e1',
-                      background: '#f8fafc',
-                      borderRadius: 8,
-                    }}
-                    value={desig}
-                    onChange={e => handleDesigChange(e.target.value)}
-                  >
-                    <option value="" disabled>
-                      Select Designation...
-                    </option>
-                    <option value="Center Head">Center Head</option>
-                    <option value="Project Manager">Project Manager</option>
-                    <option value="Research Analyst">Research Analyst</option>
-                    <option value="Fellow">Fellow</option>
-                    <option value="Intern">Intern</option>
-                    <option value="Senior Advisor">Senior Advisor</option>
-                    <option value="Research Associate">
-                      Research Associate
-                    </option>
-                    <option value="Field Investigator">
-                      Field Investigator
-                    </option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      color: '#475569',
-                      marginBottom: 6,
-                      display: 'block',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Positions <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <input
-                    type="number"
-                    id="modalTeamPositionCount"
-                    className="form-control-input"
-                    min={1}
-                    value={posCount}
-                    onChange={e => setPosCount(e.target.value)}
-                    style={{
-                      height: 42,
-                      fontWeight: 700,
-                      textAlign: 'center',
-                      width: '100%',
-                      border: '1.5px solid #cbd5e1',
-                      background: '#f8fafc',
-                      borderRadius: 8,
-                    }}
-                  />
-                </div>
-
-                <div style={{ position: 'relative' }} ref={empWrapRef}>
-                  <label
-                    style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      color: '#475569',
-                      marginBottom: 6,
-                      display: 'block',
-                    }}
-                  >
-                    Select Employees <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
-                  <div
-                    id="modalEmployeeDropdownTrigger"
-                    onClick={() => setEmpMenuOpen(o => !o)}
-                    style={{
-                      height: 42,
-                      border: '1.5px solid #cbd5e1',
-                      borderRadius: 8,
-                      padding: '0 12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      cursor: 'pointer',
-                      background: '#f8fafc',
-                    }}
-                  >
-                    <span
-                      id="modalSelectedEmployeesText"
-                      style={{
-                        fontSize: '0.86rem',
-                        color: '#64748b',
-                        fontWeight: 600,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        maxWidth: '90%',
-                      }}
-                    >
-                      {empSelectText}
-                    </span>
-                    <i
-                      className="pi pi-chevron-down"
-                      style={{ color: '#64748b', fontSize: 11 }}
-                    />
-                  </div>
-
-                  <div
-                    id="modalEmployeeCheckboxMenu"
-                    style={{
-                      display: empMenuOpen ? 'block' : 'none',
-                      position: 'absolute',
-                      top: 'calc(100% + 6px)',
-                      left: 0,
-                      width: '100%',
-                      background: '#ffffff',
-                      border: '1.5px solid #cbd5e1',
-                      borderRadius: 8,
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
-                      zIndex: 1000,
-                      maxHeight: 200,
-                      overflowY: 'auto',
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: 12,
-                        fontSize: '0.85rem',
-                        color: '#94a3b8',
-                        textAlign: 'center',
-                        display: desig ? 'none' : 'block',
-                      }}
-                      id="modalEmployeeMenuEmpty"
-                    >
-                      Select a designation first
-                    </div>
-                    <div
-                      id="modalEmployeeMenuList"
-                      style={{
-                        display: desig ? 'block' : 'none',
-                        padding: '6px 0',
-                      }}
-                    >
-                      {employeeList.map(emp => (
-                        <label
-                          key={emp}
-                          onMouseEnter={() => setHoverEmpName(emp)}
-                          onMouseLeave={() => setHoverEmpName('')}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                            transition: 'background 0.1s',
-                            background:
-                              hoverEmpName === emp ? '#f1f5f9' : 'transparent',
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            className="modal-emp-checkbox"
-                            checked={selectedEmps.includes(emp)}
-                            onChange={() => toggleEmp(emp)}
-                            style={{
-                              accentColor: '#15803d',
-                              width: 16,
-                              height: 16,
-                            }}
-                          />
-                          <span
-                            style={{
-                              fontSize: '0.85rem',
-                              color: '#334155',
-                              fontWeight: 600,
-                            }}
-                          >
-                            {emp}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={addTeamRow}
-                    style={{
-                      height: 42,
-                      padding: '0 20px',
-                      fontWeight: 800,
-                      fontSize: '0.84rem',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      boxShadow: '0 2px 6px rgba(24,55,212,0.2)',
-                      whiteSpace: 'nowrap',
-                      borderRadius: 8,
-                      background: '#1e3a8a',
-                      color: '#ffffff',
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <i className="pi pi-plus" /> Add
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                border: '1.5px solid #e2e8f0',
-                borderRadius: 12,
-                overflow: 'hidden',
-                background: '#ffffff',
-              }}
-            >
-              <table
-                style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: '0.84rem',
-                  textAlign: 'left',
-                }}
-              >
-                <thead
-                  style={{
-                    background: '#f8fafc',
-                    borderBottom: '1.5px solid #e2e8f0',
-                  }}
-                >
-                  <tr>
-                    <th
-                      style={{
-                        padding: '11px 14px',
-                        color: '#475569',
-                        fontWeight: 800,
-                        width: 180,
-                      }}
-                    >
-                      Designation
-                    </th>
-                    <th
-                      style={{
-                        padding: '11px 14px',
-                        color: '#475569',
-                        fontWeight: 800,
-                        width: 90,
-                        textAlign: 'center',
-                      }}
-                    >
-                      Positions
-                    </th>
-                    <th
-                      style={{
-                        padding: '11px 14px',
-                        color: '#475569',
-                        fontWeight: 800,
-                      }}
-                    >
-                      Assigned Employees
-                    </th>
-                    <th
-                      style={{
-                        padding: '11px 14px',
-                        width: 60,
-                        textAlign: 'center',
-                      }}
-                    >
-                      Act
-                    </th>
-                  </tr>
-                </thead>
-                <tbody id="modalAssignedTeamTbody">
-                  {assignTeam.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        style={{
-                          textAlign: 'center',
-                          padding: 24,
-                          color: '#94a3b8',
-                          fontWeight: 600,
-                        }}
-                      >
-                        No team members assigned yet. Use the form above to add
-                        members.
-                      </td>
-                    </tr>
-                  ) : (
-                    assignTeam.map((item, idx) => (
-                      <tr
-                        key={`${item.designation}-${idx}`}
-                        style={{ borderBottom: '1px solid #f1f5f9' }}
-                      >
-                        <td
-                          style={{
-                            padding: '10px 14px',
-                            fontWeight: 700,
-                            color: '#0f172a',
-                          }}
-                        >
-                          {item.designation}
-                        </td>
-                        <td
-                          style={{
-                            padding: '10px 14px',
-                            textAlign: 'center',
-                            fontWeight: 800,
-                            color: '#1e3a8a',
-                          }}
-                        >
-                          {item.positions}
-                        </td>
-                        <td style={{ padding: '10px 14px' }}>
-                          {item.employees && item.employees.length > 0 ? (
-                            item.employees.map(emp => (
-                              <span
-                                key={emp}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 5,
-                                  background: '#f1f5f9',
-                                  border: '1px solid #e2e8f0',
-                                  borderRadius: 14,
-                                  padding: '2px 8px 2px 4px',
-                                  fontSize: '0.78rem',
-                                  fontWeight: 700,
-                                  color: '#1e293b',
-                                  margin: '2px 4px 2px 0',
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    width: 20,
-                                    height: 20,
-                                    borderRadius: '50%',
-                                    background: getAvatarColor(emp),
-                                    color: '#fff',
-                                    fontSize: '0.62rem',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  {getInitials(emp)}
-                                </span>
-                                {emp}
-                              </span>
-                            ))
-                          ) : (
-                            <span
-                              style={{
-                                color: '#64748b',
-                                fontSize: '0.8rem',
-                                fontWeight: 500,
-                              }}
-                            >
-                              To be assigned later
-                            </span>
-                          )}
-                        </td>
-                        <td
-                          style={{ padding: '10px 14px', textAlign: 'center' }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => removeTeamRow(idx)}
-                            onMouseEnter={() => setHoverTrashIdx(idx)}
-                            onMouseLeave={() => setHoverTrashIdx(-1)}
-                            style={{
-                              background:
-                                hoverTrashIdx === idx ? '#fee2e2' : '#fef2f2',
-                              color: '#ef4444',
-                              border: 'none',
-                              width: 28,
-                              height: 28,
-                              borderRadius: 6,
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.15s',
-                            }}
-                            title="Remove Row"
-                          >
-                            <i
-                              className="pi pi-trash"
-                              style={{ fontSize: 11 }}
-                            />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div
-            style={{
-              padding: '16px 28px',
-              background: '#f8fafc',
-              borderTop: '1.5px solid #e2e8f0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 12,
-            }}
-          >
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={closeAssigneeModal}
-              style={{
-                height: 40,
-                padding: '0 18px',
-                fontWeight: 700,
-                fontSize: '0.86rem',
-                borderRadius: 8,
-                border: '1.5px solid #cbd5e1',
-                background: '#ffffff',
-                color: '#475569',
-                cursor: 'pointer',
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={saveTeam}
-              style={{
-                height: 40,
-                padding: '0 24px',
-                fontSize: '0.88rem',
-                fontWeight: 800,
-                background: 'linear-gradient(135deg, #1e3a8a, #2563eb)',
-                border: 'none',
-                color: '#ffffff',
-                borderRadius: 8,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
-              }}
-            >
-              <i className="pi pi-check-circle" />
-              <span>Save Assignees</span>
             </button>
           </div>
         </div>

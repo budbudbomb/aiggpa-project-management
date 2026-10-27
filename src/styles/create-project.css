@@ -837,3 +837,106 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   PROJECT STEPPER TABS (General, Budget, Assignee)
+   ========================================================================== */
+
+.project-stepper-box {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.project-step-tab {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1.5px solid transparent;
+  background: transparent;
+  text-align: left;
+  user-select: none;
+}
+
+.project-step-tab:hover:not(.active) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.project-step-tab.active {
+  background: #ffffff;
+  border-color: #1e3a8a;
+  box-shadow: 0 4px 14px rgba(30, 58, 138, 0.08);
+}
+
+.project-step-tab.completed {
+  border-color: #e2e8f0;
+}
+
+.project-step-num {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #64748b;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.project-step-tab.active .project-step-num {
+  background: #1e3a8a;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(30, 58, 138, 0.25);
+}
+
+.project-step-tab.completed .project-step-num {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1.5px solid #a7f3d0;
+}
+
+.project-step-info h4 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+  line-height: 1.2;
+}
+
+.project-step-info p {
+  font-size: 0.74rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.step-nav-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1.5px solid #f1f5f9;
+}
+
+@media (max-width: 900px) {
+  .project-stepper-box {
+    grid-template-columns: 1fr;
+  }
+}
+
