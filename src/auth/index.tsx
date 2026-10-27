@@ -11,6 +11,7 @@ import CreateProjectPage from '../pages/CreateProjectPage';
 import ActivitiesPage from '../pages/ActivitiesPage';
 import SurveysPage from '../pages/SurveysPage';
 import CreateSurveyPage from '../pages/CreateSurveyPage';
+import SurveyDashboardPage from '../pages/SurveyDashboardPage';
 import ComplaintsPage from '../pages/ComplaintsPage';
 import QuestionBankPage from '../pages/QuestionBankPage';
 import {
@@ -60,6 +61,7 @@ export function AppLayoutFeatures() {
           <Route path="create-project" element={<CreateProjectPage />} />
           <Route path="activities" element={<ActivitiesPage />} />
           <Route path="surveys" element={<SurveysPage />} />
+          <Route path="surveys/:id/dashboard" element={<SurveyDashboardPage />} />
           <Route path="create-survey" element={<CreateSurveyPage />} />
           <Route path="complaints" element={<ComplaintsPage />} />
           <Route path="question-bank" element={<QuestionBankPage />} />

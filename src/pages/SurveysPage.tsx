@@ -506,17 +506,14 @@ export default function SurveysPage(): React.ReactElement {
                         style={{ fontSize: 10 }}
                       />
                     </Link>
-                    <div
+                    <Link
+                      to={`/surveys/${survey.id}/dashboard`}
+                      id={`view-dashboard-btn-${survey.id}`}
                       className="btn-card-dashboard"
-                      style={{
-                        pointerEvents: 'none',
-                        cursor: 'default',
-                        userSelect: 'none',
-                      }}
                     >
                       <i className="pi pi-chart-bar" />
                       <span>View Dashboard</span>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -1237,7 +1234,15 @@ export default function SurveysPage(): React.ReactElement {
             </div>
           </div>
 
-          <div className="survey-modal-footer">
+          <div
+            className="survey-modal-footer"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+            }}
+          >
             <button
               type="button"
               className="btn-cs-secondary"
@@ -1245,6 +1250,26 @@ export default function SurveysPage(): React.ReactElement {
             >
               Close
             </button>
+            {selectedSurvey && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Link
+                  to={`/activities?surveyId=${selectedSurvey.id}&title=${encodeURIComponent(selectedSurvey.title)}`}
+                  className="btn-card-allocate"
+                  style={{ padding: '8px 14px', textDecoration: 'none' }}
+                >
+                  <span>Allocate Task</span>
+                  <i className="pi pi-arrow-right" style={{ fontSize: 10 }} />
+                </Link>
+                <Link
+                  to={`/surveys/${selectedSurvey.id}/dashboard`}
+                  className="btn-card-dashboard"
+                  style={{ padding: '8px 14px', textDecoration: 'none' }}
+                >
+                  <i className="pi pi-chart-bar" />
+                  <span>Full Dashboard</span>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
