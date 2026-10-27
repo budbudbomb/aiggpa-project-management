@@ -739,6 +739,7 @@ const Store = (function () {
         const newSubtask = {
           id: 'ST-' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4),
           title: (subtask.title || '').trim(),
+          type: subtask.type || 'standard',
           completed: !!subtask.completed,
           assignee: rawAssignees.join(', '),
           assignees: rawAssignees,
@@ -748,6 +749,9 @@ const Store = (function () {
           description: subtask.description || '',
           estimatedHours: subtask.estimatedHours || '',
           checklists: Array.isArray(subtask.checklists) ? subtask.checklists : [],
+          meetingUrl: subtask.meetingUrl || '',
+          meetingDuration: subtask.meetingDuration || '',
+          meetingDescription: subtask.meetingDescription || '',
           createdAt: new Date().toISOString()
         };
         t.subtasks.push(newSubtask);

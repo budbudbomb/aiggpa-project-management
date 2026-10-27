@@ -1331,7 +1331,88 @@
   </div>
 
   <!-- ════════════════════════════════════════════
-       MODAL: SUBTASK DETAILS & COLLABORATION (As in PM Tools)
+       MODAL: SUBTASK MEETING DETAILS (URL, DURATION, DESC)
+  ═══════════════════════════════════════════════ -->
+  <div class="modal-backdrop" id="modalSubtaskMeetingDetails">
+    <div class="modal-container" style="max-width: 520px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.18);">
+      <input type="hidden" id="stMeetingTaskId" value="">
+
+      <div class="modal-header" style="padding: 16px 22px; border-bottom: 1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; background:#ffffff;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:#eff6ff; color:#2563eb; display:flex; align-items:center; justify-content:center; font-size:16px;">
+            <i class="pi pi-pencil"></i>
+          </div>
+          <div>
+            <h2 style="font-size: 1.05rem; font-weight: 800; color: #1e293b; margin: 0;">Meeting Details</h2>
+            <p style="font-size: 0.76rem; color: #64748b; margin: 2px 0 0 0;">Add meeting link, duration, and brief description.</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal style="background:none; border:none; font-size:1.3rem; color:#94a3b8; cursor:pointer;">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 20px 22px; background:#ffffff;">
+        <div style="display:flex; flex-direction:column; gap: 15px;">
+
+          <!-- Meeting URL -->
+          <div>
+            <label class="form-label" style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:5px;">
+              Meeting URL <span style="font-size:0.72rem; color:#94a3b8; font-weight:normal;">(Google Meet, Zoom, MS Teams)</span>
+            </label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <span style="position:absolute; left:12px; color:#94a3b8; font-size:13px;"><i class="pi pi-link"></i></span>
+              <input type="url" id="stMeetingUrlIn" class="form-control-input"
+                placeholder="https://meet.google.com/xyz-abcd-efg or Zoom link"
+                style="padding-left:34px; width:100%; border:1.5px solid #cbd5e1; border-radius:8px; padding-top:8px; padding-bottom:8px; font-size:0.85rem; outline:none; transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'">
+            </div>
+          </div>
+
+          <!-- Meeting Duration -->
+          <div>
+            <label class="form-label" style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:5px;">
+              Meeting Duration
+            </label>
+            <div style="position:relative; display:flex; align-items:center;">
+              <span style="position:absolute; left:12px; color:#94a3b8; font-size:13px;"><i class="pi pi-clock"></i></span>
+              <select id="stMeetingDurationSelect" class="form-control-select"
+                style="padding-left:34px; width:100%; border:1.5px solid #cbd5e1; border-radius:8px; padding-top:8px; padding-bottom:8px; font-size:0.85rem; outline:none; background:#ffffff; cursor:pointer; transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'">
+                <option value="15 mins">15 mins</option>
+                <option value="30 mins">30 mins</option>
+                <option value="45 mins" selected>45 mins</option>
+                <option value="1 hour">1 hour</option>
+                <option value="1.5 hours">1.5 hours</option>
+                <option value="2 hours">2 hours</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Description / Agenda -->
+          <div>
+            <label class="form-label" style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:5px;">
+              Description / Agenda
+            </label>
+            <textarea id="stMeetingDescIn" rows="3"
+              placeholder="Brief agenda, discussion points, or key objectives..."
+              style="width:100%; border:1.5px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:0.85rem; font-family:inherit; outline:none; resize:vertical; box-sizing:border-box; transition:border-color 0.2s;"
+              onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#cbd5e1'"></textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 22px; background:#f8fafc; border-top: 1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-secondary" data-close-modal style="padding:6px 14px; font-size:0.82rem; font-weight:600;">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="window.saveSubtaskMeetingDetailsModal()" style="padding:6px 18px; font-size:0.82rem; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+          <i class="pi pi-check"></i>
+          <span>Save Details</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       MODAL: SUBTASK DETAILS &amp; COLLABORATION (As in PM Tools)
   ═══════════════════════════════════════════════ -->
   <div class="modal-backdrop" id="modalSubtaskDetails">
     <div class="modal-container" style="max-width: 650px; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">

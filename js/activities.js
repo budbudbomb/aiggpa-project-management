@@ -608,6 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Quick Subtask Inline Multi-check Assignee Picker ──
   let quickSubtaskAssigneesMap = {};
+  let quickSubtaskTypeMap = {};         // tracks selected subtask type per taskId
+  let quickSubtaskMeetingDetailsMap = {}; // stores meeting details per taskId
 
   window.openQuickSubtaskAssigneePicker = function (taskId, triggerEl, e) {
     if (e) {
@@ -819,6 +821,106 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof showToast === 'function') {
       showToast('Meeting details saved!');
     }
+  };
+
+  // ── Subtask Type Pill Selector ──
+  window.selectSubtaskType = function (taskId, type) {
+    quickSubtaskTypeMap[taskId] = type;
+
+    const pills = [
+      { id: `stPillStandard-${taskId}`, type: 'standard', cls: 'active' },
+      { id: `stPillSurvey-${taskId}`,   type: 'survey',   cls: 'active pill-survey' },
+      { id: `stPillMeeting-${taskId}`,  type: 'meeting',  cls: 'active pill-meeting' }
+    ];
+    pills.forEach(p => {
+      const el = document.getElementById(p.id);
+      if (el) el.className = 'grid-type-pill' + (p.type === type ? ` ${p.cls}` : '');
+    });
+
+    const textInput    = document.getElementById('quickSubtaskInput-'       + taskId);
+    const surveySelect = document.getElementById('quickSubtaskSurveySelect-' + taskId);
+    const meetingBtn   = document.getElementById('quickSubtaskMeetingBtn-'   + taskId);
+    const fileEditBtn  = document.getElementById('quickSubtaskFileEditBtn-'  + taskId);
+    const inputWrapper = document.getElementById('stInputWrapper-'           + taskId);
+    const pillBox      = document.getElementById('stPillBox-'                + taskId);
+    const pillBoxWidth = pillBox ? pillBox.offsetWidth : 0;
+
+    if (type === 'survey') {
+      if (textInput)    textInput.style.display    = 'none';
+      if (fileEditBtn)  fileEditBtn.style.display  = 'none';
+      if (meetingBtn)   meetingBtn.style.display   = 'none';
+      if (surveySelect) { surveySelect.style.display = 'block'; surveySelect.style.width = '100%'; surveySelect.focus(); }
+      // Width-match wrapper to pill box
+      if (inputWrapper && pillBoxWidth > 0) {
+        inputWrapper.style.flex  = 'none';
+        inputWrapper.style.width = pillBoxWidth + 'px';
+      } else if (inputWrapper) {
+        inputWrapper.style.flex  = 'none';
+        inputWrapper.style.width = '280px';
+      }
+    } else if (type === 'meeting') {
+      if (surveySelect) surveySelect.style.display = 'none';
+      if (fileEditBtn)  fileEditBtn.style.display  = 'none';
+      if (textInput)    { textInput.style.display = 'block'; textInput.style.flex = '1'; textInput.placeholder = 'Write meeting subtask title (e.g. Weekly Governance Sync)...'; textInput.focus(); }
+      if (meetingBtn)   meetingBtn.style.display   = 'inline-flex';
+      // Width-match wrapper to pill box
+      if (inputWrapper && pillBoxWidth > 0) {
+        inputWrapper.style.flex  = 'none';
+        inputWrapper.style.width = pillBoxWidth + 'px';
+      } else if (inputWrapper) {
+        inputWrapper.style.flex  = 'none';
+        inputWrapper.style.width = '280px';
+      }
+    } else {
+      // Standard — reset to flex:1
+      if (surveySelect) surveySelect.style.display = 'none';
+      if (meetingBtn)   meetingBtn.style.display   = 'none';
+      if (fileEditBtn)  fileEditBtn.style.display  = 'flex';
+      if (textInput)    { textInput.style.display = 'block'; textInput.style.flex = '1'; textInput.placeholder = 'Add a subtask... (type name & press Enter)'; textInput.focus(); }
+      if (inputWrapper) { inputWrapper.style.flex = '1'; inputWrapper.style.width = ''; }
+    }
+  };
+
+  // ── Subtask Meeting Details Modal Handlers ──
+  window.openSubtaskMeetingDetailsModal = function (taskId, e) {
+    if (e) e.stopPropagation();
+    const details = quickSubtaskMeetingDetailsMap[taskId] || {};
+    const urlIn  = document.getElementById('stMeetingUrlIn');
+    const durIn  = document.getElementById('stMeetingDurationSelect');
+    const descIn = document.getElementById('stMeetingDescIn');
+    const tidIn  = document.getElementById('stMeetingTaskId');
+    if (urlIn)  urlIn.value  = details.url  || '';
+    if (durIn)  durIn.value  = details.duration || '45 mins';
+    if (descIn) descIn.value = details.description || '';
+    if (tidIn)  tidIn.value  = taskId;
+    openModal('modalSubtaskMeetingDetails');
+  };
+
+  window.saveSubtaskMeetingDetailsModal = function () {
+    const taskId = document.getElementById('stMeetingTaskId')?.value || '';
+    if (!taskId) return;
+    const url  = document.getElementById('stMeetingUrlIn')?.value.trim() || '';
+    const dur  = document.getElementById('stMeetingDurationSelect')?.value || '45 mins';
+    const desc = document.getElementById('stMeetingDescIn')?.value.trim() || '';
+    quickSubtaskMeetingDetailsMap[taskId] = { url, duration: dur, description: desc };
+
+    const btn  = document.getElementById('quickSubtaskMeetingBtn-' + taskId);
+    const span = document.getElementById('quickSubtaskMeetingBtnTxt-' + taskId);
+    if (btn) {
+      if (url || desc) {
+        btn.style.background   = '#dcfce7';
+        btn.style.borderColor  = '#86efac';
+        btn.style.color        = '#15803d';
+        if (span) span.textContent = 'Details Added ✓';
+      } else {
+        btn.style.background   = '#eff6ff';
+        btn.style.borderColor  = '#bfdbfe';
+        btn.style.color        = '#2563eb';
+        if (span) span.textContent = 'Details';
+      }
+    }
+    closeModal(document.getElementById('modalSubtaskMeetingDetails'));
+    if (typeof showToast === 'function') showToast('Meeting details saved!');
   };
 
   // ── Dynamic In-Grid Task Type Selector ──
@@ -1691,23 +1793,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
           subtasksRowsHtml += `
             <tr class="subtask-quick-add-row" id="subtask-quick-add-${t.id}" style="border-bottom:1px dashed #e2e8f0;background:#f8fafc;">
-              <!-- 1. SUBTASK TITLE -->
-              <td style="padding:6px 14px 6px 36px;vertical-align:middle;">
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <span style="color:#94a3b8;font-size:12px;user-select:none;">↳</span>
-                  <div style="position:relative;flex:1;display:flex;align-items:center;">
-                    <input type="text" class="subtask-quick-input" id="quickSubtaskInput-${t.id}" 
-                      placeholder="Add a subtask... (type name & press Enter)" 
-                      onkeydown="if(event.key === 'Enter') { event.preventDefault(); window.submitQuickSubtask('${t.id}'); }"
-                      onclick="event.stopPropagation();"
-                      style="width:100%;border:1.5px solid #cbd5e1;background:#ffffff;border-radius:6px;padding:4px 28px 4px 8px;font-size:0.75rem;font-weight:600;color:#1e293b;outline:none;font-family:inherit;">
-                    <button type="button" onclick="window.openQuickSubtaskDetailsModal('${t.id}', event)" 
-                      style="position:absolute;right:4px;background:none;border:none;color:#94a3b8;cursor:pointer;padding:2px 4px;font-size:11px;border-radius:3px;display:flex;align-items:center;"
-                      onmouseover="this.style.color='#2563eb'" onmouseout="this.style.color='#94a3b8'"
-                      title="Add details / notes in pop up before saving">
-                      <i class="pi pi-file-edit"></i>
-                    </button>
+              <!-- 1. SUBTASK TITLE + TYPE SELECTOR -->
+              <td style="padding:5px 14px 5px 36px;vertical-align:middle;">
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <div style="display:flex;align-items:center;gap:5px;padding-left:18px;">
+                    <span style="color:#94a3b8;font-weight:700;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.04em;flex-shrink:0;">Type:</span>
+                    <div id="stPillBox-${t.id}" style="display:inline-flex;align-items:center;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:9px;padding:2px;gap:2px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.03);">
+                      <button type="button" class="grid-type-pill active" id="stPillStandard-${t.id}"
+                        onclick="window.selectSubtaskType('${t.id}', 'standard')" title="Standard Subtask"
+                        style="font-size:0.65rem;padding:2px 7px;">
+                        📌 Standard task
+                      </button>
+                      <button type="button" class="grid-type-pill" id="stPillSurvey-${t.id}"
+                        onclick="window.selectSubtaskType('${t.id}', 'survey')" title="Survey Subtask"
+                        style="font-size:0.65rem;padding:2px 7px;">
+                        📋 Survey task
+                      </button>
+                      <button type="button" class="grid-type-pill" id="stPillMeeting-${t.id}"
+                        onclick="window.selectSubtaskType('${t.id}', 'meeting')" title="Meeting Subtask"
+                        style="font-size:0.65rem;padding:2px 7px;">
+                        📅 Meeting task
+                      </button>
+                    </div>
                   </div>
+
+                  <!-- INPUT / SURVEY / MEETING ROW -->
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="color:#94a3b8;font-size:12px;user-select:none;flex-shrink:0;">↳</span>
+
+                    <!-- Unified input wrapper — width matches pill box when survey/meeting -->
+                    <div id="stInputWrapper-${t.id}" style="position:relative;flex:1;display:flex;align-items:center;gap:5px;min-width:0;">
+
+                      <!-- Standard text input (default visible) -->
+                      <input type="text" class="subtask-quick-input" id="quickSubtaskInput-${t.id}"
+                        placeholder="Add a subtask... (type name & press Enter)"
+                        onkeydown="if(event.key === 'Enter') { event.preventDefault(); window.submitQuickSubtask('${t.id}'); }"
+                        onclick="event.stopPropagation();"
+                        style="flex:1;min-width:0;border:1.5px solid #cbd5e1;background:#ffffff;border-radius:6px;padding:4px 28px 4px 8px;font-size:0.75rem;font-weight:600;color:#1e293b;outline:none;font-family:inherit;">
+
+                      <!-- File-edit icon inside text input (standard only) -->
+                      <button type="button" id="quickSubtaskFileEditBtn-${t.id}" onclick="window.openQuickSubtaskDetailsModal('${t.id}', event)"
+                        style="position:absolute;right:4px;background:none;border:none;color:#94a3b8;cursor:pointer;padding:2px 4px;font-size:11px;border-radius:3px;display:flex;align-items:center;"
+                        onmouseover="this.style.color='#2563eb'" onmouseout="this.style.color='#94a3b8'"
+                        title="Add details / notes before saving">
+                        <i class="pi pi-file-edit"></i>
+                      </button>
+
+                      <!-- Survey dropdown (hidden until survey selected) -->
+                      <select id="quickSubtaskSurveySelect-${t.id}"
+                        onkeydown="if(event.key === 'Enter') { event.preventDefault(); window.submitQuickSubtask('${t.id}'); }"
+                        onclick="event.stopPropagation();"
+                        style="display:none;width:100%;border:1.5px solid #ddd6fe;background:#faf5ff;border-radius:6px;padding:4px 8px;font-size:0.75rem;font-weight:600;color:#7c3aed;outline:none;cursor:pointer;font-family:inherit;"
+                        onfocus="this.style.borderColor='#7c3aed';this.style.boxShadow='0 0 0 3px rgba(124,58,237,0.1)';"
+                        onblur="this.style.borderColor='#ddd6fe';this.style.boxShadow='none';">
+                        <option value="">-- Select a Survey --</option>
+                        ${Store.getSurveys().map(s => `<option value="${escapeHtml(s.name)}">📋 ${escapeHtml(s.name)} (${escapeHtml(s.id)})</option>`).join('')}
+                      </select>
+
+                      <!-- Meeting Details button (hidden until meeting selected) -->
+                      <button type="button" id="quickSubtaskMeetingBtn-${t.id}"
+                        onclick="window.openSubtaskMeetingDetailsModal('${t.id}', event)"
+                        style="display:none;flex-shrink:0;align-items:center;gap:4px;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;font-size:0.70rem;font-weight:700;padding:4px 9px;border-radius:7px;cursor:pointer;transition:all 0.15s ease;"
+                        onmouseover="this.style.background='#dbeafe';this.style.borderColor='#93c5fd';"
+                        onmouseout="if(!quickSubtaskMeetingDetailsMap || !quickSubtaskMeetingDetailsMap['${t.id}'] || (!quickSubtaskMeetingDetailsMap['${t.id}'].url && !quickSubtaskMeetingDetailsMap['${t.id}'].description)){this.style.background='#eff6ff';this.style.borderColor='#bfdbfe';}"
+                        title="Add Meeting URL, Duration & Description">
+                        <i class="pi pi-pencil" style="font-size:10px;"></i>
+                        <span id="quickSubtaskMeetingBtnTxt-${t.id}">Details</span>
+                      </button>
+
+                    </div>
+                  </div>
+
                 </div>
               </td>
 
@@ -2127,40 +2283,65 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.submitQuickSubtask = function (taskId, inputEl = null) {
-    const inEl = inputEl || document.getElementById('quickSubtaskInput-' + taskId);
-    if (!inEl) return;
-    const title = inEl.value.trim();
-    if (!title) {
-      inEl.focus();
-      return;
+    const subtaskType = quickSubtaskTypeMap[taskId] || 'standard';
+
+    // Resolve title based on type
+    let title = '';
+    if (subtaskType === 'survey') {
+      const sel = document.getElementById('quickSubtaskSurveySelect-' + taskId);
+      title = sel ? sel.value.trim() : '';
+      if (!title) {
+        if (sel) sel.focus();
+        return;
+      }
+    } else {
+      const inEl = inputEl || document.getElementById('quickSubtaskInput-' + taskId);
+      if (!inEl) return;
+      title = inEl.value.trim();
+      if (!title) {
+        inEl.focus();
+        return;
+      }
     }
 
     const assigneeEl = document.getElementById('quickSubtaskAssignee-' + taskId);
-    const dueDateEl = document.getElementById('quickSubtaskDueDate-' + taskId);
-    const priorityEl = document.getElementById('quickSubtaskPriority-' + taskId);
-    const statusEl = document.getElementById('quickSubtaskStatus-' + taskId);
+    const dueDateEl  = document.getElementById('quickSubtaskDueDate-'   + taskId);
+    const priorityEl = document.getElementById('quickSubtaskPriority-'  + taskId);
+    const statusEl   = document.getElementById('quickSubtaskStatus-'    + taskId);
 
     const assignee = assigneeEl ? assigneeEl.value.trim() : '';
-    const dueDate = dueDateEl ? dueDateEl.value : '';
-    const priority = priorityEl ? priorityEl.value : 'Medium';
-    const status = statusEl ? statusEl.value : 'In Progress';
+    const dueDate  = dueDateEl  ? dueDateEl.value          : '';
+    const priority = priorityEl ? priorityEl.value         : 'Medium';
+    const status   = statusEl   ? statusEl.value           : 'In Progress';
     const completed = status === 'Completed';
 
     const assignedList = (quickSubtaskAssigneesMap[taskId] && quickSubtaskAssigneesMap[taskId].length > 0)
       ? quickSubtaskAssigneesMap[taskId]
       : (assignee ? assignee.split(',').map(s => s.trim()).filter(Boolean) : []);
 
+    // Collect meeting details if applicable
+    const meetingDetails = subtaskType === 'meeting'
+      ? (quickSubtaskMeetingDetailsMap[taskId] || {})
+      : {};
+
     const created = Store.addSubtask(taskId, {
       title,
+      type: subtaskType,
       assignees: assignedList,
       assignee: assignedList.join(', '),
       dueDate,
       priority,
       status,
-      completed
+      completed,
+      meetingUrl:         meetingDetails.url         || '',
+      meetingDuration:    meetingDetails.duration    || '',
+      meetingDescription: meetingDetails.description || ''
     });
 
-    quickSubtaskAssigneesMap[taskId] = [];
+    // Reset per-task state
+    quickSubtaskAssigneesMap[taskId]     = [];
+    quickSubtaskTypeMap[taskId]          = 'standard';
+    quickSubtaskMeetingDetailsMap[taskId] = {};
 
     if (created && typeof showToast === 'function') {
       showToast(`Subtask "${title}" added!`);
@@ -2168,9 +2349,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTable();
     setTimeout(() => {
       const nextEl = document.getElementById('quickSubtaskInput-' + taskId);
-      if (nextEl) {
-        nextEl.focus();
-      }
+      if (nextEl) nextEl.focus();
     }, 50);
   };
 
