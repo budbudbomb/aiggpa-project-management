@@ -81,6 +81,8 @@ export interface ChecklistItem {
   [key: string]: any;
 }
 
+export type SubtaskType = 'standard' | 'survey' | 'meeting';
+
 export interface Subtask {
   id: string;
   title: string;
@@ -93,6 +95,11 @@ export interface Subtask {
   description?: string;
   estimatedHours?: string;
   checklists?: ChecklistItem[];
+  type?: SubtaskType;
+  surveyId?: string;
+  meetingUrl?: string;
+  meetingDuration?: string;
+  meetingDescription?: string;
   createdAt?: string;
   [key: string]: any;
 }
@@ -216,11 +223,7 @@ export interface SurveyFeedback {
 }
 
 export type MilestoneStatus =
-  | 'Not Started'
-  | 'In Progress'
-  | 'Blocked'
-  | 'Completed'
-  | 'Skipped';
+  'Not Started' | 'In Progress' | 'Blocked' | 'Completed' | 'Skipped';
 
 export interface SurveyMilestone {
   id: string;

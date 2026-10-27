@@ -954,8 +954,28 @@ export default function ActivitiesPage(): React.ReactElement {
                           </span>
                         </td>
                         <td className="py-3 px-4 text-slate-500">
-                          {t.checklist.filter(c => c.completed).length}/
-                          {t.checklist.length}
+                          <div className="flex items-center gap-1.5">
+                            <span>
+                              {t.checklist.filter(c => c.completed).length}/
+                              {t.checklist.length}
+                            </span>
+                            {t.checklist.some(c => c.type === 'meeting') && (
+                              <span
+                                className="px-1 py-0.2 bg-blue-50 text-blue-700 rounded text-[9px] font-bold border border-blue-200/60"
+                                title="Contains meeting subtasks"
+                              >
+                                📅
+                              </span>
+                            )}
+                            {t.checklist.some(c => c.type === 'survey') && (
+                              <span
+                                className="px-1 py-0.2 bg-amber-50 text-amber-800 rounded text-[9px] font-bold border border-amber-200/60"
+                                title="Contains survey subtasks"
+                              >
+                                📋
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3 px-4 text-center">
                           <button

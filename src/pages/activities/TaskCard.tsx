@@ -160,7 +160,23 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
             <span className="flex items-center gap-1">
               <CheckSquare className="w-3 h-3 text-slate-400" />
-              <span>Checklist</span>
+              <span>Subtasks</span>
+              {task.checklist.some(c => c.type === 'meeting') && (
+                <span
+                  className="text-[9px] px-1 py-0.2 bg-blue-50 text-blue-700 rounded font-bold border border-blue-200/60"
+                  title="Has meeting subtasks"
+                >
+                  📅
+                </span>
+              )}
+              {task.checklist.some(c => c.type === 'survey') && (
+                <span
+                  className="text-[9px] px-1 py-0.2 bg-amber-50 text-amber-800 rounded font-bold border border-amber-200/60"
+                  title="Has survey subtasks"
+                >
+                  📋
+                </span>
+              )}
             </span>
             <span>
               {completedChecklist}/{totalChecklist}

@@ -31,10 +31,17 @@ export interface Employee {
   isActive?: boolean;
 }
 
+export type SubtaskType = 'standard' | 'survey' | 'meeting';
+
 export interface TaskChecklistItem {
   id: string;
   text: string;
   completed: boolean;
+  type?: SubtaskType;
+  surveyId?: string;
+  meetingUrl?: string;
+  meetingDuration?: string;
+  meetingDescription?: string;
 }
 
 export interface TaskComment {
@@ -2709,6 +2716,93 @@ export const ActivityTaskStore = {
       return task;
     }
     return null;
+  },
+
+  addChecklistItem(
+    taskId: string,
+    itemData: {
+      text: string;
+      type?: SubtaskType;
+      surveyId?: string;
+      meetingUrl?: string;
+      meetingDuration?: string;
+      meetingDescription?: string;
+    },
+    actor: { id: string; name: string; role: string }
+  ): ActivityTask | null {
+    const list = this.getTasks();
+    const task = list.find(t => t.id === taskId);
+    if (!task || !itemData.text?.trim()) return null;
+
+    if (!Array.isArray(task.checklist)) {
+      task.checklist = [];
+    }
+
+    const newItem: TaskChecklistItem = {
+      id: `cl-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      text: itemData.text.trim(),
+      completed: false,
+      type: itemData.type || 'standard',
+      surveyId: itemData.surveyId || '',
+      meetingUrl: itemData.meetingUrl || '',
+      meetingDuration: itemData.meetingDuration || '',
+      meetingDescription: itemData.meetingDescription || '',
+    };
+
+    task.checklist.push(newItem);
+
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    task.timeline.push({
+      id: `tm-${Date.now()}`,
+      actorName: actor.name,
+      actorRole: actor.role as OrgRole,
+      action: 'Subtask / Checklist Added',
+      details: `Added ${newItem.type || 'standard'} subtask: "${newItem.text}"`,
+      timestamp: `${dateStr} ${timeStr}`,
+    });
+
+    this.saveTasks(list);
+    return task;
+  },
+
+  deleteChecklistItem(
+    taskId: string,
+    checklistId: string,
+    actor: { id: string; name: string; role: string }
+  ): ActivityTask | null {
+    const list = this.getTasks();
+    const task = list.find(t => t.id === taskId);
+    if (!task || !Array.isArray(task.checklist)) return null;
+
+    const idx = task.checklist.findIndex(c => c.id === checklistId);
+    if (idx === -1) return null;
+
+    const removed = task.checklist.splice(idx, 1)[0];
+
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    task.timeline.push({
+      id: `tm-${Date.now()}`,
+      actorName: actor.name,
+      actorRole: actor.role as OrgRole,
+      action: 'Subtask / Checklist Removed',
+      details: `Removed: "${removed.text}"`,
+      timestamp: `${dateStr} ${timeStr}`,
+    });
+
+    this.saveTasks(list);
+    return task;
   },
 
   addComment(
