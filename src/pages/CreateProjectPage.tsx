@@ -652,13 +652,19 @@ export default function CreateProjectPage(): React.ReactElement {
       let updatedVal = value;
       if (key === 'fromDate' || key === 'toDate') {
         if (selectedFyRange) {
-          if (value && value < selectedFyRange.minDate) updatedVal = selectedFyRange.minDate;
-          if (value && value > selectedFyRange.maxDate) updatedVal = selectedFyRange.maxDate;
+          if (value && value < selectedFyRange.minDate)
+            updatedVal = selectedFyRange.minDate;
+          if (value && value > selectedFyRange.maxDate)
+            updatedVal = selectedFyRange.maxDate;
         }
       }
       const updated = { ...prev, [key]: updatedVal };
       if (key !== 'prcDate') {
-        if (updated.fromDate && updated.toDate && updated.toDate < updated.fromDate) {
+        if (
+          updated.fromDate &&
+          updated.toDate &&
+          updated.toDate < updated.fromDate
+        ) {
           updated.toDate = updated.fromDate;
         }
         updated.duration = String(
@@ -1686,7 +1692,8 @@ export default function CreateProjectPage(): React.ReactElement {
                   }}
                 >
                   <i className="pi pi-calendar" style={{ fontSize: 10 }} />
-                  FY Window: {selectedFyRange.minDate} to {selectedFyRange.maxDate}
+                  FY Window: {selectedFyRange.minDate} to{' '}
+                  {selectedFyRange.maxDate}
                 </span>
               )}
             </div>
@@ -1730,7 +1737,9 @@ export default function CreateProjectPage(): React.ReactElement {
                 <i className="pi pi-calendar date-icon" />
               </div>
               {selectedFyRange && (
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 3 }}>
+                <span
+                  style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 3 }}
+                >
                   Allowed: {selectedFyRange.minDate} onwards
                 </span>
               )}
@@ -1754,7 +1763,9 @@ export default function CreateProjectPage(): React.ReactElement {
                 <i className="pi pi-calendar date-icon" />
               </div>
               {selectedFyRange && (
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 3 }}>
+                <span
+                  style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 3 }}
+                >
                   Up to: {selectedFyRange.maxDate}
                 </span>
               )}
