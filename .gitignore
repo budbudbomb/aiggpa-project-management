@@ -12,13 +12,16 @@ dist/
 *.tsbuildinfo
 docs/
 
-# Playwright testing
-/tests/
-/playwright-report/
-/test-results/
-/playwright/.cache/
+# Playwright testing & QA artifacts
+tests/
+playwright-report/
+test-results/
+playwright/.cache/
+.playwright/
+blob-report/
 
-# Test artifacts
+# Test artifacts, traces, and media
 *.trace.zip
 *.webm
-.playwright
+*.mp4
+test-results/

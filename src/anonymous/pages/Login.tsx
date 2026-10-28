@@ -199,14 +199,14 @@ export default function Login({ onForgotPassword }: LoginProps) {
             <div className="flex items-center gap-4 mb-6">
               <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white p-3 flex items-center justify-center border border-blue-200/80 shadow-md backdrop-blur-md">
                 <img
-                  src="/MP_LOGO.png"
+                  src={`${import.meta.env.BASE_URL}MP_LOGO.png`}
                   alt="Government of MP Emblem Logo"
                   className="w-full h-full object-contain"
                 />
               </div>
               <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white p-3 flex items-center justify-center border border-blue-200/80 shadow-md backdrop-blur-md">
                 <img
-                  src="/Aiggpa_Logo.svg"
+                  src={`${import.meta.env.BASE_URL}Aiggpa_Logo.svg`}
                   alt="AIGGPA Department Logo"
                   className="w-full h-full object-contain"
                 />
@@ -263,7 +263,7 @@ export default function Login({ onForgotPassword }: LoginProps) {
         return (
           <div className="hidden lg:flex lg:w-7/12 xl:w-2/3 w-full flex-col justify-center items-center max-w-3xl xl:max-w-4xl">
             <img
-              src="/Login_infographic.png"
+              src={`${import.meta.env.BASE_URL}Login_infographic.png`}
               alt="AIGGPA ERP Infographic"
               className="w-full h-auto max-h-[92vh] xl:max-h-[95vh] object-contain drop-shadow-2xl scale-105 transition-transform duration-300"
             />
@@ -276,7 +276,12 @@ export default function Login({ onForgotPassword }: LoginProps) {
   };
 
   return (
-    <div className={`aiggpa-login-bg-page ${lang === 'hi' ? 'lang-hi' : ''}`}>
+    <div
+      className={`aiggpa-login-bg-page ${lang === 'hi' ? 'lang-hi' : ''}`}
+      style={{
+        backgroundImage: `url('${import.meta.env.BASE_URL}login_bg.jpg')`,
+      }}
+    >
       {/* Ambient CSS Light Glow Orbs */}
       <div className="aiggpa-login-glow-orb-1" />
       <div className="aiggpa-login-glow-orb-2" />
@@ -284,12 +289,12 @@ export default function Login({ onForgotPassword }: LoginProps) {
       {/* TOP LEFT MOBILE BRANDING (Dual Logos: MP Emblem + AIGGPA Logo) */}
       <div className="fixed top-3 left-3 lg:hidden z-40 flex items-center gap-2">
         <img
-          src="/MP_LOGO.png"
+          src={`${import.meta.env.BASE_URL}MP_LOGO.png`}
           alt="Government of MP Emblem Logo"
           className="w-7 h-7 object-contain shrink-0"
         />
         <img
-          src="/Aiggpa_Logo.svg"
+          src={`${import.meta.env.BASE_URL}Aiggpa_Logo.svg`}
           alt="AIGGPA Department Logo"
           className="w-7 h-7 object-contain shrink-0"
         />

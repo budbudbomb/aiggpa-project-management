@@ -170,7 +170,7 @@ export default function Features() {
       {/* Background Watermark */}
       <div className="fixed bottom-6 right-10 pointer-events-none opacity-5 dark:opacity-10 z-0 select-none">
         <img
-          src="/Aiggpa_Logo.svg"
+          src={`${import.meta.env.BASE_URL}Aiggpa_Logo.svg`}
           alt="AIGGPA Logo"
           className="w-56 h-56 object-contain"
         />

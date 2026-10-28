@@ -241,7 +241,7 @@ const SmartSidebar: React.FC = () => {
           <div className="smart-logo-zone">
             <div className="smart-logo-box">
               <img
-                src="/Aiggpa_Logo.svg"
+                src={`${import.meta.env.BASE_URL}Aiggpa_Logo.svg`}
                 alt="AIGGPA Logo"
                 className="smart-logo-img"
               />
@@ -280,7 +280,7 @@ const SmartSidebar: React.FC = () => {
         {/* Sidebar Bottom: AIGGPA Logo Watermark */}
         <div className="smart-sidebar-watermark-container">
           <img
-            src="/Aiggpa_Logo.svg"
+            src={`${import.meta.env.BASE_URL}Aiggpa_Logo.svg`}
             alt="AIGGPA Logo Watermark"
             className="smart-sidebar-watermark-img"
           />

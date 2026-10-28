@@ -200,7 +200,7 @@ export default function Header({
           >
             <div className="w-7 h-7 rounded-lg bg-white p-1 flex items-center justify-center shrink-0 shadow-2xs border border-slate-200/80 dark:border-slate-800">
               <img
-                src="/Aiggpa_Logo.svg"
+                src={`${import.meta.env.BASE_URL}Aiggpa_Logo.svg`}
                 alt="AIGGPA Logo"
                 className="w-full h-full object-contain"
               />
@@ -223,7 +223,7 @@ export default function Header({
           >
             <div className="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center font-bold shrink-0 shadow-xs border border-slate-200/80 dark:border-slate-800 transition-transform duration-200">
               <img
-                src="/Aiggpa_Logo.svg"
+                src={`${import.meta.env.BASE_URL}Aiggpa_Logo.svg`}
                 alt="AIGGPA Logo"
                 className="w-full h-full object-contain"
               />

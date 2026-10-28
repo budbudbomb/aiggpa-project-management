@@ -106,7 +106,7 @@ export default function Sidebar({
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-1.5 font-bold shrink-0 shadow-xs border border-slate-200/80 dark:border-slate-800 transition-transform">
             <img
-              src="/Aiggpa_Logo.svg"
+              src={`${import.meta.env.BASE_URL}Aiggpa_Logo.svg`}
               alt="AIGGPA Logo"
               className="w-full h-full object-contain"
             />
@@ -453,7 +453,7 @@ export default function Sidebar({
       {/* Sidebar Bottom: AIGGPA Logo Watermark (Pure Background Watermark) */}
       <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden">
         <img
-          src="/Aiggpa_Logo.svg"
+          src={`${import.meta.env.BASE_URL}Aiggpa_Logo.svg`}
           alt="AIGGPA Logo Watermark"
           className={`transition-all duration-300 object-contain ${
             isOpen || isMobile ? 'w-36 h-36 sm:w-40 sm:h-40' : 'w-10 h-10'
