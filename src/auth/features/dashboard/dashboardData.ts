@@ -74,8 +74,7 @@ export const initialSchemeData: SchemeItem[] = [
     id: 'sch-3',
     financialYear: '2025-2026',
     name: 'Research and Survey for Policy Design and Impact Assessment',
-    schemeName:
-      'Research and Survey for Policy Design and Impact Assessment',
+    schemeName: 'Research and Survey for Policy Design and Impact Assessment',
     code: '7821',
     budgetAllocated: '8,00,00,000',
     isActive: true,
@@ -83,7 +82,8 @@ export const initialSchemeData: SchemeItem[] = [
   },
 ];
 
-export type TimePeriodUnit = 'Days' | 'Months' | 'Years' | 'Trips' | 'Lump Sum' | string;
+export type TimePeriodUnit =
+  'Days' | 'Months' | 'Years' | 'Trips' | 'Lump Sum' | string;
 
 export interface ProjectSubHeadItem {
   id: string;

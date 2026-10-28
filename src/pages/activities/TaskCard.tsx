@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type {
   ActivityTask,
   Employee,
@@ -6,11 +6,22 @@ import type {
 } from '../../stores/activityTaskStore';
 import {
   Calendar,
-  CheckSquare,
   Paperclip,
   ShieldCheck,
   AlertCircle,
   Clock,
+  MoreVertical,
+  PlayCircle,
+  CheckCircle2,
+  RotateCcw,
+  GripVertical,
+  FolderKanban,
+  FileText,
+  AlertTriangle,
+  Flame,
+  ArrowDown,
+  ExternalLink,
+  Users,
 } from 'lucide-react';
 
 interface TaskCardProps {
@@ -30,222 +41,405 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onDragStart,
   onOpenReadReceipts,
 }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
   const isOverdue =
     task.status !== 'Completed' &&
     task.dueDate &&
     new Date(task.dueDate) < new Date(new Date().setHours(0, 0, 0, 0));
 
-  const totalChecklist = task.checklist.length;
-  const completedChecklist = task.checklist.filter(c => c.completed).length;
+  const isDueToday =
+    task.status !== 'Completed' &&
+    task.dueDate &&
+    new Date(task.dueDate).toDateString() === new Date().toDateString();
 
-  const priorityStyles: Record<
+  // Priority metadata
+  const priorityConfig: Record<
     string,
-    { bg: string; text: string; border: string }
+    { bg: string; text: string; border: string; icon: React.ReactNode }
   > = {
     Critical: {
       bg: 'bg-rose-50',
       text: 'text-rose-700',
       border: 'border-rose-200',
+      icon: <Flame className="w-3 h-3 text-rose-600" />,
     },
     High: {
       bg: 'bg-amber-50',
       text: 'text-amber-700',
       border: 'border-amber-200',
+      icon: <AlertTriangle className="w-3 h-3 text-amber-600" />,
     },
     Medium: {
       bg: 'bg-blue-50',
       text: 'text-blue-700',
       border: 'border-blue-200',
+      icon: <Clock className="w-3 h-3 text-blue-600" />,
     },
     Low: {
       bg: 'bg-slate-50',
       text: 'text-slate-600',
       border: 'border-slate-200',
+      icon: <ArrowDown className="w-3 h-3 text-slate-500" />,
     },
   };
 
-  const pStyle = priorityStyles[task.priority] || priorityStyles.Medium;
+  const pConfig = priorityConfig[task.priority] || priorityConfig.Medium;
+
+  // Permissions logic
+  const isIntern = currentUser?.role === 'Intern';
+  const isReviewer = Boolean(
+    currentUser &&
+    (currentUser.id === task.reviewerId ||
+      currentUser.role === 'Advisor' ||
+      currentUser.role === 'Center Head')
+  );
+
+  // Next quick-advance configuration
+  const getQuickAction = () => {
+    switch (task.status) {
+      case 'To Do':
+        return {
+          label: 'Start Task',
+          icon: <PlayCircle className="w-3 h-3" />,
+          target: 'In Progress' as TaskStatus,
+          className:
+            'bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200',
+        };
+      case 'In Progress':
+        if (task.requiresReview) {
+          return {
+            label: 'Submit for Review',
+            icon: <ShieldCheck className="w-3 h-3" />,
+            target: 'In Review' as TaskStatus,
+            className:
+              'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200',
+          };
+        }
+        return {
+          label: 'Complete Task',
+          icon: <CheckCircle2 className="w-3 h-3" />,
+          target: 'Completed' as TaskStatus,
+          className:
+            'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200',
+          disabled: isIntern,
+          disabledTip: 'Interns cannot mark complete without supervisor review',
+        };
+      case 'In Review':
+        if (isReviewer) {
+          return {
+            label: 'Approve & Complete',
+            icon: <CheckCircle2 className="w-3 h-3" />,
+            target: 'Completed' as TaskStatus,
+            className:
+              'bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-600 shadow-2xs',
+          };
+        }
+        return null;
+      case 'Changes Requested':
+        return {
+          label: 'Start Revisions',
+          icon: <RotateCcw className="w-3 h-3" />,
+          target: 'In Progress' as TaskStatus,
+          className:
+            'bg-amber-50 text-amber-800 hover:bg-amber-100 border-amber-200',
+        };
+      default:
+        return null;
+    }
+  };
+
+  const quickAction = getQuickAction();
+
+  // All 5 statuses for dropdown with permission checks
+  const statusOptions: Array<{
+    status: TaskStatus;
+    label: string;
+    allowed: boolean;
+    reason?: string;
+  }> = [
+    { status: 'To Do', label: 'To Do', allowed: true },
+    { status: 'In Progress', label: 'In Progress', allowed: true },
+    {
+      status: 'In Review',
+      label: 'In Review',
+      allowed: true,
+      reason:
+        isIntern && task.evidenceRequirements?.length > 0
+          ? 'Requires evidence attachment'
+          : undefined,
+    },
+    {
+      status: 'Changes Requested',
+      label: 'Needs Revision',
+      allowed: !isIntern,
+      reason: isIntern ? 'Only reviewers can request changes' : undefined,
+    },
+    {
+      status: 'Completed',
+      label: 'Completed',
+      allowed: !isIntern && (!task.requiresReview || isReviewer),
+      reason: isIntern
+        ? 'Interns cannot close tasks'
+        : task.requiresReview && !isReviewer
+          ? 'Only designated reviewer can approve'
+          : undefined,
+    },
+  ];
 
   return (
     <div
       draggable
-      onDragStart={e => onDragStart(e, task)}
+      onDragStart={e => {
+        setIsDragging(true);
+        onDragStart(e, task);
+      }}
+      onDragEnd={() => setIsDragging(false)}
       onClick={() => onOpenDetails(task)}
-      className="group bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:shadow-md hover:border-blue-400 transition-all cursor-pointer select-none relative flex flex-col gap-3"
+      className={`group relative bg-white rounded-xl border p-3.5 transition-all duration-200 cursor-grab active:cursor-grabbing select-none flex flex-col gap-2.5 ${
+        isDragging
+          ? 'opacity-40 scale-95 ring-2 ring-blue-500 shadow-2xl border-blue-400 bg-blue-50/20'
+          : 'border-slate-200/90 shadow-2xs hover:shadow-md hover:border-blue-400/80 hover:-translate-y-0.5'
+      }`}
     >
-      {/* Top row: ID, Priority, Status Dropdown */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+      {/* ── Top Header Row: Grip, ID, Priority, Quick Menu ── */}
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+          {/* Subtle drag grip handle */}
+          <GripVertical className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 transition-colors shrink-0" />
+
+          {/* Task ID Pill */}
+          <span className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50/80 px-1.5 py-0.5 rounded border border-blue-200/70 shrink-0">
             {task.id}
           </span>
+
+          {/* Priority Pill */}
           <span
-            className={`text-[10px] font-bold px-2 py-0.5 rounded border ${pStyle.bg} ${pStyle.text} ${pStyle.border}`}
+            className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border ${pConfig.bg} ${pConfig.text} ${pConfig.border} shrink-0`}
           >
-            {task.priority}
+            {pConfig.icon}
+            <span>{task.priority}</span>
           </span>
 
+          {/* Special status highlight badges */}
           {task.status === 'Changes Requested' && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 shrink-0">
               <AlertCircle className="w-3 h-3 text-rose-600" />
               <span>Needs Revision</span>
             </span>
           )}
 
           {task.status === 'In Review' && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
               <Clock className="w-3 h-3 text-indigo-600" />
               <span>In Review</span>
             </span>
           )}
         </div>
 
-        {/* Quick status change dropdown */}
-        <div onClick={e => e.stopPropagation()} className="flex items-center">
-          <select
-            value={task.status}
-            onChange={e => onStatusChange(task, e.target.value as TaskStatus)}
-            className="text-[11px] font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-blue-600 cursor-pointer"
+        {/* ── More Actions Dropdown Menu ── */}
+        <div
+          ref={menuRef}
+          onClick={e => e.stopPropagation()}
+          className="relative shrink-0"
+        >
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen(prev => !prev)}
+            aria-label="Task options"
+            className="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            <option value="To Do">To Do</option>
-            <option value="In Progress">In Progress</option>
-            <option
-              value="In Review"
-              disabled={
-                currentUser?.role === 'Intern' &&
-                task.status !== 'In Review' &&
-                task.evidenceRequirements?.length > 0
-              }
-            >
-              In Review{' '}
-              {currentUser?.role === 'Intern' && task.status !== 'In Review'
-                ? '(Attach Evidence)'
-                : ''}
-            </option>
-            <option
-              value="Changes Requested"
-              disabled={currentUser?.role === 'Intern'}
-            >
-              Changes Requested{' '}
-              {currentUser?.role === 'Intern' ? '(Reviewer Only)' : ''}
-            </option>
-            <option value="Completed" disabled={currentUser?.role === 'Intern'}>
-              Completed{' '}
-              {currentUser?.role === 'Intern' ? '(Requires Review)' : ''}
-            </option>
-          </select>
+            <MoreVertical className="w-3.5 h-3.5" />
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute right-0 top-7 z-30 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 text-xs animate-in fade-in zoom-in-95 duration-100">
+              <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
+                Move Task To
+              </div>
+
+              {statusOptions.map(opt => (
+                <button
+                  key={opt.status}
+                  type="button"
+                  disabled={!opt.allowed || opt.status === task.status}
+                  onClick={() => {
+                    onStatusChange(task, opt.status);
+                    setIsMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-[11px] font-medium flex items-center justify-between transition-colors ${
+                    opt.status === task.status
+                      ? 'bg-blue-50 text-blue-700 font-bold'
+                      : !opt.allowed
+                        ? 'opacity-40 text-slate-400 cursor-not-allowed'
+                        : 'text-slate-700 hover:bg-slate-50 cursor-pointer'
+                  }`}
+                  title={opt.reason}
+                >
+                  <span>{opt.label}</span>
+                  {opt.status === task.status && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                  )}
+                </button>
+              ))}
+
+              <div className="my-1 border-t border-slate-100" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  onOpenDetails(task);
+                }}
+                className="w-full text-left px-3 py-1.5 text-[11px] text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer font-medium"
+              >
+                <ExternalLink className="w-3 h-3 text-slate-400" />
+                <span>Open Task Details</span>
+              </button>
+
+              {onOpenReadReceipts && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onOpenReadReceipts(task);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-[11px] text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer font-medium"
+                >
+                  <Users className="w-3 h-3 text-slate-400" />
+                  <span>View Read Receipts</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Task Title & Project */}
+      {/* ── Task Title & Project Name ── */}
       <div>
-        <h4 className="text-xs sm:text-[13px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+        <h4 className="text-[13px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
           {task.title}
         </h4>
-        <div className="text-[11px] font-medium text-slate-500 mt-1 truncate flex items-center gap-1">
-          <span className="text-slate-400">📁</span>
-          <span>{task.projectName}</span>
+        <div className="text-[11px] font-medium text-slate-500 mt-1 truncate flex items-center gap-1.5">
+          <FolderKanban className="w-3 h-3 text-slate-400 shrink-0" />
+          <span className="truncate">{task.projectName}</span>
         </div>
       </div>
 
-      {/* Review feedback alert banner if changes requested */}
+      {/* ── Reviewer Feedback Banner (If Changes Requested) ── */}
       {task.status === 'Changes Requested' && task.reviewFeedback && (
-        <div className="p-2 bg-rose-50/80 border border-rose-200/80 rounded-lg text-[11px] text-rose-800 line-clamp-2 leading-relaxed">
-          <span className="font-semibold">Reviewer: </span>
-          {task.reviewFeedback}
+        <div className="p-2.5 bg-rose-50/90 border border-rose-200/90 rounded-lg text-[11px] text-rose-900 leading-relaxed space-y-1">
+          <div className="flex items-center gap-1 font-bold text-rose-800 text-[10px] uppercase tracking-wider">
+            <AlertCircle className="w-3 h-3 text-rose-600 shrink-0" />
+            <span>Revision Feedback:</span>
+          </div>
+          <p className="line-clamp-2 italic text-rose-800">
+            &ldquo;{task.reviewFeedback}&rdquo;
+          </p>
         </div>
       )}
 
-      {/* Checklist bar if present */}
-      {totalChecklist > 0 && (
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
-            <span className="flex items-center gap-1">
-              <CheckSquare className="w-3 h-3 text-slate-400" />
-              <span>Subtasks</span>
-              {task.checklist.some(c => c.type === 'meeting') && (
-                <span
-                  className="text-[9px] px-1 py-0.2 bg-blue-50 text-blue-700 rounded font-bold border border-blue-200/60"
-                  title="Has meeting subtasks"
-                >
-                  📅
-                </span>
-              )}
-              {task.checklist.some(c => c.type === 'survey') && (
-                <span
-                  className="text-[9px] px-1 py-0.2 bg-amber-50 text-amber-800 rounded font-bold border border-amber-200/60"
-                  title="Has survey subtasks"
-                >
-                  📋
-                </span>
-              )}
-            </span>
-            <span>
-              {completedChecklist}/{totalChecklist}
-            </span>
-          </div>
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-300 ${
-                completedChecklist === totalChecklist
-                  ? 'bg-emerald-500'
-                  : 'bg-blue-600'
-              }`}
-              style={{
-                width: `${Math.round((completedChecklist / totalChecklist) * 100)}%`,
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Tags / Labels & Review Badge */}
+      {/* ── Badges Row: Review Gate, Evidence Req, Attachments, Survey ── */}
       <div className="flex items-center gap-1.5 flex-wrap">
-        {task.requiresReview && task.status !== 'Changes Requested' && (
+        {task.surveyId && (
           <span
-            title={`Reviewed by: ${task.reviewerName || 'Supervisor'}`}
-            className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200"
+            title="Field survey questionnaire linked to this task"
+            className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200"
           >
-            <ShieldCheck className="w-3 h-3 text-amber-600" />
-            <span>Review Gate</span>
+            <FileText className="w-3 h-3 text-emerald-600" />
+            <span>Field Survey</span>
           </span>
         )}
 
-        {task.labels.slice(0, 2).map((label, idx) => (
+        {task.requiresReview && task.status !== 'Changes Requested' && (
           <span
-            key={idx}
-            className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600"
+            title={`Reviewed by: ${task.reviewerName || 'Supervisor'}`}
+            className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200"
           >
-            #{label}
-          </span>
-        ))}
-
-        {task.attachments.length > 0 && (
-          <span
-            title={`${task.attachments.length} attachment(s)`}
-            className="inline-flex items-center gap-0.5 text-[10px] text-slate-400"
-          >
-            <Paperclip className="w-3 h-3" />
-            <span>{task.attachments.length}</span>
+            <ShieldCheck className="w-3 h-3 text-indigo-600" />
+            <span>Review Gate</span>
           </span>
         )}
 
         {task.evidenceRequirements && task.evidenceRequirements.length > 0 && (
           <span
             title={`${task.evidenceRequirements.length} evidence requirements configured`}
-            className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200"
+            className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200"
           >
+            <Paperclip className="w-3 h-3 text-slate-500" />
             <span>
-              📎 {task.evidenceRequirements.length} Req
+              {task.evidenceRequirements.length} Req
               {task.evidenceRequirements.length > 1 ? 's' : ''}
             </span>
           </span>
         )}
+
+        {task.attachments.length > 0 && (
+          <span
+            title={`${task.attachments.length} attachment(s)`}
+            className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-slate-500 px-1.5 py-0.5 bg-slate-100 rounded"
+          >
+            <Paperclip className="w-3 h-3" />
+            <span>{task.attachments.length}</span>
+          </span>
+        )}
+
+        {task.labels.slice(0, 2).map((label, idx) => (
+          <span
+            key={idx}
+            className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-50 text-slate-600 border border-slate-200/60"
+          >
+            #{label}
+          </span>
+        ))}
       </div>
 
-      {/* Bottom row: Assignee Avatar + Due date */}
+      {/* ── Quick Advance One-Click Button (Flow Accelerator) ── */}
+      {quickAction && (
+        <div
+          onClick={e => e.stopPropagation()}
+          className="pt-1 border-t border-slate-100 flex items-center justify-between gap-2"
+        >
+          <span className="text-[10px] font-medium text-slate-400">
+            Quick Stage:
+          </span>
+          <button
+            type="button"
+            disabled={quickAction.disabled}
+            onClick={() => onStatusChange(task, quickAction.target)}
+            title={quickAction.disabledTip}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+              quickAction.disabled
+                ? 'opacity-40 cursor-not-allowed bg-slate-50 text-slate-400 border-slate-200'
+                : quickAction.className
+            }`}
+          >
+            {quickAction.icon}
+            <span>{quickAction.label}</span>
+          </button>
+        </div>
+      )}
+
+      {/* ── Bottom Row: Assignee Info & Due Date ── */}
       <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-        {/* Assignee (Click to view read receipts) */}
+        {/* Assignee Avatar & Name */}
         <div
           onClick={e => {
             if (onOpenReadReceipts) {
@@ -254,34 +448,47 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             }
           }}
           className="flex items-center gap-1.5 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
-          title={`Assignee: ${task.assigneeName} (${task.assigneeRole}) - Click to view read receipts`}
+          title={`Assignee: ${task.assigneeName} (${task.assigneeRole}) — Click to view read receipts`}
         >
           <div
-            className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+            className="w-5.5 h-5.5 rounded-full flex items-center justify-center text-[10px] font-extrabold text-white shrink-0 shadow-2xs ring-1 ring-white"
             style={{
               backgroundColor:
-                task.assigneeRole === 'Intern' ? '#64748b' : '#2563eb',
+                task.assigneeRole === 'Intern'
+                  ? '#475569'
+                  : task.assigneeRole === 'Fellow'
+                    ? '#0284c7'
+                    : '#1d4ed8',
             }}
           >
             {task.assigneeName.charAt(0)}
           </div>
-          <span className="text-[11px] font-semibold text-slate-700 truncate max-w-[110px]">
+          <span className="text-[11px] font-semibold text-slate-700 truncate max-w-[105px]">
             {task.assigneeName}
           </span>
         </div>
 
-        {/* Due Date & Overdue */}
+        {/* Due Date Indicator with Overdue & Due Today Accents */}
         <div className="flex items-center gap-1 shrink-0">
-          <Calendar className="w-3 h-3 text-slate-400" />
-          <span
-            className={`text-[11px] font-semibold ${
+          <Calendar
+            className={`w-3 h-3 ${
               isOverdue
-                ? 'text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200'
-                : 'text-slate-500'
+                ? 'text-rose-600'
+                : isDueToday
+                  ? 'text-amber-600'
+                  : 'text-slate-400'
+            }`}
+          />
+          <span
+            className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+              isOverdue
+                ? 'text-rose-700 bg-rose-50 border border-rose-200'
+                : isDueToday
+                  ? 'text-amber-800 bg-amber-50 border border-amber-200'
+                  : 'text-slate-500'
             }`}
           >
-            {isOverdue && '⚠️ '}
-            {task.dueDate}
+            {isOverdue ? 'Overdue' : isDueToday ? 'Today' : task.dueDate}
           </span>
         </div>
       </div>

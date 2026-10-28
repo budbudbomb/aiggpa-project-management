@@ -32,6 +32,11 @@ import {
   Trash2,
   ExternalLink,
   Video,
+  ClipboardList,
+  PlayCircle,
+  ShieldCheck,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function ActivitiesPage(): React.ReactElement {
@@ -404,50 +409,80 @@ export default function ActivitiesPage(): React.ReactElement {
     showToast(res.message);
   };
 
-  // 5-Column Kanban structure
+  // 5-Column Kanban structure with rich stage metadata
   const kanbanColumns: Array<{
     status: TaskStatus;
     title: string;
+    stageNum: string;
     dotColor: string;
     badgeBg: string;
     badgeText: string;
+    headerBorder: string;
+    icon: React.ElementType;
+    description: string;
   }> = [
     {
       status: 'To Do',
       title: 'To Do',
+      stageNum: '01',
       dotColor: 'bg-slate-400',
-      badgeBg: 'bg-slate-200',
-      badgeText: 'text-slate-700',
+      badgeBg: 'bg-slate-200/90',
+      badgeText: 'text-slate-800',
+      headerBorder: 'border-t-slate-500',
+      icon: ClipboardList,
+      description: 'Backlog & scheduled deliverables',
     },
     {
       status: 'In Progress',
       title: 'In Progress',
+      stageNum: '02',
       dotColor: 'bg-blue-500',
       badgeBg: 'bg-blue-100',
-      badgeText: 'text-blue-700',
+      badgeText: 'text-blue-800',
+      headerBorder: 'border-t-blue-600',
+      icon: PlayCircle,
+      description: 'Actively under field execution',
     },
     {
       status: 'In Review',
       title: 'In Review',
-      dotColor: 'bg-indigo-500',
+      stageNum: '03',
+      dotColor: 'bg-indigo-600',
       badgeBg: 'bg-indigo-100',
-      badgeText: 'text-indigo-700',
+      badgeText: 'text-indigo-800',
+      headerBorder: 'border-t-indigo-600',
+      icon: ShieldCheck,
+      description: 'Awaiting supervisory review',
     },
     {
       status: 'Changes Requested',
       title: 'Needs Revision',
+      stageNum: '04',
       dotColor: 'bg-rose-500',
       badgeBg: 'bg-rose-100',
-      badgeText: 'text-rose-700',
+      badgeText: 'text-rose-800',
+      headerBorder: 'border-t-rose-500',
+      icon: AlertCircle,
+      description: 'Reviewer feedback provided',
     },
     {
       status: 'Completed',
       title: 'Completed',
+      stageNum: '05',
       dotColor: 'bg-emerald-500',
       badgeBg: 'bg-emerald-100',
-      badgeText: 'text-emerald-700',
+      badgeText: 'text-emerald-800',
+      headerBorder: 'border-t-emerald-600',
+      icon: CheckCircle2,
+      description: 'Verified & closed deliverables',
     },
   ];
+
+  const isTier3 =
+    currentUser.role === 'Fellow' ||
+    currentUser.role === 'Intern' ||
+    currentUser.role === 'Field Instructor' ||
+    currentUser.role === 'Research Analyst';
 
   const canCreate = ActivityTaskStore.canCreateTasks(currentUser.role);
   const supervisor = currentUser.reportsTo
@@ -474,7 +509,7 @@ export default function ActivitiesPage(): React.ReactElement {
         ]}
         actions={
           <div className="flex items-center gap-2">
-            {currentUser.role !== 'Intern' && (
+            {!isTier3 && (
               <AppButton
                 variant="outline"
                 size="sm"
@@ -546,20 +581,16 @@ export default function ActivitiesPage(): React.ReactElement {
         {/* Informative Perspective Scope Hint */}
         <div className="text-right text-[11px] text-slate-500 hidden sm:block">
           {currentUser.role === 'Center Head' &&
-            'Scope: Full Center Governance • All 17 Personnel'}
-          {currentUser.role === 'Project Manager' &&
-            'Scope: Digital Infrastructure Projects & Subordinate Fellows'}
-          {currentUser.role === 'Research Analyst' &&
-            'Scope: Quantitative Research Stream & Subordinate Fellows'}
-          {currentUser.role === 'Fellow' &&
-            'Scope: Assigned Policy Studies & Assigned Interns'}
-          {currentUser.role === 'Intern' &&
-            'Scope: Personal Assigned Field Tasks Only'}
+            'Scope: Top Level • Center Head (Full Project Governance & Allocation)'}
+          {currentUser.role === 'Advisor' &&
+            'Scope: Middle Level • Advisor (Management & Allocation; cannot assign to CH)'}
+          {isTier3 &&
+            'Scope: Execution Tier • Strictly Tasks Allocated by Senior (Advisor / Center Head)'}
         </div>
       </div>
 
       {/* ── Review Urgent Alert Callout Banner ── */}
-      {reviewQueueCount > 0 && currentUser.role !== 'Intern' && (
+      {reviewQueueCount > 0 && !isTier3 && (
         <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-900">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
@@ -579,29 +610,64 @@ export default function ActivitiesPage(): React.ReactElement {
         </div>
       )}
 
-      {/* ── Summary KPI Metric Cards (7 Cards) ── */}
+      {/* ── Summary KPI Metric Cards (Interactive Filters) ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 mt-4">
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedStatus('');
+            setSelectedDateFilter('');
+          }}
+          className={`bg-white p-3 rounded-xl border text-left transition-all cursor-pointer ${
+            !selectedStatus && !selectedDateFilter
+              ? 'border-blue-600 ring-2 ring-blue-500/20 shadow-xs'
+              : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
+          }`}
+        >
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
             Total Tasks
           </div>
           <div className="text-lg font-bold text-slate-900 mt-0.5">
             {kpis.total}
           </div>
-          <div className="text-[10px] text-slate-400">Visible to role</div>
-        </div>
+          <div className="text-[10px] text-slate-400">All visible tasks</div>
+        </button>
 
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
-          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedStatus(prev => (prev === 'To Do' ? '' : 'To Do'));
+            setSelectedDateFilter('');
+          }}
+          className={`bg-white p-3 rounded-xl border text-left transition-all cursor-pointer ${
+            selectedStatus === 'To Do'
+              ? 'border-slate-700 ring-2 ring-slate-400/20 shadow-xs'
+              : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
+          }`}
+        >
+          <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">
             To Do
           </div>
           <div className="text-lg font-bold text-slate-700 mt-0.5">
             {kpis.todo}
           </div>
           <div className="text-[10px] text-slate-400">Queued for work</div>
-        </div>
+        </button>
 
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedStatus(prev =>
+              prev === 'In Progress' ? '' : 'In Progress'
+            );
+            setSelectedDateFilter('');
+          }}
+          className={`bg-white p-3 rounded-xl border text-left transition-all cursor-pointer ${
+            selectedStatus === 'In Progress'
+              ? 'border-blue-600 ring-2 ring-blue-500/20 shadow-xs'
+              : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
+          }`}
+        >
           <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
             In Progress
           </div>
@@ -609,9 +675,22 @@ export default function ActivitiesPage(): React.ReactElement {
             {kpis.inProgress}
           </div>
           <div className="text-[10px] text-slate-400">Work in flight</div>
-        </div>
+        </button>
 
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedStatus(prev =>
+              prev === 'In Review' ? '' : 'In Review'
+            );
+            setSelectedDateFilter('');
+          }}
+          className={`bg-white p-3 rounded-xl border text-left transition-all cursor-pointer ${
+            selectedStatus === 'In Review'
+              ? 'border-indigo-600 ring-2 ring-indigo-500/20 shadow-xs'
+              : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
+          }`}
+        >
           <div className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
             In Review
           </div>
@@ -621,9 +700,22 @@ export default function ActivitiesPage(): React.ReactElement {
           <div className="text-[10px] text-indigo-700/80">
             Awaiting approval
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedStatus(prev =>
+              prev === 'Changes Requested' ? '' : 'Changes Requested'
+            );
+            setSelectedDateFilter('');
+          }}
+          className={`bg-white p-3 rounded-xl border text-left transition-all cursor-pointer ${
+            selectedStatus === 'Changes Requested'
+              ? 'border-rose-600 ring-2 ring-rose-500/20 shadow-xs'
+              : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
+          }`}
+        >
           <div className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">
             Needs Revision
           </div>
@@ -631,9 +723,22 @@ export default function ActivitiesPage(): React.ReactElement {
             {kpis.changesRequested}
           </div>
           <div className="text-[10px] text-rose-700/80">Changes requested</div>
-        </div>
+        </button>
 
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedStatus(prev =>
+              prev === 'Completed' ? '' : 'Completed'
+            );
+            setSelectedDateFilter('');
+          }}
+          className={`bg-white p-3 rounded-xl border text-left transition-all cursor-pointer ${
+            selectedStatus === 'Completed'
+              ? 'border-emerald-600 ring-2 ring-emerald-500/20 shadow-xs'
+              : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
+          }`}
+        >
           <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
             Completed
           </div>
@@ -641,9 +746,22 @@ export default function ActivitiesPage(): React.ReactElement {
             {kpis.completed}
           </div>
           <div className="text-[10px] text-emerald-700/80">Closed & signed</div>
-        </div>
+        </button>
 
-        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedDateFilter(prev =>
+              prev === 'overdue' ? '' : 'overdue'
+            );
+            setSelectedStatus('');
+          }}
+          className={`bg-white p-3 rounded-xl border text-left transition-all cursor-pointer ${
+            selectedDateFilter === 'overdue'
+              ? 'border-rose-600 ring-2 ring-rose-500/20 shadow-xs'
+              : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
+          }`}
+        >
           <div className="text-[10px] font-bold text-rose-600 uppercase tracking-wider">
             Overdue
           </div>
@@ -651,13 +769,13 @@ export default function ActivitiesPage(): React.ReactElement {
             {kpis.overdue}
           </div>
           <div className="text-[10px] text-rose-700/80">Past due date</div>
-        </div>
+        </button>
       </div>
 
       {/* ── Search, View Switcher & Filter Controls Bar ── */}
       <div className="mt-3 bg-white rounded-xl border border-slate-200 p-3 shadow-xs space-y-2.5">
-        {/* Intern Quick-Filter Tabs */}
-        {currentUser.role === 'Intern' && (
+        {/* Tier 3 Team Execution Quick-Filter Tabs */}
+        {isTier3 && (
           <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-100">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-1">
               Execution Views:
@@ -807,7 +925,7 @@ export default function ActivitiesPage(): React.ReactElement {
         {/* Dropdown Filters */}
         <div
           className={`grid gap-2 pt-2 border-t border-slate-100 ${
-            currentUser.role === 'Intern'
+            isTier3
               ? 'grid-cols-2 sm:grid-cols-4'
               : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
           }`}
@@ -825,7 +943,7 @@ export default function ActivitiesPage(): React.ReactElement {
             ))}
           </select>
 
-          {currentUser.role !== 'Intern' && (
+          {!isTier3 && (
             <>
               <select
                 value={selectedAssignee}
@@ -894,68 +1012,130 @@ export default function ActivitiesPage(): React.ReactElement {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════
-          VIEW 1: 5-COLUMN KANBAN BOARD
+          VIEW 1: 5-COLUMN HORIZONTAL FLOW KANBAN BOARD
       ══════════════════════════════════════════════════════════════════ */}
       {viewMode === 'kanban' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mt-4 items-start">
-          {kanbanColumns.map(col => {
-            const colTasks = filteredTasks.filter(t => t.status === col.status);
-            const isOver = dragOverColumn === col.status;
+        <div className="mt-4 pb-6 overflow-x-auto [scrollbar-width:thin] [scrollbar-color:#cbd5e1_transparent]">
+          <div className="flex gap-4 items-start min-w-[1300px] w-full">
+            {kanbanColumns.map(col => {
+              const colTasks = filteredTasks.filter(
+                t => t.status === col.status
+              );
+              const isOver = dragOverColumn === col.status;
+              const ColIcon = col.icon;
 
-            return (
-              <div
-                key={col.status}
-                onDragOver={e => handleDragOver(e, col.status)}
-                onDragLeave={handleDragLeave}
-                onDrop={e => handleDrop(e, col.status)}
-                className={`bg-slate-100/70 rounded-2xl p-3 border transition-all min-h-[500px] flex flex-col ${
-                  isOver
-                    ? 'border-blue-500 bg-blue-50/40 ring-2 ring-blue-500/20'
-                    : 'border-slate-200'
-                }`}
-              >
-                {/* Column Header */}
-                <div className="flex items-center justify-between pb-2.5 mb-2 px-1">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full ${col.dotColor}`}
-                    />
-                    <h3 className="text-xs font-bold text-slate-800 m-0 uppercase tracking-wider">
-                      {col.title}
-                    </h3>
-                  </div>
-                  <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${col.badgeBg} ${col.badgeText}`}
-                  >
-                    {colTasks.length}
-                  </span>
-                </div>
+              return (
+                <div
+                  key={col.status}
+                  onDragOver={e => handleDragOver(e, col.status)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={e => handleDrop(e, col.status)}
+                  className={`flex-1 min-w-[285px] max-w-[340px] shrink-0 bg-slate-100/75 rounded-2xl p-3.5 border border-t-[3.5px] transition-all min-h-[560px] flex flex-col shadow-2xs ${
+                    col.headerBorder
+                  } ${
+                    isOver
+                      ? 'border-blue-500 bg-blue-50/60 ring-4 ring-blue-500/20 shadow-md scale-[1.01]'
+                      : 'border-slate-200/90'
+                  }`}
+                >
+                  {/* Column Header */}
+                  <div className="pb-3 mb-3 border-b border-slate-200/80 px-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${col.badgeBg}`}
+                        >
+                          <ColIcon className={`w-4 h-4 ${col.badgeText}`} />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-xs font-bold text-slate-800 m-0 uppercase tracking-wider truncate">
+                            {col.title}
+                          </h3>
+                          <p className="text-[10px] text-slate-400 truncate leading-tight mt-0.5">
+                            {col.description}
+                          </p>
+                        </div>
+                      </div>
 
-                {/* Cards Container */}
-                <div className="space-y-3 flex-1">
-                  {colTasks.length === 0 ? (
-                    <div className="h-28 border-2 border-dashed border-slate-200 rounded-xl flex items-center justify-center text-center p-3">
-                      <span className="text-[11px] text-slate-400">
-                        Drop tasks here to mark as {col.title}
-                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span
+                          className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full ${col.badgeBg} ${col.badgeText} shadow-2xs`}
+                        >
+                          {colTasks.length}
+                        </span>
+
+                        {canCreate && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreselectedSurveyId(null);
+                              setIsCreateOpen(true);
+                            }}
+                            title={`Create task in ${col.title}`}
+                            className="w-6 h-6 rounded-lg bg-white hover:bg-blue-50 text-slate-500 hover:text-blue-700 border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    colTasks.map(task => (
-                      <TaskCard
-                        key={task.id}
-                        task={task}
-                        currentUser={currentUser}
-                        onOpenDetails={t => setSelectedTask(t)}
-                        onStatusChange={handleCardStatusChange}
-                        onDragStart={handleDragStart}
-                        onOpenReadReceipts={t => setReadReceiptsTask(t)}
-                      />
-                    ))
+                  </div>
+
+                  {/* Cards Container */}
+                  <div className="space-y-3 flex-1">
+                    {colTasks.length === 0 ? (
+                      <div
+                        className={`h-36 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center p-4 transition-all ${
+                          isOver
+                            ? 'border-blue-400 bg-blue-50/50 text-blue-700'
+                            : 'border-slate-300/70 bg-white/40 text-slate-400'
+                        }`}
+                      >
+                        <ColIcon className="w-5 h-5 mb-1.5 opacity-50" />
+                        <span className="text-xs font-semibold">
+                          No tasks in {col.title}
+                        </span>
+                        <span className="text-[10px] opacity-75 mt-0.5 max-w-[180px]">
+                          {isOver
+                            ? 'Release cursor to move task here'
+                            : 'Drag and drop cards here to change status'}
+                        </span>
+                      </div>
+                    ) : (
+                      colTasks.map(task => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          currentUser={currentUser}
+                          onOpenDetails={t => setSelectedTask(t)}
+                          onStatusChange={handleCardStatusChange}
+                          onDragStart={handleDragStart}
+                          onOpenReadReceipts={t => setReadReceiptsTask(t)}
+                        />
+                      ))
+                    )}
+                  </div>
+
+                  {/* Column Footer */}
+                  {colTasks.length > 0 && (
+                    <div className="pt-2.5 mt-2 border-t border-slate-200/60 flex items-center justify-between text-[10px] text-slate-400 font-medium px-1">
+                      <span>
+                        {colTasks.length}
+                        {colTasks.length === 1 ? 'task' : 'tasks'}
+                      </span>
+                      {col.status === 'Completed' ? (
+                        <span className="text-emerald-600 font-bold">
+                          100% Closed
+                        </span>
+                      ) : (
+                        <span>Stage {col.stageNum} of 05</span>
+                      )}
+                    </div>
                   )}
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
 

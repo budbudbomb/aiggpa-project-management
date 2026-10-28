@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate } from 'react-router-dom';
 import surveysCss from '../styles/surveys.css?inline';
 import { usePageStyles } from '../lib/usePageStyles';
 import SurveyStore from '../stores/surveyStore';
@@ -195,8 +195,6 @@ export default function CreateSurveyPage(): React.ReactElement {
 
   const projects = Store.getProjects();
   const [projectId, setProjectId] = useState(projects[0]?.id || 'PRJ-01');
-
-
 
   const questionsListRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -582,6 +580,14 @@ export default function CreateSurveyPage(): React.ReactElement {
     }
 
     return null;
+  }
+
+  if (
+    authUser?.role !== 'Center Head' &&
+    authUser?.role !== 'Advisor' &&
+    authUser?.role !== 'Super Admin'
+  ) {
+    return <Navigate to="/activities" replace />;
   }
 
   return (
@@ -1003,14 +1009,28 @@ export default function CreateSurveyPage(): React.ReactElement {
                 <div className="qbc-media-capture-box">
                   <div>
                     <div className="qbc-media-title">
-                      Participant Media Capture
+                      Take Evidence & Verification Requirements
                     </div>
                     <div className="qbc-media-sub">
-                      Allow surveyor to capture voice note, video, or
-                      participant photo
+                      Enable surveyor to click picture, record voice note, or
+                      record video when answering this question
                     </div>
                   </div>
                   <div className="qbc-media-toggles">
+                    <button
+                      type="button"
+                      className={`qbc-media-btn${q.allowImage ? ' active' : ''}`}
+                      onClick={() =>
+                        updateQuestion(q.id, cur => ({
+                          ...cur,
+                          allowImage: !cur.allowImage,
+                        }))
+                      }
+                      title="Enable surveyor to click picture with camera"
+                    >
+                      <i className="pi pi-camera" />
+                      <span>Click Picture</span>
+                    </button>
                     <button
                       type="button"
                       className={`qbc-media-btn${q.allowVoice ? ' active' : ''}`}
@@ -1020,9 +1040,10 @@ export default function CreateSurveyPage(): React.ReactElement {
                           allowVoice: !cur.allowVoice,
                         }))
                       }
+                      title="Enable respondent voice note recording"
                     >
                       <i className="pi pi-volume-up" />
-                      <span>Voice Note</span>
+                      <span>Record Voice Note</span>
                     </button>
                     <button
                       type="button"
@@ -1033,22 +1054,10 @@ export default function CreateSurveyPage(): React.ReactElement {
                           allowVideo: !cur.allowVideo,
                         }))
                       }
+                      title="Enable surveyor video clip recording"
                     >
                       <i className="pi pi-video" />
-                      <span>Video Note</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`qbc-media-btn${q.allowImage ? ' active' : ''}`}
-                      onClick={() =>
-                        updateQuestion(q.id, cur => ({
-                          ...cur,
-                          allowImage: !cur.allowImage,
-                        }))
-                      }
-                    >
-                      <i className="pi pi-camera" />
-                      <span>Photo / Image</span>
+                      <span>Record Video</span>
                     </button>
                   </div>
                 </div>
@@ -1066,7 +1075,8 @@ export default function CreateSurveyPage(): React.ReactElement {
                 <div>
                   <h3>Add Question</h3>
                   <p>
-                    Pick any of the 5 question formats below to configure your questionnaire
+                    Pick any of the 5 question formats below to configure your
+                    questionnaire
                   </p>
                 </div>
               </div>
@@ -1495,8 +1505,6 @@ export default function CreateSurveyPage(): React.ReactElement {
           </div>
         </div>
       </div>
-
-
     </PageContainer>
   );
 }

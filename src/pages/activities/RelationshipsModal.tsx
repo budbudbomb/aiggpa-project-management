@@ -46,28 +46,13 @@ export const RelationshipsModal: React.FC<RelationshipsModalProps> = ({
       // Center Head reports to no one
       if (selectedEmployee.role === 'Center Head') return false;
 
-      // PM and RA report to Center Head
-      if (
-        selectedEmployee.role === 'Project Manager' ||
-        selectedEmployee.role === 'Research Analyst'
-      ) {
+      // Advisors report to Center Head
+      if (selectedEmployee.role === 'Advisor') {
         return supervisor.role === 'Center Head';
       }
 
-      // Fellows report to PM or RA
-      if (selectedEmployee.role === 'Fellow') {
-        return (
-          supervisor.role === 'Project Manager' ||
-          supervisor.role === 'Research Analyst'
-        );
-      }
-
-      // Interns report to Fellows
-      if (selectedEmployee.role === 'Intern') {
-        return supervisor.role === 'Fellow';
-      }
-
-      return false;
+      // Tier 3 (Fellow, Intern, Field Instructor, Research Analyst) report to Advisor or Center Head
+      return supervisor.role === 'Advisor' || supervisor.role === 'Center Head';
     });
   }, [employees, selectedEmployee]);
 
@@ -108,7 +93,7 @@ export const RelationshipsModal: React.FC<RelationshipsModalProps> = ({
   const supervisorOptions = useMemo(() => {
     if (selectedEmployee?.role === 'Center Head') {
       return [
-        { value: 'none', label: 'Reports directly to Board / Governance' },
+        { value: 'none', label: 'Reports directly to Directorate / Board' },
       ];
     }
     const opts = [{ value: '', label: '-- Select Approved Supervisor --' }];
@@ -125,19 +110,19 @@ export const RelationshipsModal: React.FC<RelationshipsModalProps> = ({
     () => employees.filter(e => e.role === 'Center Head'),
     [employees]
   );
-  const managers = useMemo(
+  const advisors = useMemo(
+    () => employees.filter(e => e.role === 'Advisor'),
+    [employees]
+  );
+  const executionStaff = useMemo(
     () =>
       employees.filter(
-        e => e.role === 'Project Manager' || e.role === 'Research Analyst'
+        e =>
+          e.role === 'Fellow' ||
+          e.role === 'Intern' ||
+          e.role === 'Field Instructor' ||
+          e.role === 'Research Analyst'
       ),
-    [employees]
-  );
-  const fellows = useMemo(
-    () => employees.filter(e => e.role === 'Fellow'),
-    [employees]
-  );
-  const interns = useMemo(
-    () => employees.filter(e => e.role === 'Intern'),
     [employees]
   );
 
@@ -151,7 +136,7 @@ export const RelationshipsModal: React.FC<RelationshipsModalProps> = ({
           <span>Organizational Reporting Hierarchy & Assignment Matrix</span>
         </div>
       }
-      subtitle="Center Head → Project Managers & Research Analysts → Fellows → Interns"
+      subtitle="Center Head (Super Admin Level) → Advisor (Management Level) → Execution Team (RA, Fellow, Intern, Field Instructor)"
       maxWidth="4xl"
     >
       <div className="space-y-6">
@@ -223,15 +208,15 @@ export const RelationshipsModal: React.FC<RelationshipsModalProps> = ({
         </div>
 
         {/* Hierarchy Overview Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Level 1: Center Head */}
-          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
+          <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <span className="text-xs font-bold text-blue-950 uppercase tracking-wider">
                 Level 1: Center Head
               </span>
               <AppBadge variant="primary" size="xs">
-                {centerHeads.length} Leaders
+                {centerHeads.length} Super Admin
               </AppBadge>
             </div>
             <div className="space-y-2">
@@ -249,18 +234,18 @@ export const RelationshipsModal: React.FC<RelationshipsModalProps> = ({
             </div>
           </div>
 
-          {/* Level 2: Project Managers & Research Analysts */}
-          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
+          {/* Level 2: Advisors */}
+          <div className="p-4 rounded-xl border border-sky-200 bg-sky-50/50">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Level 2: PMs & Analysts
+              <span className="text-xs font-bold text-sky-950 uppercase tracking-wider">
+                Level 2: Advisors
               </span>
               <AppBadge variant="info" size="xs">
-                {managers.length} Staff
+                {advisors.length} Senior
               </AppBadge>
             </div>
             <div className="space-y-2">
-              {managers.map(m => (
+              {advisors.map(m => (
                 <div
                   key={m.id}
                   className="p-2.5 bg-white border border-slate-200 rounded-lg text-xs"
@@ -274,50 +259,30 @@ export const RelationshipsModal: React.FC<RelationshipsModalProps> = ({
             </div>
           </div>
 
-          {/* Level 3: Fellows */}
+          {/* Level 3: Execution Team */}
           <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Level 3: Fellows
+                Level 3: Execution Team
               </span>
               <AppBadge variant="secondary" size="xs">
-                {fellows.length} Fellows
+                {executionStaff.length} Members
               </AppBadge>
             </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {fellows.map(f => (
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-0.5">
+              {executionStaff.map(s => (
                 <div
-                  key={f.id}
+                  key={s.id}
                   className="p-2 bg-white border border-slate-200 rounded-lg text-xs"
                 >
-                  <div className="font-bold text-slate-900">{f.name}</div>
-                  <div className="text-[11px] text-slate-500">
-                    {f.designation}
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900">{s.name}</span>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
+                      {s.role}
+                    </span>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Level 4: Interns */}
-          <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Level 4: Field Interns
-              </span>
-              <AppBadge variant="neutral" size="xs">
-                {interns.length} Interns
-              </AppBadge>
-            </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {interns.map(i => (
-                <div
-                  key={i.id}
-                  className="p-2 bg-white border border-slate-200 rounded-lg text-xs"
-                >
-                  <div className="font-bold text-slate-900">{i.name}</div>
                   <div className="text-[11px] text-slate-500">
-                    {i.designation}
+                    {s.designation}
                   </div>
                 </div>
               ))}

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useEffect, useState } from 'react';
 
 type ToastPayload = { message: string; id: number } | null;
@@ -14,7 +15,7 @@ export function ToastHost(): React.ReactElement {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    listener = (payload) => {
+    listener = payload => {
       setToast(payload);
       setVisible(true);
       window.clearTimeout(hideTimeout);

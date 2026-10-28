@@ -529,7 +529,7 @@ export const DEFAULT_GRIEVANCE_CATEGORIES: GrievanceCategoryItem[] = [
       'Monthly honorarium processing delays or attendance reconciliation disputes',
     slaHours: 24,
     defaultPriority: 'Urgent',
-    targetRole: 'Project Manager',
+    targetRole: 'Advisor',
     isActive: true,
     createdAt: '2026-01-01',
   },
@@ -621,8 +621,8 @@ export const DEFAULT_PROJECT_ALLOCATIONS: ProjectTeamAllocation[] = [
     projectName: 'DPI-Based Open Networks for Human Capital in Viksit MP 2047',
     employeeId: 'EMP-PM-01',
     employeeName: 'Priya Sharma',
-    employeeRole: 'Project Manager',
-    projectRole: 'Project Manager (Operations)',
+    employeeRole: 'Advisor',
+    projectRole: 'Advisor (Operations)',
     allocatedDate: '2026-10-01',
     isActive: true,
   },
@@ -678,8 +678,8 @@ export const DEFAULT_PROJECT_ALLOCATIONS: ProjectTeamAllocation[] = [
     projectName: 'Evaluation of Rural Healthcare Infrastructure',
     employeeId: 'EMP-PM-01',
     employeeName: 'Priya Sharma',
-    employeeRole: 'Project Manager',
-    projectRole: 'Project Director',
+    employeeRole: 'Advisor',
+    projectRole: 'Project Lead Advisor',
     allocatedDate: '2026-08-15',
     isActive: true,
   },
@@ -724,8 +724,8 @@ export const DEFAULT_PROJECT_ALLOCATIONS: ProjectTeamAllocation[] = [
     projectName: 'Impact Assessment of Tribal Agriculture Extension Services',
     employeeId: 'EMP-PM-02',
     employeeName: 'Amitav Banerjee',
-    employeeRole: 'Project Manager',
-    projectRole: 'Project Lead',
+    employeeRole: 'Advisor',
+    projectRole: 'Project Lead Advisor',
     allocatedDate: '2026-09-01',
     isActive: true,
   },
@@ -1483,10 +1483,7 @@ export const MasterStore = {
 
   // ── 9. Survey Milestone Master ──
   getMilestones(includeInactive = false): MilestoneMasterItem[] {
-    const list = readStorage<MilestoneMasterItem[]>(
-      MASTER_KEYS.MILESTONES,
-      []
-    );
+    const list = readStorage<MilestoneMasterItem[]>(MASTER_KEYS.MILESTONES, []);
     if (!list || list.length === 0) {
       writeStorage(MASTER_KEYS.MILESTONES, DEFAULT_MILESTONES);
       return includeInactive
@@ -1553,4 +1550,3 @@ export const MasterStore = {
     return true;
   },
 };
-

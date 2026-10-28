@@ -25,7 +25,9 @@ export default function VerticalBarChart({
       {/* ── Score banner if available ── */}
       {likertScore !== undefined && (
         <div className="flex items-center justify-between pb-3 mb-2 border-b border-slate-100 text-xs">
-          <span className="font-semibold text-slate-500">Average Satisfaction Score</span>
+          <span className="font-semibold text-slate-500">
+            Average Satisfaction Score
+          </span>
           <div className="flex items-center gap-1.5 bg-purple-50 text-purple-700 font-bold px-2.5 py-0.5 rounded-full border border-purple-200">
             <span>⭐ {likertScore} / 5.0</span>
           </div>
@@ -36,7 +38,10 @@ export default function VerticalBarChart({
       <div className="w-full pt-4 sm:pt-6 pb-2">
         <div className="flex items-end justify-around gap-1 sm:gap-3 h-[150px] sm:h-[180px] w-full px-0.5 sm:px-1">
           {distributions.map((item, idx) => {
-            const barHeight = Math.max(10, Math.round((item.percentage / maxPct) * chartHeight));
+            const barHeight = Math.max(
+              10,
+              Math.round((item.percentage / maxPct) * chartHeight)
+            );
 
             return (
               <div
@@ -70,10 +75,7 @@ export default function VerticalBarChart({
         {/* Labels under baseline */}
         <div className="flex items-start justify-around gap-1 sm:gap-3 w-full px-0.5 sm:px-1 pt-1.5">
           {distributions.map((item, idx) => (
-            <div
-              key={idx}
-              className="flex-1 text-center"
-            >
+            <div key={idx} className="flex-1 text-center">
               <p className="text-[9px] sm:text-[11px] font-bold text-slate-700 leading-tight break-words line-clamp-2 sm:line-clamp-none">
                 {item.label}
               </p>

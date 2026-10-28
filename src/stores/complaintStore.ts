@@ -1,155 +1,157 @@
 /**
- * Complaints Store & Initial Mock Data (TypeScript port)
- * Matching Schame-managemt exact dataset and behavior
+ * Complaints Store & Initial Mock Data
+ * Supporting 3-Tier Hierarchy:
+ * - Tier 1: Center Head (Full review, final resolution, views escalated & all)
+ * - Tier 2: Advisor (Reviews grievances, resolves, or moves to Center Head if unable to resolve)
+ * - Tier 3: Fellow, Intern, Field Instructor, Research Analyst (Create grievances with 4 common fields, track responses)
  */
 import { emitStoreChange } from '../lib/storeEvents';
+import { complaintCategoryLabel } from '../lib/utils/formatters';
 import type { Complaint } from './types';
 
 const DEFAULT_COMPLAINTS: Complaint[] = [
-  // ── Intern -> Fellow (Review Intern Complaints tab) ──
   {
     id: 'cmp-01',
     ticketNumber: 'CMP-2026-0101',
-    applicantId: 'u-intern-01',
-    applicantName: 'Priya Patel',
-    applicantRole: 'intern',
-    assignedLocation: 'Ujjain Urban (Ujjain)',
+    applicantId: 'EMP-FL-01',
+    applicantName: 'Aakash Mehta',
+    applicantRole: 'Fellow',
+    assignedLocation: 'Field Operations & Surveys',
     category: 'field_travel',
-    categoryLabel: 'Field Travel & Conveyance',
+    categoryLabel: 'Field & Travel Logistics',
     priority: 'high',
     subject: 'Delay in reimbursement of village travel allowance',
-    description: 'Field visits conducted across 4 remote Gram Panchayats between 18-22 August. Travel expense bills submitted with original fuel receipts, awaiting approval.',
-    incidentDate: '2026-08-22',
-    documentName: 'Travel_Expense_Vouchers.pdf',
-    voiceNoteUrl: '#voice-note',
-    voiceNoteName: 'Travel_Clarification.m4a',
-    voiceNoteDuration: 14,
+    description:
+      'Field visits conducted across 4 remote Gram Panchayats between 18-22 October. Travel expense bills submitted with original fuel vouchers, awaiting administrative approval.',
+    incidentDate: '2026-10-22',
     status: 'pending',
-    appliedAt: '2026-09-02T10:30:00Z',
-    targetRole: 'fellow',
+    appliedAt: '2026-10-23T10:30:00Z',
+    targetRole: 'Advisor',
   },
   {
     id: 'cmp-02',
     ticketNumber: 'CMP-2026-0102',
-    applicantId: 'u-intern-02',
-    applicantName: 'Rohit Yadav',
-    applicantRole: 'intern',
-    assignedLocation: 'Indore Block A (Indore)',
+    applicantId: 'EMP-IN-01',
+    applicantName: 'Rohan Verma',
+    applicantRole: 'Intern',
+    assignedLocation: 'Indore Block A',
     category: 'infrastructure',
-    categoryLabel: 'Hardware & Infrastructure',
+    categoryLabel: 'Device, SIM & Portal',
     priority: 'urgent',
-    subject: 'Mobile survey portal crashing during offline sync',
-    description: 'Survey app version 2.1 fails to sync cached household survey responses when reconnected to mobile network. Data loss risk is high.',
-    incidentDate: '2026-09-01',
-    documentName: 'App_Crash_Screenshot.png',
-    status: 'resolved',
-    appliedAt: '2026-09-01T09:00:00Z',
-    targetRole: 'fellow',
-    reviewedBy: 'Vikram Singh',
-    reviewerRole: 'fellow',
-    reviewerComment: 'Technical patch applied; cache reset instructions shared. Verified that offline sync is functioning normally.',
-    reviewedAt: '2026-09-02T16:00:00Z',
+    subject:
+      'Tablet battery failure and offline survey sync issues in remote sector',
+    description:
+      'Field survey tablets are losing power after 2 hours and offline data fails to sync upon reconnection. Requesting replacement hardware.',
+    incidentDate: '2026-10-24',
+    status: 'escalated',
+    appliedAt: '2026-10-24T09:00:00Z',
+    targetRole: 'Center Head',
+    isEscalated: true,
+    forwardedBy: 'Priya Sharma',
+    forwarderRole: 'Advisor',
+    forwardComment:
+      'Hardware replacement budget approval required from Center Head. Local buffer inventory is currently exhausted.',
+    forwardedAt: '2026-10-25T11:00:00Z',
+    escalations: [
+      {
+        forwardedBy: 'Priya Sharma',
+        forwarderRole: 'Advisor',
+        forwardedToRole: 'Center Head',
+        forwardedToLabel: 'Center Head & Director',
+        reason:
+          'Hardware replacement budget approval required from Center Head. Local buffer inventory is currently exhausted.',
+        forwardedAt: '2026-10-25T11:00:00Z',
+      },
+    ],
   },
   {
     id: 'cmp-03',
     ticketNumber: 'CMP-2026-0103',
-    applicantId: 'u-intern-03',
-    applicantName: 'Divya Sharma',
-    applicantRole: 'intern',
-    assignedLocation: 'Sanwer Block (Indore)',
+    applicantId: 'EMP-FI-01',
+    applicantName: 'Surendra Patel',
+    applicantRole: 'Field Instructor',
+    assignedLocation: 'Field Operations & Surveys',
     category: 'workload_tasks',
-    categoryLabel: 'Workload & Task Allocation',
+    categoryLabel: 'Workload & Assignments',
     priority: 'medium',
-    subject: 'Overlapping survey schedule with university semester exams',
-    description: 'Final semester practical exams scheduled between Sept 10 and Sept 14. Requesting temporary re-allocation of PHC physical verification duties.',
-    incidentDate: '2026-09-03',
-    documentName: 'Exam_Schedule_Affidavit.pdf',
+    subject: 'Need extra enumerator support for Phase 2 Health Survey quota',
+    description:
+      'Target of 500 household surveys in Sanwer block requires 2 additional field assistants to complete within milestone deadline.',
+    incidentDate: '2026-10-25',
     status: 'pending',
-    appliedAt: '2026-09-03T11:45:00Z',
-    targetRole: 'fellow',
+    appliedAt: '2026-10-25T14:15:00Z',
+    targetRole: 'Advisor',
   },
   {
     id: 'cmp-04',
     ticketNumber: 'CMP-2026-0104',
-    applicantId: 'u-intern-04',
-    applicantName: 'Karan Malhotra',
-    applicantRole: 'intern',
-    assignedLocation: 'Depalpur Block (Indore)',
-    category: 'stipend',
-    categoryLabel: 'Stipend & Disbursal Delay',
+    applicantId: 'EMP-RA-01',
+    applicantName: 'Dr. Vikramaditya',
+    applicantRole: 'Research Analyst',
+    assignedLocation: 'Quantitative Evaluation & Statistics',
+    category: 'infrastructure',
+    categoryLabel: 'Device, SIM & Portal',
     priority: 'medium',
-    subject: 'Discrepancy in attendance days vs August stipend credit',
-    description: 'Three field survey days in August were recorded as unpaid leaves on the portal, reducing the disbursed stipend.',
-    incidentDate: '2026-08-31',
-    status: 'rejected',
-    appliedAt: '2026-08-31T14:20:00Z',
-    targetRole: 'fellow',
-    reviewedBy: 'Vikram Singh',
-    reviewerRole: 'fellow',
-    reviewerComment: 'Geo-fence logs indicate check-ins were outside designated block boundaries without prior BDO permission.',
-    reviewedAt: '2026-09-01T11:30:00Z',
+    subject:
+      'Access credentials for High-Throughput Statistical Computing Node',
+    description:
+      'Required computational node access for econometric regression analysis on Madhya Pradesh rural education dataset.',
+    incidentDate: '2026-10-18',
+    status: 'resolved',
+    appliedAt: '2026-10-18T10:00:00Z',
+    targetRole: 'Center Head',
+    reviewedBy: 'Dr. Rajeshwar Rao',
+    reviewerRole: 'Center Head',
+    reviewerComment:
+      'Computing credentials and server VPN configuration provisioned by IT division.',
+    reviewedAt: '2026-10-19T16:30:00Z',
   },
-
-  // ── Fellow -> PC (My Complaints tab) ──
   {
     id: 'cmp-05',
-    ticketNumber: 'CMP-2026-0201',
-    applicantId: 'u-fellow-01',
-    applicantName: 'Vikram Singh (AIGGPA Fellow)',
-    applicantRole: 'fellow',
+    ticketNumber: 'CMP-2026-0105',
+    applicantId: 'EMP-IN-01',
+    applicantName: 'Rohan Verma',
+    applicantRole: 'Intern',
     assignedLocation: 'Indore District',
-    category: 'infrastructure',
-    categoryLabel: 'Hardware & Infrastructure',
-    priority: 'urgent',
-    subject: 'SIM cards connectivity failure in 3 remote panchayats',
-    description: 'The BSNL SIM cards provided for biometric devices have zero signal reception in Depalpur and interior Mhow villages. Requesting porting or replacement with Jio/Airtel.',
-    incidentDate: '2026-09-01',
-    documentName: 'Signal_Strength_Log.pdf',
-    voiceNoteUrl: '#voice-note',
-    voiceNoteName: 'Depalpur_Signal_VoiceNote.m4a',
-    voiceNoteDuration: 22,
-    status: 'pending',
-    appliedAt: '2026-09-02T12:00:00Z',
-    targetRole: 'pc',
+    category: 'stipend',
+    categoryLabel: 'Stipend & Allowances',
+    priority: 'medium',
+    subject: 'Attendance record adjustment for field travel dates',
+    description:
+      '3 days of field survey duty in September were mistakenly marked as absent on attendance portal.',
+    incidentDate: '2026-10-05',
+    status: 'resolved',
+    appliedAt: '2026-10-06T11:20:00Z',
+    targetRole: 'Advisor',
+    reviewedBy: 'Priya Sharma',
+    reviewerRole: 'Advisor',
+    reviewerComment:
+      'Field attendance verified against GPS check-ins and corrected with payroll section.',
+    reviewedAt: '2026-10-07T14:00:00Z',
   },
   {
     id: 'cmp-06',
-    ticketNumber: 'CMP-2026-0202',
-    applicantId: 'u-fellow-01',
-    applicantName: 'Vikram Singh (AIGGPA Fellow)',
-    applicantRole: 'fellow',
-    assignedLocation: 'Indore District',
-    category: 'field_travel',
-    categoryLabel: 'Field Travel & Conveyance',
-    priority: 'high',
-    subject: 'Zila Panchayat meeting hall access denial for orientation workshop',
-    description: 'District nodal officer declined access to Hall 2 for the scheduled intern training batch citing internal departmental meetings without prior notification.',
-    incidentDate: '2026-09-02',
-    status: 'resolved',
-    appliedAt: '2026-09-02T15:00:00Z',
-    targetRole: 'pc',
-    reviewedBy: 'Dr. Rajesh Verma',
-    reviewerRole: 'pc',
-    reviewerComment: 'Liaised with CEO Zila Panchayat; alternate Collectorate Auditorium has been booked and keys handed over for training.',
-    reviewedAt: '2026-09-03T14:20:00Z',
+    ticketNumber: 'CMP-2026-0106',
+    applicantId: 'EMP-FL-01',
+    applicantName: 'Aakash Mehta',
+    applicantRole: 'Fellow',
+    assignedLocation: 'Policy Cell',
+    category: 'other',
+    categoryLabel: 'Other Issue',
+    priority: 'low',
+    subject: 'Exemption from non-project inter-departmental protocol meetings',
+    description:
+      'Requesting temporary relief from non-core meetings to focus on survey report writing deadline.',
+    incidentDate: '2026-10-10',
+    status: 'rejected',
+    appliedAt: '2026-10-10T16:00:00Z',
+    targetRole: 'Advisor',
+    reviewedBy: 'Priya Sharma',
+    reviewerRole: 'Advisor',
+    reviewerComment:
+      'Inter-departmental alignment meetings are mandatory per institute governance policy.',
+    reviewedAt: '2026-10-11T12:00:00Z',
   },
-  {
-    id: 'cmp-07',
-    ticketNumber: 'CMP-2026-0203',
-    applicantId: 'u-fellow-01',
-    applicantName: 'Vikram Singh (AIGGPA Fellow)',
-    applicantRole: 'fellow',
-    assignedLocation: 'Indore District',
-    category: 'workload_tasks',
-    categoryLabel: 'Workload & Task Allocation',
-    priority: 'medium',
-    subject: 'Urgent intern reassignment needed for pending block health surveys',
-    description: 'Two interns have exited the program early; current remaining field strength is insufficient to complete the required 150 household interviews by month end.',
-    incidentDate: '2026-09-04',
-    status: 'pending',
-    appliedAt: '2026-09-04T10:15:00Z',
-    targetRole: 'pc',
-  }
 ];
 
 const ComplaintStore = {
@@ -159,99 +161,230 @@ const ComplaintStore = {
     try {
       const data = localStorage.getItem(this.STORAGE_KEY);
       if (!data) {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(DEFAULT_COMPLAINTS));
+        localStorage.setItem(
+          this.STORAGE_KEY,
+          JSON.stringify(DEFAULT_COMPLAINTS)
+        );
         return DEFAULT_COMPLAINTS;
       }
       return JSON.parse(data);
-    } catch (e) {
-      console.error('Failed reading complaints', e);
+    } catch {
       return DEFAULT_COMPLAINTS;
     }
   },
 
-  getMyComplaints() {
-    return this.getAll().filter(c => c.applicantRole === 'fellow');
-  },
+  /**
+   * Returns grievances filed by a specific user.
+   */
+  getMyComplaints(
+    userId?: string,
+    userRole?: string,
+    userName?: string
+  ): Complaint[] {
+    const all = this.getAll();
+    if (!userId && !userName && !userRole) return all;
 
-  getInternComplaints() {
-    return this.getAll().filter(c => c.applicantRole === 'intern');
+    return all.filter(c => {
+      if (userId && c.applicantId === userId) return true;
+      if (userName && c.applicantName?.toLowerCase() === userName.toLowerCase())
+        return true;
+      if (userRole && c.applicantRole?.toLowerCase() === userRole.toLowerCase())
+        return true;
+      return false;
+    });
   },
 
   getById(id: string): Complaint | null {
     return this.getAll().find(c => c.id === id) || null;
   },
 
-  addComplaint(data: any): Complaint {
+  /**
+   * Adds a new grievance taking the 4 common fields:
+   * 1. category
+   * 2. incidentDate
+   * 3. subject
+   * 4. description
+   */
+  addComplaint(
+    data: {
+      category: string;
+      incidentDate?: string;
+      subject: string;
+      description: string;
+      priority?: string;
+    },
+    currentUser?: {
+      id?: string;
+      name?: string;
+      role?: string;
+      department?: string;
+      location?: string;
+    }
+  ): Complaint {
     const list = this.getAll();
     const count = list.length + 1;
     const ticketNumber = `CMP-${new Date().getFullYear()}-${String(count).padStart(4, '0')}`;
 
-    const newCmp = {
+    const newCmp: Complaint = {
       id: `cmp-new-${Date.now()}`,
       ticketNumber,
-      applicantId: 'u-fellow-01',
-      applicantName: 'Vikram Singh (AIGGPA Fellow)',
-      applicantRole: 'fellow',
-      assignedLocation: 'Indore District',
+      applicantId: currentUser?.id || 'EMP-FL-01',
+      applicantName: currentUser?.name || 'Aakash Mehta',
+      applicantRole: currentUser?.role || 'Fellow',
+      assignedLocation:
+        currentUser?.location || currentUser?.department || 'Field Operations',
       category: data.category || 'other',
-      categoryLabel: data.categoryLabel || 'General Issue',
+      categoryLabel: complaintCategoryLabel(data.category),
       priority: data.priority || 'medium',
-      subject: data.subject,
-      description: data.description,
+      subject: data.subject.trim(),
+      description: data.description.trim(),
       incidentDate: data.incidentDate || new Date().toISOString().split('T')[0],
-      documentName: data.documentName || null,
-      voiceNoteName: data.voiceNoteName || null,
-      voiceNoteDuration: data.voiceNoteDuration || null,
       status: 'pending',
       appliedAt: new Date().toISOString(),
-      targetRole: 'pc',
+      targetRole: 'Advisor',
+      escalations: [],
     };
 
     list.unshift(newCmp);
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(list));
       emitStoreChange();
-    } catch (e) {}
+    } catch {
+      /* ignore */
+    }
     return newCmp;
   },
 
-  updateStatus(id: string, newStatus: string, comment?: string, reviewer = 'Vikram Singh'): Complaint | null {
-    const list = this.getAll();
-    const item = list.find(c => c.id === id);
-    if (item) {
-      item.status = newStatus;
-      item.reviewedBy = reviewer;
-      item.reviewerRole = 'fellow';
-      item.reviewerComment = comment || (newStatus === 'resolved' ? 'Issue verified and resolved.' : 'Complaint rejected after assessment.');
-      item.reviewedAt = new Date().toISOString();
-      try {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(list));
-        emitStoreChange();
-      emitStoreChange();
-      } catch (e) {}
-      return item;
-    }
-    return null;
+  // Alias
+  create(
+    data: Parameters<typeof this.addComplaint>[0],
+    currentUser?: Parameters<typeof this.addComplaint>[1]
+  ): Complaint {
+    return this.addComplaint(data, currentUser);
   },
 
-  forwardComplaint(id: string, comment?: string, reviewer = 'Vikram Singh'): Complaint | null {
+  /**
+   * Resolve complaint (by Advisor or Center Head)
+   */
+  resolve(
+    id: string,
+    comment?: string,
+    reviewer?: { name?: string; role?: string }
+  ): Complaint | null {
     const list = this.getAll();
     const item = list.find(c => c.id === id);
-    if (item) {
-      item.targetRole = 'pc';
-      item.isEscalated = true;
-      item.forwardedBy = reviewer;
-      item.forwardComment = comment;
-      item.forwardedAt = new Date().toISOString();
-      try {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(list));
-        emitStoreChange();
+    if (!item) return null;
+
+    item.status = 'resolved';
+    item.reviewedBy = reviewer?.name || 'Senior Reviewer';
+    item.reviewerRole = reviewer?.role || 'Advisor';
+    item.reviewerComment =
+      comment || 'Complaint verified and resolved with necessary action.';
+    item.reviewedAt = new Date().toISOString();
+
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(list));
       emitStoreChange();
-      } catch (e) {}
-      return item;
+    } catch {
+      /* ignore */
     }
-    return null;
-  }
+    return item;
+  },
+
+  /**
+   * Reject complaint (by Advisor or Center Head)
+   */
+  reject(
+    id: string,
+    comment?: string,
+    reviewer?: { name?: string; role?: string }
+  ): Complaint | null {
+    const list = this.getAll();
+    const item = list.find(c => c.id === id);
+    if (!item) return null;
+
+    item.status = 'rejected';
+    item.reviewedBy = reviewer?.name || 'Senior Reviewer';
+    item.reviewerRole = reviewer?.role || 'Advisor';
+    item.reviewerComment =
+      comment || 'Complaint reviewed and rejected after formal verification.';
+    item.reviewedAt = new Date().toISOString();
+
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(list));
+      emitStoreChange();
+    } catch {
+      /* ignore */
+    }
+    return item;
+  },
+
+  /**
+   * Advisor moves complaint to Center Head when unable to resolve
+   */
+  forwardToCenterHead(
+    id: string,
+    reason: string = 'Unable to resolve at advisor level. Moved to Center Head for executive review.',
+    reviewer?: { name?: string; role?: string }
+  ): Complaint | null {
+    const list = this.getAll();
+    const item = list.find(c => c.id === id);
+    if (!item) return null;
+
+    const reviewerName = reviewer?.name || 'Priya Sharma';
+    const reviewerRole = reviewer?.role || 'Advisor';
+
+    const escalationItem = {
+      forwardedBy: reviewerName,
+      forwarderRole: reviewerRole,
+      forwardedToRole: 'Center Head',
+      forwardedToLabel: 'Center Head & Director',
+      reason: reason.trim(),
+      forwardedAt: new Date().toISOString(),
+    };
+
+    item.status = 'escalated';
+    item.targetRole = 'Center Head';
+    item.isEscalated = true;
+    item.forwardedBy = reviewerName;
+    item.forwarderRole = reviewerRole;
+    item.forwardComment = reason.trim();
+    item.forwardedAt = escalationItem.forwardedAt;
+    item.escalations = [...(item.escalations || []), escalationItem];
+    item.reviewerComment = `Moved to Center Head by ${reviewerName} (${reviewerRole}): "${reason.trim()}"`;
+
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(list));
+      emitStoreChange();
+    } catch {
+      /* ignore */
+    }
+    return item;
+  },
+
+  /**
+   * Backwards compatible forward method
+   */
+  forward(
+    id: string,
+    reason: string,
+    reviewer?: { name?: string; role?: string }
+  ): Complaint | null {
+    return this.forwardToCenterHead(id, reason, reviewer);
+  },
+
+  resetDefaults(): Complaint[] {
+    try {
+      localStorage.setItem(
+        this.STORAGE_KEY,
+        JSON.stringify(DEFAULT_COMPLAINTS)
+      );
+      emitStoreChange();
+      return DEFAULT_COMPLAINTS;
+    } catch {
+      return DEFAULT_COMPLAINTS;
+    }
+  },
 };
 
 export default ComplaintStore;

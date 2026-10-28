@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { MapPin, ArrowRight, XCircle, Funnel, Buildings, HouseLine } from '@phosphor-icons/react';
+import {
+  MapPin,
+  ArrowRight,
+  XCircle,
+  Funnel,
+  Buildings,
+  HouseLine,
+} from '@phosphor-icons/react';
 import {
   MP_LOCATION_HIERARCHY,
   type LocationFilterState,
@@ -63,7 +70,9 @@ export default function LocationHierarchyFilter({
   // Find selected panchayat object
   const selectedPanchayat = useMemo(() => {
     if (!value.gramPanchayat) return null;
-    return availablePanchayats.find(p => p.name === value.gramPanchayat) || null;
+    return (
+      availablePanchayats.find(p => p.name === value.gramPanchayat) || null
+    );
   }, [value.gramPanchayat, availablePanchayats]);
 
   // Available villages for selected panchayat
@@ -150,7 +159,11 @@ export default function LocationHierarchyFilter({
   };
 
   const isFiltered = Boolean(
-    value.division || value.district || value.block || value.gramPanchayat || value.village
+    value.division ||
+    value.district ||
+    value.block ||
+    value.gramPanchayat ||
+    value.village
   );
 
   return (
@@ -166,7 +179,8 @@ export default function LocationHierarchyFilter({
               Administrative Drilldown Filter
             </span>
             <span className="text-[11px] text-slate-400">
-              Filter data by Division → District → Block → Gram Panchayat → Village (Stop at any stage)
+              Filter data by Division → District → Block → Gram Panchayat →
+              Village (Stop at any stage)
             </span>
           </div>
         </div>
@@ -251,7 +265,9 @@ export default function LocationHierarchyFilter({
             )}
           >
             <option value="">
-              {value.district ? `All in ${value.district}` : 'Select District first'}
+              {value.district
+                ? `All in ${value.district}`
+                : 'Select District first'}
             </option>
             {availableBlocks.map(b => (
               <option key={b.id} value={b.name}>
@@ -305,7 +321,9 @@ export default function LocationHierarchyFilter({
             )}
           >
             <option value="">
-              {value.gramPanchayat ? `All in ${value.gramPanchayat}` : 'Select GP first'}
+              {value.gramPanchayat
+                ? `All in ${value.gramPanchayat}`
+                : 'Select GP first'}
             </option>
             {availableVillages.map((v, vIdx) => (
               <option key={vIdx} value={v}>

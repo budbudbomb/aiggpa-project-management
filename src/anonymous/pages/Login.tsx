@@ -15,18 +15,91 @@ import {
   ShieldCheck,
   Languages,
   LayoutTemplate,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
+import { AppDialog } from '../../components/ui/AppDialog';
 import './Login.css';
 
 export interface LoginProps {
   onForgotPassword?: () => void;
 }
 
+const DEMO_PROFILES = [
+  {
+    id: 'EMP-CH-01',
+    role: 'Center Head',
+    name: 'Dr. Rajeshwar Rao',
+    tierLabel: 'Tier 1 • Directorate',
+    badgeColor:
+      'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+    icon: '👑',
+    tier: 1,
+    desc: 'Directorate level authority, system configuration, all-project oversight',
+  },
+  {
+    id: 'EMP-ADV-01',
+    role: 'Advisor',
+    name: 'Priya Sharma',
+    tierLabel: 'Tier 2 • Advisory',
+    badgeColor:
+      'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400 border-sky-200 dark:border-sky-800',
+    icon: '💼',
+    tier: 2,
+    desc: 'Advisor level supervision, task review, project & survey execution',
+  },
+  {
+    id: 'EMP-FL-01',
+    role: 'Fellow',
+    name: 'Aakash Mehta',
+    tierLabel: 'Tier 3 • Execution',
+    badgeColor:
+      'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+    icon: '🎓',
+    tier: 3,
+    desc: 'Policy fellow, survey collection, task evidence submission',
+  },
+  {
+    id: 'EMP-IN-01',
+    role: 'Intern',
+    name: 'Rohan Verma',
+    tierLabel: 'Tier 3 • Execution',
+    badgeColor:
+      'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+    icon: '📋',
+    tier: 3,
+    desc: 'Field research intern, fieldwork data collection & evidence capture',
+  },
+  {
+    id: 'EMP-FI-01',
+    role: 'Field Instructor',
+    name: 'Surendra Patel',
+    tierLabel: 'Tier 3 • Execution',
+    badgeColor:
+      'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
+    icon: '🧭',
+    tier: 3,
+    desc: 'Field verification instructor, ground data collector',
+  },
+  {
+    id: 'EMP-RA-01',
+    role: 'Research Analyst',
+    name: 'Dr. Vikramaditya',
+    tierLabel: 'Tier 3 • Execution',
+    badgeColor:
+      'bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400 border-teal-200 dark:border-teal-800',
+    icon: '🔬',
+    tier: 3,
+    desc: 'Quantitative analyst, research reports, field analytics',
+  },
+];
+
 export default function Login({ onForgotPassword }: LoginProps) {
   const [isHiding, setIsHiding] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [lang, setLang] = useState<'en' | 'hi'>('en');
   const [selectedLayout, setSelectedLayout] = useState<1 | 2>(1);
+  const [isQuickLoginOpen, setIsQuickLoginOpen] = useState(false);
 
   const {
     formData,
@@ -364,99 +437,251 @@ export default function Login({ onForgotPassword }: LoginProps) {
                 {t.signInBtn}
               </Button>
 
-              {/* Quick Demo Role Selector */}
-              <div className="pt-2.5 mt-1 border-t border-slate-100 dark:border-slate-800">
+              {/* Quick 1-Click Direct Login Profiles (Clean Clickable Buttons - Zero Overflow) */}
+              <div className="pt-2.5 mt-0.5 border-t border-slate-100 dark:border-slate-800/80">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    Hierarchy Test Profiles (Prototype)
+                    {lang === 'en'
+                      ? '1-Click Direct Login'
+                      : '1-क्लिक त्वरित लॉगिन'}
                   </span>
-                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">
-                    1-Click Direct Login
+                  <button
+                    type="button"
+                    onClick={() => setIsQuickLoginOpen(true)}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <span>
+                      {lang === 'en' ? 'All 6 Profiles' : 'सभी 6 प्रोफाइल'}
+                    </span>
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* 3 Clickable Direct Login Tier Buttons */}
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                  <button
+                    type="button"
+                    onClick={() => quickLogin('EMP-CH-01')}
+                    className="flex flex-col items-center justify-center p-2 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 hover:border-blue-400 dark:hover:border-blue-600 transition-all cursor-pointer group text-center shadow-2xs"
+                    title="Direct Login as Center Head (Dr. Rajeshwar Rao)"
+                  >
+                    <span className="text-sm sm:text-base group-hover:scale-110 transition-transform">
+                      👑
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-900 dark:text-white leading-tight mt-0.5">
+                      Center Head
+                    </span>
+                    <span className="text-[9px] text-blue-700 dark:text-blue-400 font-semibold">
+                      Tier 1
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => quickLogin('EMP-ADV-01')}
+                    className="flex flex-col items-center justify-center p-2 rounded-xl border border-sky-200 dark:border-sky-900/60 bg-sky-50/70 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900/60 hover:border-sky-400 dark:hover:border-sky-600 transition-all cursor-pointer group text-center shadow-2xs"
+                    title="Direct Login as Advisor (Priya Sharma)"
+                  >
+                    <span className="text-sm sm:text-base group-hover:scale-110 transition-transform">
+                      💼
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-900 dark:text-white leading-tight mt-0.5">
+                      Advisor
+                    </span>
+                    <span className="text-[9px] text-sky-700 dark:text-sky-400 font-semibold">
+                      Tier 2
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => quickLogin('EMP-IN-01')}
+                    className="flex flex-col items-center justify-center p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-600 transition-all cursor-pointer group text-center shadow-2xs"
+                    title="Direct Login as Field Staff / Intern (Rohan Verma)"
+                  >
+                    <span className="text-sm sm:text-base group-hover:scale-110 transition-transform">
+                      📋
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-900 dark:text-white leading-tight mt-0.5">
+                      Field Staff
+                    </span>
+                    <span className="text-[9px] text-slate-600 dark:text-slate-400 font-semibold">
+                      Tier 3
+                    </span>
+                  </button>
+                </div>
+
+                {/* Additional Full Modal Launcher Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsQuickLoginOpen(true)}
+                  className="w-full mt-2 py-1.5 px-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-600 bg-white/50 dark:bg-slate-900/40 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 text-[11px] font-medium text-slate-600 hover:text-blue-700 dark:text-slate-400 dark:hover:text-blue-300 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                  <span>
+                    {lang === 'en'
+                      ? 'Select from All 6 Demo Profiles (Fellow, FI, RA)...'
+                      : 'सभी 6 टेस्ट प्रोफाइल्स देखें (फ़ेलो, एफआई, आरए)...'}
                   </span>
-                </div>
-                <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto pr-0.5">
-                  {[
-                    {
-                      id: 'EMP-CH-01',
-                      role: 'Center Head',
-                      name: 'Dr. Rajeshwar Rao',
-                      badge: 'Tier 1 • Center Head',
-                      badgeColor:
-                        'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-                      icon: '👑',
-                    },
-                    {
-                      id: 'EMP-PM-01',
-                      role: 'Project Manager',
-                      name: 'Priya Sharma',
-                      badge: 'Tier 2 • PM',
-                      badgeColor:
-                        'bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400 border-sky-200 dark:border-sky-800',
-                      icon: '💼',
-                    },
-                    {
-                      id: 'EMP-RA-01',
-                      role: 'Research Analyst',
-                      name: 'Dr. Vikramaditya',
-                      badge: 'Tier 2 • RA',
-                      badgeColor:
-                        'bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-400 border-teal-200 dark:border-teal-800',
-                      icon: '🔬',
-                    },
-                    {
-                      id: 'EMP-FL-01',
-                      role: 'Fellow',
-                      name: 'Aakash Mehta',
-                      badge: 'Tier 3 • Fellow',
-                      badgeColor:
-                        'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
-                      icon: '🎓',
-                    },
-                    {
-                      id: 'EMP-IN-01',
-                      role: 'Intern',
-                      name: 'Rohan Verma',
-                      badge: 'Tier 4 • Intern',
-                      badgeColor:
-                        'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-                      icon: '📋',
-                    },
-                  ].map(acc => (
-                    <button
-                      key={acc.id}
-                      type="button"
-                      onClick={() => quickLogin(acc.id)}
-                      className="w-full flex items-center justify-between p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 hover:bg-blue-50/70 dark:hover:bg-blue-950/40 hover:border-blue-300 dark:hover:border-blue-700 transition-all text-left group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-sm shrink-0">{acc.icon}</span>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-                              {acc.name}
-                            </span>
-                            <span
-                              className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border ${acc.badgeColor}`}
-                            >
-                              {acc.role}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                            ID: {acc.id}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 opacity-80 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all flex items-center shrink-0 ml-1">
-                        Sign In →
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                </button>
               </div>
             </form>
           </div>
         </div>
       </main>
+
+      {/* 1-Click Direct Login Profiles Modal */}
+      <AppDialog
+        isOpen={isQuickLoginOpen}
+        onClose={() => setIsQuickLoginOpen(false)}
+        maxWidth="lg"
+        title={
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/80 flex items-center justify-center text-blue-700 dark:text-blue-400 shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">
+                {lang === 'en'
+                  ? '1-Click Direct Login Profiles'
+                  : '1-क्लिक त्वरित लॉगिन प्रोफाइल्स'}
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                {lang === 'en'
+                  ? 'Select any organizational role to instantly explore the ERP system'
+                  : 'ईआरपी पोर्टल में प्रवेश करने के लिए कोई भी पद चुनें'}
+              </p>
+            </div>
+          </div>
+        }
+      >
+        <div className="space-y-3.5 py-1 text-left">
+          {/* Tier 1 */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
+                Tier 1 • Directorate &amp; Super Admin
+              </span>
+            </div>
+            {DEMO_PROFILES.filter(p => p.tier === 1).map(acc => (
+              <button
+                key={acc.id}
+                type="button"
+                onClick={() => {
+                  setIsQuickLoginOpen(false);
+                  quickLogin(acc.id);
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/40 hover:bg-blue-100/70 dark:hover:bg-blue-900/60 hover:border-blue-400 transition-all text-left cursor-pointer group shadow-2xs"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-lg shrink-0">{acc.icon}</span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                        {acc.name}
+                      </span>
+                      <span
+                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${acc.badgeColor}`}
+                      >
+                        {acc.role}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                      {acc.desc}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform shrink-0 ml-2">
+                  Sign In →
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Tier 2 */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wider">
+                Tier 2 • Advisory &amp; Project Oversight
+              </span>
+            </div>
+            {DEMO_PROFILES.filter(p => p.tier === 2).map(acc => (
+              <button
+                key={acc.id}
+                type="button"
+                onClick={() => {
+                  setIsQuickLoginOpen(false);
+                  quickLogin(acc.id);
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl border border-sky-200 dark:border-sky-900/60 bg-sky-50/50 dark:bg-sky-950/40 hover:bg-sky-100/70 dark:hover:bg-sky-900/60 hover:border-sky-400 transition-all text-left cursor-pointer group shadow-2xs"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="text-lg shrink-0">{acc.icon}</span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                        {acc.name}
+                      </span>
+                      <span
+                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${acc.badgeColor}`}
+                      >
+                        {acc.role}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                      {acc.desc}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-sky-600 dark:text-sky-400 group-hover:translate-x-0.5 transition-transform shrink-0 ml-2">
+                  Sign In →
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* Tier 3 */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                Tier 3 • Ground Execution &amp; Field Staff
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {DEMO_PROFILES.filter(p => p.tier === 3).map(acc => (
+                <button
+                  key={acc.id}
+                  type="button"
+                  onClick={() => {
+                    setIsQuickLoginOpen(false);
+                    quickLogin(acc.id);
+                  }}
+                  className="flex items-center justify-between p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:border-slate-400 transition-all text-left cursor-pointer group shadow-2xs"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-base shrink-0">{acc.icon}</span>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                          {acc.name}
+                        </span>
+                      </div>
+                      <span
+                        className={`inline-block text-[9px] font-medium px-1.5 py-0.2 rounded border mt-0.5 ${acc.badgeColor}`}
+                      >
+                        {acc.role}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform shrink-0 ml-1">
+                    Sign In →
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </AppDialog>
 
       {/* 2-Side Screen Bottom Footer (Compact Mobile Optimized) */}
       <footer className="fixed bottom-0 left-0 right-0 w-full py-1.5 sm:py-2.5 px-3 sm:px-8 lg:px-12 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-2 text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 z-30 font-medium leading-tight">

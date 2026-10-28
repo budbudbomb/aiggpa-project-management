@@ -741,7 +741,7 @@ const Store = (() => {
   return {
     // Projects
     getProjects: function (): Project[] {
-      let list = get(KEYS.PROJECTS, null);
+      const list = get(KEYS.PROJECTS, null);
       if (!list || list.length === 0) {
         set(KEYS.PROJECTS, DEFAULT_PROJECTS);
         return DEFAULT_PROJECTS;

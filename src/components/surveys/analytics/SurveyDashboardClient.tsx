@@ -34,7 +34,9 @@ interface SurveyDashboardClientProps {
   surveyId: string;
 }
 
-export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClientProps) {
+export default function SurveyDashboardClient({
+  surveyId,
+}: SurveyDashboardClientProps) {
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +53,9 @@ export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClien
       setError(null);
       try {
         const surveys = SurveyStore.getSurveys();
-        const normalizedId = surveyId ? surveyId.replace(/^surv-/, 'survey-') : '';
+        const normalizedId = surveyId
+          ? surveyId.replace(/^surv-/, 'survey-')
+          : '';
         const found =
           surveys.find(
             s =>
@@ -99,11 +103,12 @@ export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClien
       const matchesSearch =
         searchQuery.trim() === '' ||
         q.questionText.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        `q${q.questionNumber}`.toLowerCase().includes(searchQuery.toLowerCase());
+        `q${q.questionNumber}`
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
 
       const matchesType =
-        selectedTypeFilter === 'all' ||
-        q.questionType === selectedTypeFilter;
+        selectedTypeFilter === 'all' || q.questionType === selectedTypeFilter;
 
       return matchesSearch && matchesType;
     });
@@ -148,9 +153,12 @@ export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClien
         <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
           <ChartBar size={24} weight="bold" />
         </div>
-        <h2 className="text-lg font-bold text-slate-900">Survey Dashboard Not Found</h2>
+        <h2 className="text-lg font-bold text-slate-900">
+          Survey Dashboard Not Found
+        </h2>
         <p className="text-xs text-slate-500">
-          The requested survey analytics could not be compiled or does not exist.
+          The requested survey analytics could not be compiled or does not
+          exist.
         </p>
         <Link
           to="/surveys"
@@ -180,7 +188,9 @@ export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClien
             </Link>
             <span className="text-slate-300">•</span>
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200 uppercase">
-              {survey.submissionStatus ? survey.submissionStatus.replace(/_/g, ' ') : 'IN PROGRESS'}
+              {survey.submissionStatus
+                ? survey.submissionStatus.replace(/_/g, ' ')
+                : 'IN PROGRESS'}
             </span>
           </div>
 
@@ -189,7 +199,8 @@ export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClien
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-500 max-w-3xl">
-            {survey.description || 'Comprehensive question-by-question response breakdown and visual distribution analysis.'}
+            {survey.description ||
+              'Comprehensive question-by-question response breakdown and visual distribution analysis.'}
           </p>
         </div>
 
@@ -284,9 +295,12 @@ export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClien
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-slate-900 mt-2">
-            {analyticsData.averageTimeMinutes} <span className="text-sm font-semibold text-slate-500">mins</span>
+            {analyticsData.averageTimeMinutes}{' '}
+            <span className="text-sm font-semibold text-slate-500">mins</span>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">High respondent engagement</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            High respondent engagement
+          </p>
         </div>
 
         {/* Geographic Coverage / Field Reach */}
@@ -311,14 +325,14 @@ export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClien
             {locationFilter?.village
               ? `Village: ${locationFilter.village}`
               : locationFilter?.gramPanchayat
-              ? `GP: ${locationFilter.gramPanchayat}`
-              : locationFilter?.block
-              ? `Block: ${locationFilter.block}`
-              : locationFilter?.district
-              ? `District: ${locationFilter.district}`
-              : locationFilter?.division
-              ? `Division: ${locationFilter.division}`
-              : 'Statewide MP Field Coverage'}
+                ? `GP: ${locationFilter.gramPanchayat}`
+                : locationFilter?.block
+                  ? `Block: ${locationFilter.block}`
+                  : locationFilter?.district
+                    ? `District: ${locationFilter.district}`
+                    : locationFilter?.division
+                      ? `Division: ${locationFilter.division}`
+                      : 'Statewide MP Field Coverage'}
           </p>
         </div>
       </div>
@@ -334,7 +348,10 @@ export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClien
 
           {/* Search bar inside navigator */}
           <div className="relative w-full sm:max-w-xs">
-            <MagnifyingGlass size={15} className="absolute left-3 top-2 text-slate-400 pointer-events-none" />
+            <MagnifyingGlass
+              size={15}
+              className="absolute left-3 top-2 text-slate-400 pointer-events-none"
+            />
             <input
               type="search"
               value={searchQuery}
@@ -348,7 +365,9 @@ export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClien
         {/* Quick jump pills Q1..Q30 */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
           {analyticsData.questionsAnalytics.map(q => {
-            const isMatch = filteredQuestions.some(fq => fq.questionNumber === q.questionNumber);
+            const isMatch = filteredQuestions.some(
+              fq => fq.questionNumber === q.questionNumber
+            );
             return (
               <button
                 key={q.questionNumber}
@@ -398,9 +417,12 @@ export default function SurveyDashboardClient({ surveyId }: SurveyDashboardClien
       {/* ── Question Analytics Cards Grid ── */}
       {filteredQuestions.length === 0 ? (
         <div className="card p-12 text-center space-y-3 bg-white border border-slate-200">
-          <p className="text-sm font-bold text-slate-800">No matching questions found</p>
+          <p className="text-sm font-bold text-slate-800">
+            No matching questions found
+          </p>
           <p className="text-xs text-slate-400">
-            Try adjusting your search query "{searchQuery}" or selected question filter.
+            Try adjusting your search query "{searchQuery}" or selected question
+            filter.
           </p>
           <button
             type="button"

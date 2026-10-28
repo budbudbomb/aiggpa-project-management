@@ -115,18 +115,26 @@ export default function DonutMetricChart({
           <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 mt-0.5 sm:mt-1 uppercase tracking-wider">
             Total
           </span>
-          <span className="text-xs sm:text-sm font-black text-slate-800">{totalAnswers}</span>
+          <span className="text-xs sm:text-sm font-black text-slate-800">
+            {totalAnswers}
+          </span>
         </div>
       </div>
 
       {/* ── Legend matching Screenshot 2 ── */}
       <div className="w-full min-w-0 max-w-full pt-3 mt-1 border-t border-slate-100 flex flex-col gap-1.5 px-0.5 sm:px-2">
         {sorted.map((item, idx) => (
-          <div key={idx} className="flex items-center justify-between text-xs group w-full min-w-0">
+          <div
+            key={idx}
+            className="flex items-center justify-between text-xs group w-full min-w-0"
+          >
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 pr-2">
               <div
                 className="w-4 h-4 rounded-md flex items-center justify-center shrink-0"
-                style={{ backgroundColor: `${item.color}20`, color: item.color }}
+                style={{
+                  backgroundColor: `${item.color}20`,
+                  color: item.color,
+                }}
               >
                 <SealCheck size={12} weight="bold" />
               </div>
@@ -135,8 +143,12 @@ export default function DonutMetricChart({
               </span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-slate-400 text-[10px] sm:text-[11px]">({item.count})</span>
-              <span className="font-bold text-slate-900 w-8 sm:w-9 text-right text-xs sm:text-sm">{item.percentage}%</span>
+              <span className="text-slate-400 text-[10px] sm:text-[11px]">
+                ({item.count})
+              </span>
+              <span className="font-bold text-slate-900 w-8 sm:w-9 text-right text-xs sm:text-sm">
+                {item.percentage}%
+              </span>
             </div>
           </div>
         ))}

@@ -37,7 +37,7 @@ export const HIERARCHY_ACCOUNTS: Record<string, User> = {
     id: 'EMP-CH-01',
     code: 'EMP-CH-01',
     name: 'Dr. Rajeshwar Rao',
-    email: 'rajeshwar.rao@aiggpa.mp.gov.in',
+    email: 'center_head@aiggpa.mp.gov.in',
     role: 'Center Head',
     designation: 'Director & Center Head',
     department: 'Center for Policy Governance & Evaluation',
@@ -45,48 +45,33 @@ export const HIERARCHY_ACCOUNTS: Record<string, User> = {
     centerId: 'CPGE-01',
     assignedProjectIds: ['PRJ-01', 'PRJ-02', 'PRJ-03', 'PRJ-04'],
     permissions: ROLE_PERMISSIONS['Center Head'],
-    defaultLandingPath: '/activities',
+    defaultLandingPath: '/dashboard',
     avatarColor: '#1d4ed8',
   },
-  'EMP-PM-01': {
-    id: 'EMP-PM-01',
-    code: 'EMP-PM-01',
+  'EMP-ADV-01': {
+    id: 'EMP-ADV-01',
+    code: 'EMP-ADV-01',
     name: 'Priya Sharma',
-    email: 'priya.sharma@aiggpa.mp.gov.in',
-    role: 'Project Manager',
-    designation: 'Senior Project Manager',
+    email: 'advisor@aiggpa.mp.gov.in',
+    role: 'Advisor',
+    designation: 'Senior Advisor & Project Lead',
     department: 'Digital Infrastructure & Field Operations',
     reportsTo: 'EMP-CH-01',
     centerId: 'CPGE-01',
-    assignedProjectIds: ['PRJ-01', 'PRJ-02'],
-    permissions: ROLE_PERMISSIONS['Project Manager'],
-    defaultLandingPath: '/activities',
+    assignedProjectIds: ['PRJ-01', 'PRJ-02', 'PRJ-03'],
+    permissions: ROLE_PERMISSIONS['Advisor'],
+    defaultLandingPath: '/dashboard',
     avatarColor: '#0284c7',
-  },
-  'EMP-RA-01': {
-    id: 'EMP-RA-01',
-    code: 'EMP-RA-01',
-    name: 'Dr. Vikramaditya',
-    email: 'vikramaditya@aiggpa.mp.gov.in',
-    role: 'Research Analyst',
-    designation: 'Lead Research Analyst',
-    department: 'Quantitative Evaluation & Statistics',
-    reportsTo: 'EMP-CH-01',
-    centerId: 'CPGE-01',
-    assignedProjectIds: ['PRJ-01', 'PRJ-03'],
-    permissions: ROLE_PERMISSIONS['Research Analyst'],
-    defaultLandingPath: '/activities',
-    avatarColor: '#0f766e',
   },
   'EMP-FL-01': {
     id: 'EMP-FL-01',
     code: 'EMP-FL-01',
     name: 'Aakash Mehta',
-    email: 'aakash.mehta@aiggpa.mp.gov.in',
+    email: 'fellow@aiggpa.mp.gov.in',
     role: 'Fellow',
     designation: 'Lead Policy Fellow',
     department: 'Field Operations & Surveys',
-    reportsTo: 'EMP-PM-01',
+    reportsTo: 'EMP-ADV-01',
     centerId: 'CPGE-01',
     assignedProjectIds: ['PRJ-01'],
     permissions: ROLE_PERMISSIONS['Fellow'],
@@ -97,74 +82,74 @@ export const HIERARCHY_ACCOUNTS: Record<string, User> = {
     id: 'EMP-IN-01',
     code: 'EMP-IN-01',
     name: 'Rohan Verma',
-    email: 'rohan.verma@aiggpa.mp.gov.in',
+    email: 'intern@aiggpa.mp.gov.in',
     role: 'Intern',
     designation: 'Field Research Intern',
     department: 'Field Operations & Surveys',
-    reportsTo: 'EMP-FL-01',
+    reportsTo: 'EMP-ADV-01',
     centerId: 'CPGE-01',
     assignedProjectIds: ['PRJ-01'],
     permissions: ROLE_PERMISSIONS['Intern'],
     defaultLandingPath: '/activities',
-    avatarColor: '#6366f1',
+    avatarColor: '#64748b',
+  },
+  'EMP-FI-01': {
+    id: 'EMP-FI-01',
+    code: 'EMP-FI-01',
+    name: 'Surendra Patel',
+    email: 'field.instructor@aiggpa.mp.gov.in',
+    role: 'Field Instructor',
+    designation: 'Field Instructor & Ground Supervisor',
+    department: 'Field Operations & Surveys',
+    reportsTo: 'EMP-ADV-01',
+    centerId: 'CPGE-01',
+    assignedProjectIds: ['PRJ-01', 'PRJ-02'],
+    permissions: ROLE_PERMISSIONS['Field Instructor'],
+    defaultLandingPath: '/activities',
+    avatarColor: '#0284c7',
+  },
+  'EMP-RA-01': {
+    id: 'EMP-RA-01',
+    code: 'EMP-RA-01',
+    name: 'Dr. Vikramaditya',
+    email: 'analyst@aiggpa.mp.gov.in',
+    role: 'Research Analyst',
+    designation: 'Lead Research Analyst',
+    department: 'Quantitative Evaluation & Statistics',
+    reportsTo: 'EMP-ADV-01',
+    centerId: 'CPGE-01',
+    assignedProjectIds: ['PRJ-01', 'PRJ-03'],
+    permissions: ROLE_PERMISSIONS['Research Analyst'],
+    defaultLandingPath: '/activities',
+    avatarColor: '#0f766e',
   },
 };
 
 export const ROLE_ACCOUNTS: Record<string, User> = {
   ...HIERARCHY_ACCOUNTS,
   E0001: {
-    id: 'EMP-CH-01',
+    ...HIERARCHY_ACCOUNTS['EMP-CH-01'],
     code: 'E0001',
-    name: 'Dr. Rajeshwar Rao (Super Admin)',
-    email: 'superadmin@aiggpa.mp.gov.in',
-    role: 'Center Head',
-    defaultLandingPath: '/activities',
-    reportsTo: null,
-    centerId: 'CPGE-01',
-    assignedProjectIds: ['PRJ-01', 'PRJ-02', 'PRJ-03'],
-    permissions: ROLE_PERMISSIONS['Center Head'],
-    designation: 'Director & Center Head',
-    department: 'Center for Policy Governance & Evaluation',
   },
   E0002: {
-    id: 'EMP-PM-01',
+    ...HIERARCHY_ACCOUNTS['EMP-ADV-01'],
     code: 'E0002',
-    name: 'Priya Sharma (Admin Head)',
-    email: 'adminhead@aiggpa.mp.gov.in',
-    role: 'Project Manager',
-    defaultLandingPath: '/activities',
-    reportsTo: 'EMP-CH-01',
-    centerId: 'CPGE-01',
-    assignedProjectIds: ['PRJ-01', 'PRJ-02'],
-    permissions: ROLE_PERMISSIONS['Project Manager'],
-    designation: 'Senior Project Manager',
-    department: 'Digital Infrastructure',
   },
   E0003: {
-    id: 'EMP-RA-01',
+    ...HIERARCHY_ACCOUNTS['EMP-RA-01'],
     code: 'E0003',
-    name: 'Dr. Vikramaditya (Finance Head)',
-    email: 'financehead@aiggpa.mp.gov.in',
-    role: 'Research Analyst',
-    defaultLandingPath: '/activities',
-    reportsTo: 'EMP-CH-01',
-    centerId: 'CPGE-01',
-    assignedProjectIds: ['PRJ-01', 'PRJ-03'],
-    permissions: ROLE_PERMISSIONS['Research Analyst'],
-    designation: 'Lead Research Analyst',
-    department: 'Evaluation & Statistics',
   },
   E0004: {
-    ...HIERARCHY_ACCOUNTS['EMP-CH-01'],
+    ...HIERARCHY_ACCOUNTS['EMP-FL-01'],
     code: 'E0004',
   },
   E0005: {
-    ...HIERARCHY_ACCOUNTS['EMP-FL-01'],
+    ...HIERARCHY_ACCOUNTS['EMP-IN-01'],
     code: 'E0005',
   },
-  'EMP-1042': {
-    ...HIERARCHY_ACCOUNTS['EMP-PM-01'],
-    code: 'EMP-1042',
+  E0006: {
+    ...HIERARCHY_ACCOUNTS['EMP-FI-01'],
+    code: 'E0006',
   },
 };
 
@@ -183,17 +168,19 @@ export function findUserByUsername(input: string): User {
   if (
     lower.includes('center_head') ||
     lower.includes('center head') ||
+    lower.includes('centerhead') ||
     lower.includes('rajeshwar') ||
     lower === 'ch' ||
     lower === 'ch01' ||
-    lower === 'e0001' ||
-    lower === 'e0004'
+    lower === 'e0001'
   ) {
     return HIERARCHY_ACCOUNTS['EMP-CH-01'];
   }
 
-  // 2. Project Manager matches
+  // 2. Advisor matches
   if (
+    lower.includes('advisor') ||
+    lower.includes('adv') ||
     lower.includes('project_manager') ||
     lower.includes('project manager') ||
     lower.includes('pm') ||
@@ -202,10 +189,23 @@ export function findUserByUsername(input: string): User {
     lower === 'e0002' ||
     lower === 'aiggpa'
   ) {
-    return HIERARCHY_ACCOUNTS['EMP-PM-01'];
+    return HIERARCHY_ACCOUNTS['EMP-ADV-01'];
   }
 
-  // 3. Research Analyst matches
+  // 3. Field Instructor matches
+  if (
+    lower.includes('instructor') ||
+    lower.includes('field_instructor') ||
+    lower.includes('field instructor') ||
+    lower.includes('surendra') ||
+    lower === 'fi' ||
+    lower === 'fi01' ||
+    lower === 'e0006'
+  ) {
+    return HIERARCHY_ACCOUNTS['EMP-FI-01'];
+  }
+
+  // 4. Research Analyst matches
   if (
     lower.includes('research_analyst') ||
     lower.includes('research analyst') ||
@@ -218,23 +218,24 @@ export function findUserByUsername(input: string): User {
     return HIERARCHY_ACCOUNTS['EMP-RA-01'];
   }
 
-  // 4. Fellow matches
+  // 5. Fellow matches
   if (
     lower.includes('fellow') ||
     lower.includes('aakash') ||
     lower === 'fl' ||
     lower === 'fl01' ||
-    lower === 'e0005'
+    lower === 'e0004'
   ) {
     return HIERARCHY_ACCOUNTS['EMP-FL-01'];
   }
 
-  // 5. Intern matches
+  // 6. Intern matches
   if (
     lower.includes('intern') ||
     lower.includes('rohan') ||
     lower === 'in' ||
-    lower === 'in01'
+    lower === 'in01' ||
+    lower === 'e0005'
   ) {
     return HIERARCHY_ACCOUNTS['EMP-IN-01'];
   }

@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Flag, Clock, Calendar, CheckCircle2, XCircle } from 'lucide-react';
+import {
+  Plus,
+  Edit3,
+  Flag,
+  Clock,
+  Calendar,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-react';
 import {
   MasterStore,
   type MilestoneMasterItem,
@@ -25,14 +33,16 @@ export const MilestoneMasterPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [surveyTypeFilter, setSurveyTypeFilter] = useState('All');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingMilestone, setEditingMilestone] = useState<MilestoneMasterItem | null>(null);
+  const [editingMilestone, setEditingMilestone] =
+    useState<MilestoneMasterItem | null>(null);
 
   // Form fields
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [sequence, setSequence] = useState<number>(1);
-  const [surveyType, setSurveyType] = useState<MilestoneMasterItem['surveyType']>('All');
+  const [surveyType, setSurveyType] =
+    useState<MilestoneMasterItem['surveyType']>('All');
   const [targetDaysOffset, setTargetDaysOffset] = useState<number>(7);
   const [isRequired, setIsRequired] = useState(true);
   const [isActive, setIsActive] = useState(true);
@@ -47,13 +57,19 @@ export const MilestoneMasterPage: React.FC = () => {
     const handleStoreChange = () => loadData();
     window.addEventListener('aiggpa_master_store_updated', handleStoreChange);
     return () => {
-      window.removeEventListener('aiggpa_master_store_updated', handleStoreChange);
+      window.removeEventListener(
+        'aiggpa_master_store_updated',
+        handleStoreChange
+      );
     };
   }, []);
 
   const openCreateModal = () => {
     setEditingMilestone(null);
-    const nextSeq = milestones.length > 0 ? Math.max(...milestones.map(m => m.sequence)) + 1 : 1;
+    const nextSeq =
+      milestones.length > 0
+        ? Math.max(...milestones.map(m => m.sequence)) + 1
+        : 1;
     setCode(`MS-${String(nextSeq).padStart(3, '0')}`);
     setName('');
     setDescription('');
@@ -122,9 +138,12 @@ export const MilestoneMasterPage: React.FC = () => {
       const matchesSearch =
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
+        (item.description &&
+          item.description.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesType =
-        surveyTypeFilter === 'All' || item.surveyType === 'All' || item.surveyType === surveyTypeFilter;
+        surveyTypeFilter === 'All' ||
+        item.surveyType === 'All' ||
+        item.surveyType === surveyTypeFilter;
       return matchesSearch && matchesType;
     })
     .sort((a, b) => a.sequence - b.sequence);
@@ -160,7 +179,9 @@ export const MilestoneMasterPage: React.FC = () => {
             {row.name}
           </div>
           {row.description && (
-            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{row.description}</p>
+            <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+              {row.description}
+            </p>
           )}
         </div>
       ),
@@ -181,8 +202,8 @@ export const MilestoneMasterPage: React.FC = () => {
       width: '120px',
       render: row => (
         <span className="inline-flex items-center gap-1 text-xs text-slate-600">
-          <Clock className="w-3.5 h-3.5 text-slate-400" />
-          +{row.targetDaysOffset} days
+          <Clock className="w-3.5 h-3.5 text-slate-400" />+
+          {row.targetDaysOffset} days
         </span>
       ),
     },
@@ -210,9 +231,7 @@ export const MilestoneMasterPage: React.FC = () => {
       header: 'Status',
       width: '100px',
       render: row => (
-        <StatusBadge
-          status={row.isActive ? 'active' : 'inactive'}
-        />
+        <StatusBadge status={row.isActive ? 'active' : 'inactive'} />
       ),
     },
     {
@@ -228,10 +247,20 @@ export const MilestoneMasterPage: React.FC = () => {
             className="text-slate-600 hover:text-blue-600"
           />
           <ActionIconButton
-            icon={row.isActive ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+            icon={
+              row.isActive ? (
+                <XCircle className="w-3.5 h-3.5" />
+              ) : (
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              )
+            }
             title={row.isActive ? 'Deactivate' : 'Activate'}
             onClick={() => handleToggleActive(row)}
-            className={row.isActive ? 'text-slate-400 hover:text-rose-600' : 'text-slate-400 hover:text-emerald-600'}
+            className={
+              row.isActive
+                ? 'text-slate-400 hover:text-rose-600'
+                : 'text-slate-400 hover:text-emerald-600'
+            }
           />
         </div>
       ),
@@ -279,15 +308,14 @@ export const MilestoneMasterPage: React.FC = () => {
       <AppDialog
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingMilestone ? 'Edit Survey Milestone' : 'Define Survey Milestone'}
+        title={
+          editingMilestone ? 'Edit Survey Milestone' : 'Define Survey Milestone'
+        }
         maxWidth="lg"
       >
         <form onSubmit={handleSave} className="space-y-4">
           {errorMessage && (
-            <ErrorState
-              title="Validation Error"
-              message={errorMessage}
-            />
+            <ErrorState title="Validation Error" message={errorMessage} />
           )}
 
           <div className="grid grid-cols-2 gap-4">
@@ -332,7 +360,9 @@ export const MilestoneMasterPage: React.FC = () => {
             <SelectField
               label="Applicable Survey Scope"
               value={surveyType || 'All'}
-              onChange={val => setSurveyType(val as MilestoneMasterItem['surveyType'])}
+              onChange={val =>
+                setSurveyType(val as MilestoneMasterItem['surveyType'])
+              }
               options={[
                 { value: 'All', label: 'All Survey Types' },
                 { value: 'Baseline', label: 'Baseline Surveys' },
@@ -347,7 +377,9 @@ export const MilestoneMasterPage: React.FC = () => {
               label="Target Offset (Days from Start)"
               type="number"
               value={targetDaysOffset.toString()}
-              onChange={e => setTargetDaysOffset(parseInt(e.target.value, 10) || 0)}
+              onChange={e =>
+                setTargetDaysOffset(parseInt(e.target.value, 10) || 0)
+              }
               placeholder="e.g. 14"
             />
           </div>
@@ -377,7 +409,9 @@ export const MilestoneMasterPage: React.FC = () => {
           <div className="pt-2">
             <FormActions
               onCancel={() => setIsModalOpen(false)}
-              submitLabel={editingMilestone ? 'Update Milestone' : 'Create Milestone'}
+              submitLabel={
+                editingMilestone ? 'Update Milestone' : 'Create Milestone'
+              }
             />
           </div>
         </form>

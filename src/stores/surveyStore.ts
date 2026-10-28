@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Survey Store & Initial Mock Data (TypeScript port)
  * Enhanced with Dynamic Milestone Lifecycle & Progress Tracking
@@ -120,7 +121,7 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         plannedDueDate: '2026-08-06',
         actualStartDate: '2026-08-01',
         completedAt: '2026-08-05',
-        assignedRole: 'Project Manager',
+        assignedRole: 'Advisor',
         assignedToName: 'Dr. Rajesh Verma',
         notes: 'Scope and sampling framework approved by Research Directorate.',
         updatedBy: 'Dr. Rajesh Verma (CPM)',
@@ -259,7 +260,7 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         status: 'Not Started',
         plannedStartDate: '2026-09-28',
         plannedDueDate: '2026-10-05',
-        assignedRole: 'Project Manager',
+        assignedRole: 'Advisor',
         assignedToName: 'Dr. Rajesh Verma',
       },
     ],
@@ -527,7 +528,7 @@ const DEFAULT_SURVEYS: AdminSurvey[] = [
         status: 'Not Started',
         plannedStartDate: '2026-10-10',
         plannedDueDate: '2026-10-15',
-        assignedRole: 'Project Manager',
+        assignedRole: 'Advisor',
         assignedToName: 'Priya Sharma',
       },
     ],
@@ -925,6 +926,52 @@ const SurveyStore = {
   getSurveyMilestoneProgress(surveyId: string): SurveyMilestoneProgress {
     const survey = this.getSurveyById(surveyId);
     return calculateSurveyMilestoneProgress(survey?.milestones);
+  },
+
+  submitResponse(
+    surveyId: string,
+    responseData: {
+      respondentName?: string;
+      respondentPhone?: string;
+      location?: string;
+      answers: Record<string, string | number | boolean | string[] | null>;
+      media: Record<
+        string,
+        {
+          voiceUrl?: string;
+          voiceName?: string;
+          voiceDuration?: number;
+          videoUrl?: string;
+          videoName?: string;
+          imageUrl?: string;
+          imageName?: string;
+        }
+      >;
+      submittedBy?: { name: string; role: string };
+    }
+  ): AdminSurvey | null {
+    const list = this.getSurveys();
+    const survey = list.find(s => s.id === surveyId);
+    if (!survey) return null;
+
+    survey.responsesCount = (survey.responsesCount || 0) + 1;
+    if (!survey.responses) {
+      survey.responses = [];
+    }
+    const newResponse = {
+      id: `resp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      submittedAt: new Date().toISOString(),
+      ...responseData,
+    };
+    survey.responses.push(newResponse);
+
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(list));
+      emitStoreChange();
+    } catch (e) {
+      console.error('Failed saving survey response', e);
+    }
+    return survey;
   },
 
   resetDefaults(): AdminSurvey[] {

@@ -54,7 +54,7 @@ export function useLoginForm() {
 
     if (!formData.userName.trim()) {
       setFormError(
-        'Please enter Username / Employee ID (e.g. EMP-CH-01, EMP-PM-01, EMP-RA-01, EMP-FL-01, EMP-IN-01).'
+        'Please enter Username / Employee ID (e.g. EMP-CH-01, EMP-ADV-01, EMP-RA-01, EMP-FL-01, EMP-IN-01, EMP-FI-01).'
       );
       return;
     }

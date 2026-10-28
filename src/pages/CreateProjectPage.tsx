@@ -2267,13 +2267,11 @@ export default function CreateProjectPage(): React.ReactElement {
                   Select Designation...
                 </option>
                 <option value="Center Head">Center Head</option>
-                <option value="Project Manager">Project Manager</option>
+                <option value="Advisor">Advisor</option>
                 <option value="Research Analyst">Research Analyst</option>
                 <option value="Fellow">Fellow</option>
                 <option value="Intern">Intern</option>
-                <option value="Senior Advisor">Senior Advisor</option>
-                <option value="Research Associate">Research Associate</option>
-                <option value="Field Investigator">Field Investigator</option>
+                <option value="Field Instructor">Field Instructor</option>
               </select>
             </div>
 

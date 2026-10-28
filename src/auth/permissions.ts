@@ -3,6 +3,10 @@ export type Permission =
   | 'VIEW_ASSIGNED_TASKS'
   | 'VIEW_TEAM_TASKS'
   | 'VIEW_REVIEW_QUEUE'
+  | 'CREATE_PROJECT'
+  | 'CREATE_SURVEY'
+  | 'MANAGE_MASTERS'
+  | 'REVIEW_COMPLAINTS'
   | 'CREATE_TASKS'
   | 'ASSIGN_TASKS'
   | 'EDIT_TASKS'
@@ -18,10 +22,19 @@ export type Permission =
   | 'MANAGE_REPORTING';
 
 export type HierarchyRole =
-  'Center Head' | 'Project Manager' | 'Research Analyst' | 'Fellow' | 'Intern';
+  | 'Center Head'
+  | 'Advisor'
+  | 'Fellow'
+  | 'Intern'
+  | 'Field Instructor'
+  | 'Research Analyst';
 
 export const ROLE_PERMISSIONS: Record<HierarchyRole, Permission[]> = {
   'Center Head': [
+    'CREATE_PROJECT',
+    'CREATE_SURVEY',
+    'MANAGE_MASTERS',
+    'REVIEW_COMPLAINTS',
     'VIEW_OWN_TASKS',
     'VIEW_ASSIGNED_TASKS',
     'VIEW_TEAM_TASKS',
@@ -40,7 +53,11 @@ export const ROLE_PERMISSIONS: Record<HierarchyRole, Permission[]> = {
     'VIEW_TEAM_REPORTS',
     'MANAGE_REPORTING',
   ],
-  'Project Manager': [
+  Advisor: [
+    'CREATE_PROJECT',
+    'CREATE_SURVEY',
+    'MANAGE_MASTERS',
+    'REVIEW_COMPLAINTS',
     'VIEW_OWN_TASKS',
     'VIEW_ASSIGNED_TASKS',
     'VIEW_TEAM_TASKS',
@@ -58,37 +75,27 @@ export const ROLE_PERMISSIONS: Record<HierarchyRole, Permission[]> = {
     'REASSIGN_TASKS',
     'VIEW_TEAM_REPORTS',
   ],
-  'Research Analyst': [
-    'VIEW_OWN_TASKS',
-    'VIEW_ASSIGNED_TASKS',
-    'VIEW_TEAM_TASKS',
-    'VIEW_REVIEW_QUEUE',
-    'CREATE_TASKS',
-    'ASSIGN_TASKS',
-    'EDIT_TASKS',
-    'UPDATE_PROGRESS',
-    'SUBMIT_FOR_REVIEW',
-    'SUBMIT_EVIDENCE',
-    'CONFIGURE_EVIDENCE',
-    'APPROVE_SUBMISSION',
-    'REQUEST_CHANGES',
-    'REJECT_SUBMISSION',
-    'REASSIGN_TASKS',
-    'VIEW_TEAM_REPORTS',
-  ],
+  // ── Tier 3 (Same Level): Fellow, Intern, Field Instructor, Research Analyst ──
+  // Execution tier: view allocated tasks, fill & submit deliverables, and raise grievances
   Fellow: [
     'VIEW_OWN_TASKS',
-    'VIEW_ASSIGNED_TASKS',
-    'VIEW_TEAM_TASKS',
-    'VIEW_REVIEW_QUEUE',
     'UPDATE_PROGRESS',
     'SUBMIT_FOR_REVIEW',
     'SUBMIT_EVIDENCE',
-    'APPROVE_SUBMISSION',
-    'REQUEST_CHANGES',
-    'REJECT_SUBMISSION',
   ],
   Intern: [
+    'VIEW_OWN_TASKS',
+    'UPDATE_PROGRESS',
+    'SUBMIT_FOR_REVIEW',
+    'SUBMIT_EVIDENCE',
+  ],
+  'Field Instructor': [
+    'VIEW_OWN_TASKS',
+    'UPDATE_PROGRESS',
+    'SUBMIT_FOR_REVIEW',
+    'SUBMIT_EVIDENCE',
+  ],
+  'Research Analyst': [
     'VIEW_OWN_TASKS',
     'UPDATE_PROGRESS',
     'SUBMIT_FOR_REVIEW',

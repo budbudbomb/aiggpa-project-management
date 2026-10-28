@@ -30,35 +30,35 @@ const employees = ActivityTaskStore.getEmployees();
 console.log(`Loaded ${employees.length} employees.`);
 
 const centerHead = employees.find(e => e.role === 'Center Head')!;
-const pm = employees.find(e => e.role === 'Project Manager')!;
+const advisor = employees.find(e => e.role === 'Advisor')!;
 const ra = employees.find(e => e.role === 'Research Analyst')!;
 const fellow = employees.find(
-  e => e.role === 'Fellow' && e.reportsTo === pm.id
+  e => e.role === 'Fellow' && e.reportsTo === advisor.id
 )!;
 const intern = employees.find(
   e => e.role === 'Intern' && e.reportsTo === fellow.id
 )!;
 
 console.log('Center Head:', centerHead.name);
-console.log('Project Manager:', pm.name);
+console.log('Advisor:', advisor.name);
 console.log('Research Analyst:', ra.name);
-console.log('Fellow under PM:', fellow.name);
+console.log('Fellow under Advisor:', fellow.name);
 console.log('Intern under Fellow:', intern.name);
 
-// 2. Can Center Head assign to PM?
+// 2. Can Center Head assign to Advisor?
 console.log(
-  'Can Center Head assign to PM?',
-  ActivityTaskStore.canAssignTo(centerHead, pm)
+  'Can Center Head assign to Advisor?',
+  ActivityTaskStore.canAssignTo(centerHead, advisor)
 ); // Expect true
 console.log(
   'Can Center Head assign to RA?',
   ActivityTaskStore.canAssignTo(centerHead, ra)
 ); // Expect true
 
-// 3. Can PM assign to Fellow?
+// 3. Can Advisor assign to Fellow?
 console.log(
-  'Can PM assign to assigned Fellow?',
-  ActivityTaskStore.canAssignTo(pm, fellow)
+  'Can Advisor assign to assigned Fellow?',
+  ActivityTaskStore.canAssignTo(advisor, fellow)
 ); // Expect true
 
 // 4. Can Fellow assign to Intern?
@@ -79,16 +79,16 @@ console.log(
 
 // 6. Test Task Creation
 const task1 = ActivityTaskStore.createTask({
-  title: 'Test Center Head Task for PM',
+  title: 'Test Center Head Task for Advisor',
   description: 'Test description',
   projectId: 'PRJ-01',
   projectName: 'DPI-Based Open Networks',
   creatorId: centerHead.id,
   creatorName: centerHead.name,
   creatorRole: centerHead.role,
-  assigneeId: pm.id,
-  assigneeName: pm.name,
-  assigneeRole: pm.role,
+  assigneeId: advisor.id,
+  assigneeName: advisor.name,
+  assigneeRole: advisor.role,
   reviewerId: centerHead.id,
   reviewerName: centerHead.name,
   reviewerRole: centerHead.role,
@@ -108,11 +108,19 @@ const task1 = ActivityTaskStore.createTask({
 console.log('Created task with ID:', task1.id);
 
 // 7. Test Transition to In Progress
-const tRes1 = ActivityTaskStore.transitionStatus(task1.id, 'In Progress', pm);
+const tRes1 = ActivityTaskStore.transitionStatus(
+  task1.id,
+  'In Progress',
+  advisor
+);
 console.log('Transition to In Progress:', tRes1.success, tRes1.message);
 
 // 8. Test Review Gate: Subordinate tries to complete task that requires review
-const tRes2 = ActivityTaskStore.transitionStatus(task1.id, 'Completed', pm);
+const tRes2 = ActivityTaskStore.transitionStatus(
+  task1.id,
+  'Completed',
+  advisor
+);
 console.log(
   'Subordinate tries to mark Completed (redirects to In Review):',
   tRes2.message
@@ -133,7 +141,7 @@ console.log('Task status after change request:', revisionTask.status); // Expect
 // 10. Subordinate resubmits
 const resubRes = ActivityTaskStore.resubmitTask(
   task1.id,
-  pm,
+  advisor,
   'Section 3 re-verified with latest survey figures.'
 );
 console.log('Subordinate resubmits:', resubRes.success, resubRes.message);

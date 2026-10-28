@@ -11,3 +11,14 @@ yarn-error.log*
 dist/
 *.tsbuildinfo
 docs/
+
+# Playwright testing
+/tests/
+/playwright-report/
+/test-results/
+/playwright/.cache/
+
+# Test artifacts
+*.trace.zip
+*.webm
+.playwright

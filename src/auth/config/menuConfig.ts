@@ -95,12 +95,6 @@ export const surveysMenuItem: MenuItemConfig = {
       icon: BookOpen,
       description: 'Interactive survey form & logic builder',
     },
-    {
-      label: 'Question Bank',
-      path: '/question-bank',
-      icon: Layers,
-      description: 'Central reusable question library',
-    },
   ],
 };
 
@@ -204,43 +198,41 @@ export const navigationMenuItems: MenuItemConfig[] =
   navigationMenuSections.flatMap(section => section.items);
 
 export function getMenuSectionsForRole(role?: string): MenuSectionConfig[] {
-  if (role === 'Intern') {
+  // Tier 3 Roles (All considered in the same level): Fellow, Intern, Field Instructor, Research Analyst
+  // "they only do whatever the task they had allocated by the senior means Advisor or Center Head or raise grievance and wait for the upper hierarchy response"
+  const isTier3 =
+    role === 'Fellow' ||
+    role === 'Intern' ||
+    role === 'Field Instructor' ||
+    role === 'Research Analyst';
+
+  if (isTier3) {
     return [
-      overviewSection,
       {
         title: 'Project Tasks',
         items: [
           {
             ...activitiesMenuItem,
-            label: 'My Tasks & Submissions',
-            description: 'Assigned field tasks, evidence capture & review status',
+            label: 'My Allocated Tasks',
+            description:
+              'Tasks assigned by Advisor or Center Head & submission status',
+          },
+        ],
+      },
+      {
+        title: 'Grievance Desk',
+        items: [
+          {
+            ...complaintsMenuItem,
+            label: 'My Grievances',
+            description: 'Track grievance status & senior hierarchy responses',
           },
         ],
       },
     ];
   }
 
-  if (role === 'Fellow') {
-    return [
-      overviewSection,
-      {
-        title: 'Project Governance',
-        items: [activitiesMenuItem],
-      },
-      surveysSection,
-      grievanceSection,
-    ];
-  }
-
-  if (role === 'Research Analyst') {
-    return [
-      overviewSection,
-      projectManagementSection,
-      surveysSection,
-      grievanceSection,
-    ];
-  }
-
+  // Tier 1 & 2: Center Head & Advisor have full access to Overview Dashboard, Governance, Studio, Helpdesk & Masters
   return navigationMenuSections;
 }
 
@@ -248,43 +240,46 @@ export function getMenuItemsForRole(role?: string): MenuItemConfig[] {
   return getMenuSectionsForRole(role).flatMap(section => section.items);
 }
 
-export function isRouteAllowedForRole(pathname: string, role?: string): boolean {
+export function isRouteAllowedForRole(
+  pathname: string,
+  role?: string
+): boolean {
   if (!role) return true;
 
   const normalized = pathname.toLowerCase();
 
-  // Intern route restrictions: strictly execution-focused
-  if (role === 'Intern') {
+  // Question Bank is completely removed from system
+  if (
+    normalized.startsWith('/question-bank') ||
+    normalized.startsWith('/question-list')
+  ) {
+    return false;
+  }
+
+  // Tier 3 (Fellow, Intern, Field Instructor, Research Analyst)
+  // Dashboard can ONLY be seen by Advisor and Center Head!
+  // Tier 3 can only access their tasks and grievances
+  const isTier3 =
+    role === 'Fellow' ||
+    role === 'Intern' ||
+    role === 'Field Instructor' ||
+    role === 'Research Analyst';
+
+  if (isTier3) {
     if (
+      normalized.startsWith('/dashboard') ||
+      normalized.startsWith('/surveys') ||
+      normalized.startsWith('/survey-dashboard') ||
       normalized.startsWith('/create-project') ||
       normalized.startsWith('/create-survey') ||
       normalized.startsWith('/masters') ||
-      normalized.startsWith('/question-bank')
+      normalized.startsWith('/create-complaint')
     ) {
       return false;
     }
     return true;
   }
 
-  // Fellow route restrictions: cannot create projects or manage master data
-  if (role === 'Fellow') {
-    if (
-      normalized.startsWith('/create-project') ||
-      normalized.startsWith('/masters')
-    ) {
-      return false;
-    }
-    return true;
-  }
-
-  // Research Analyst restrictions: cannot edit core master data
-  if (role === 'Research Analyst') {
-    if (normalized.startsWith('/masters')) {
-      return false;
-    }
-    return true;
-  }
-
+  // Center Head & Advisor have access to all routes
   return true;
 }
-

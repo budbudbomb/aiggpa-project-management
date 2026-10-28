@@ -23,7 +23,13 @@ interface QuestionAnalyticsCardProps {
   index: number;
 }
 
-type ChartType = 'bubble' | 'donut' | 'vertical_bar' | 'horizontal_bar' | 'table' | 'qualitative';
+type ChartType =
+  | 'bubble'
+  | 'donut'
+  | 'vertical_bar'
+  | 'horizontal_bar'
+  | 'table'
+  | 'qualitative';
 
 export default function QuestionAnalyticsCard({
   analytics,
@@ -75,7 +81,10 @@ export default function QuestionAnalyticsCard({
                     : 'text-slate-500 hover:text-slate-800'
                 )}
               >
-                <CirclesThree size={16} weight={activeChart === 'bubble' ? 'fill' : 'regular'} />
+                <CirclesThree
+                  size={16}
+                  weight={activeChart === 'bubble' ? 'fill' : 'regular'}
+                />
               </button>
 
               <button
@@ -89,7 +98,10 @@ export default function QuestionAnalyticsCard({
                     : 'text-slate-500 hover:text-slate-800'
                 )}
               >
-                <ChartPie size={16} weight={activeChart === 'donut' ? 'fill' : 'regular'} />
+                <ChartPie
+                  size={16}
+                  weight={activeChart === 'donut' ? 'fill' : 'regular'}
+                />
               </button>
 
               <button
@@ -103,7 +115,10 @@ export default function QuestionAnalyticsCard({
                     : 'text-slate-500 hover:text-slate-800'
                 )}
               >
-                <ChartBar size={16} weight={activeChart === 'vertical_bar' ? 'fill' : 'regular'} />
+                <ChartBar
+                  size={16}
+                  weight={activeChart === 'vertical_bar' ? 'fill' : 'regular'}
+                />
               </button>
 
               <button
@@ -117,7 +132,10 @@ export default function QuestionAnalyticsCard({
                     : 'text-slate-500 hover:text-slate-800'
                 )}
               >
-                <Rows size={16} weight={activeChart === 'horizontal_bar' ? 'fill' : 'regular'} />
+                <Rows
+                  size={16}
+                  weight={activeChart === 'horizontal_bar' ? 'fill' : 'regular'}
+                />
               </button>
 
               <button
@@ -131,7 +149,10 @@ export default function QuestionAnalyticsCard({
                     : 'text-slate-500 hover:text-slate-800'
                 )}
               >
-                <Table size={16} weight={activeChart === 'table' ? 'fill' : 'regular'} />
+                <Table
+                  size={16}
+                  weight={activeChart === 'table' ? 'fill' : 'regular'}
+                />
               </button>
             </div>
           )}
@@ -186,9 +207,15 @@ export default function QuestionAnalyticsCard({
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {analytics.distributions.map((dist, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                  <tr
+                    key={idx}
+                    className="hover:bg-slate-50/60 transition-colors"
+                  >
                     <td className="p-3 font-medium text-slate-800 flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: dist.color }} />
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: dist.color }}
+                      />
                       <span className="break-words">{dist.label}</span>
                     </td>
                     <td className="p-3 text-right font-semibold text-slate-700">
@@ -211,11 +238,19 @@ export default function QuestionAnalyticsCard({
           <span className="flex items-center gap-1.5 font-medium flex-wrap">
             <Info size={14} className="text-indigo-600 shrink-0" />
             {analytics.questionType === 'descriptive' ? (
-              <span className="break-words">Participant Submissions: <strong className="text-slate-900 font-bold">{analytics.participantResponses?.length || 0} Ground Entries (Voice, Video, Photo, Text)</strong></span>
+              <span className="break-words">
+                Participant Submissions:{' '}
+                <strong className="text-slate-900 font-bold">
+                  {analytics.participantResponses?.length || 0} Ground Entries
+                  (Voice, Video, Photo, Text)
+                </strong>
+              </span>
             ) : (
               <span className="break-words">
                 <span>Leading Response: </span>
-                <strong className="text-slate-900 font-bold">{analytics.topAnswer}</strong>
+                <strong className="text-slate-900 font-bold">
+                  {analytics.topAnswer}
+                </strong>
               </span>
             )}
           </span>

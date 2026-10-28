@@ -17,7 +17,6 @@ interface BubbleClusterChartProps {
  */
 export default function BubbleClusterChart({
   distributions,
-  theme = 'light',
 }: BubbleClusterChartProps) {
   // Sort distributions descending
   const sorted = [...distributions].sort((a, b) => b.percentage - a.percentage);
@@ -42,7 +41,7 @@ export default function BubbleClusterChart({
   // Item 1: bottom-right
   // Item 2: top-right
   // Item 3, 4: small top bubbles
-  const getBubblePosition = (index: number, r: number) => {
+  const getBubblePosition = (index: number, _r: number) => {
     switch (index) {
       case 0:
         return { x: centerX - 35, y: centerY + 15 };
@@ -54,9 +53,13 @@ export default function BubbleClusterChart({
         return { x: centerX - 10, y: centerY - 65 };
       case 4:
         return { x: centerX - 55, y: centerY - 72 };
-      default:
+      default: {
         const angle = (index * 2 * Math.PI) / sorted.length;
-        return { x: centerX + Math.cos(angle) * 75, y: centerY + Math.sin(angle) * 75 };
+        return {
+          x: centerX + Math.cos(angle) * 75,
+          y: centerY + Math.sin(angle) * 75,
+        };
+      }
     }
   };
 
@@ -64,13 +67,15 @@ export default function BubbleClusterChart({
     <div className="flex flex-col items-center justify-between w-full min-w-0 max-w-full h-full p-1 sm:p-2 overflow-hidden">
       {/* ── SVG Bubble Cluster ── */}
       <div className="relative w-full max-w-[240px] sm:max-w-[300px] aspect-[4/3] flex items-center justify-center">
-        <svg
-          viewBox="-10 -10 340 260"
-          className="w-full h-full drop-shadow-xs"
-        >
+        <svg viewBox="-10 -10 340 260" className="w-full h-full drop-shadow-xs">
           <defs>
             <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.12" />
+              <feDropShadow
+                dx="0"
+                dy="2"
+                stdDeviation="3"
+                floodOpacity="0.12"
+              />
             </filter>
           </defs>
 
@@ -117,7 +122,10 @@ export default function BubbleClusterChart({
       {/* ── Star-bullet Legend matching Screenshot 1 ── */}
       <div className="w-full min-w-0 max-w-full pt-3 mt-1 border-t border-slate-100 flex flex-col gap-1.5 px-0.5 sm:px-2">
         {sorted.map((item, idx) => (
-          <div key={idx} className="flex items-center justify-between text-xs group w-full min-w-0">
+          <div
+            key={idx}
+            className="flex items-center justify-between text-xs group w-full min-w-0"
+          >
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 pr-2">
               <Star
                 size={13}
@@ -130,8 +138,12 @@ export default function BubbleClusterChart({
               </span>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-slate-400 text-[10px] sm:text-[11px]">({item.count})</span>
-              <span className="font-bold text-slate-900 w-8 sm:w-9 text-right text-xs sm:text-sm">{item.percentage}%</span>
+              <span className="text-slate-400 text-[10px] sm:text-[11px]">
+                ({item.count})
+              </span>
+              <span className="font-bold text-slate-900 w-8 sm:w-9 text-right text-xs sm:text-sm">
+                {item.percentage}%
+              </span>
             </div>
           </div>
         ))}

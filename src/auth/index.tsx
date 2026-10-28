@@ -12,8 +12,8 @@ import ActivitiesPage from '../pages/ActivitiesPage';
 import SurveysPage from '../pages/SurveysPage';
 import CreateSurveyPage from '../pages/CreateSurveyPage';
 import SurveyDashboardPage from '../pages/SurveyDashboardPage';
+import FillSurveyPage from '../pages/FillSurveyPage';
 import ComplaintsPage from '../pages/ComplaintsPage';
-import QuestionBankPage from '../pages/QuestionBankPage';
 import {
   EmployeeMasterPage,
   CenterMasterPage,
@@ -25,12 +25,30 @@ import {
   MilestoneMasterPage,
 } from '../pages/masters';
 
+function RootRedirect() {
+  const { user } = useAuthStore();
+  const isTier3 =
+    user?.role === 'Fellow' ||
+    user?.role === 'Intern' ||
+    user?.role === 'Field Instructor' ||
+    user?.role === 'Research Analyst';
+
+  return <Navigate to={isTier3 ? '/activities' : '/dashboard'} replace />;
+}
+
 function RoleRouteGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuthStore();
   const location = useLocation();
 
   if (!isRouteAllowedForRole(location.pathname, user?.role)) {
-    const fallback = user?.defaultLandingPath || '/home';
+    const isTier3 =
+      user?.role === 'Fellow' ||
+      user?.role === 'Intern' ||
+      user?.role === 'Field Instructor' ||
+      user?.role === 'Research Analyst';
+    const fallback = isTier3
+      ? '/activities'
+      : user?.defaultLandingPath || '/dashboard';
     return <Navigate to={fallback} replace />;
   }
 
@@ -53,7 +71,7 @@ export function AppLayoutFeatures() {
       <RoleRouteGuard>
         <Routes>
           {/* Landing / Home */}
-          <Route path="" element={<Navigate to="/create-project" replace />} />
+          <Route path="" element={<RootRedirect />} />
           <Route path="home" element={<Features />} />
 
           {/* Project Management Core Suite */}
@@ -61,10 +79,26 @@ export function AppLayoutFeatures() {
           <Route path="create-project" element={<CreateProjectPage />} />
           <Route path="activities" element={<ActivitiesPage />} />
           <Route path="surveys" element={<SurveysPage />} />
-          <Route path="surveys/:id/dashboard" element={<SurveyDashboardPage />} />
+          <Route path="surveys/:id" element={<FillSurveyPage />} />
+          <Route path="surveys/:id/fill" element={<FillSurveyPage />} />
+          <Route
+            path="surveys/:id/dashboard"
+            element={<SurveyDashboardPage />}
+          />
           <Route path="create-survey" element={<CreateSurveyPage />} />
           <Route path="complaints" element={<ComplaintsPage />} />
-          <Route path="question-bank" element={<QuestionBankPage />} />
+          <Route
+            path="create-complaint"
+            element={<Navigate to="/complaints" replace />}
+          />
+          <Route
+            path="complaints/create"
+            element={<Navigate to="/complaints" replace />}
+          />
+          <Route
+            path="question-bank"
+            element={<Navigate to="/surveys" replace />}
+          />
 
           {/* Master Data Management */}
           <Route
@@ -90,20 +124,17 @@ export function AppLayoutFeatures() {
             path="masters/grievance-categories"
             element={<GrievanceCategoryMasterPage />}
           />
-          <Route
-            path="masters/milestones"
-            element={<MilestoneMasterPage />}
-          />
+          <Route path="masters/milestones" element={<MilestoneMasterPage />} />
 
           {/* Legacy redirects & aliases */}
           <Route path="budget" element={<BudgetRedirect />} />
           <Route
             path="question-list"
-            element={<Navigate to="/question-bank#list" replace />}
+            element={<Navigate to="/surveys" replace />}
           />
 
           {/* Fallback */}
-          <Route path="*" element={<Navigate to="/create-project" replace />} />
+          <Route path="*" element={<RootRedirect />} />
         </Routes>
       </RoleRouteGuard>
     </AppLayout>

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Eye, Clock, Check, X, AlignLeft } from 'lucide-react';
 import ActivityTaskStore, {
-  ActivityTask,
-  TaskAssigneeReadStatus,
+  type ActivityTask,
+  type TaskAssigneeReadStatus,
 } from '@/stores/activityTaskStore';
 
 interface TaskReadReceiptsModalProps {

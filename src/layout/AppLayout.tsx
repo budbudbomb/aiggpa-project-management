@@ -12,7 +12,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/surveys': 'AIGGPA - Survey Management',
   '/create-survey': 'AIGGPA - Create Survey',
   '/complaints': 'AIGGPA - Complaint Management',
-  '/question-bank': 'AIGGPA - Question Studio & Central Bank',
 };
 
 export default function AppLayout(): React.ReactElement {
@@ -22,7 +21,9 @@ export default function AppLayout(): React.ReactElement {
   useEffect(() => {
     const title = PAGE_TITLES[location.pathname];
     if (title) document.title = title;
-    applySidebarState(document.documentElement.classList.contains('sidebar-collapsed'));
+    applySidebarState(
+      document.documentElement.classList.contains('sidebar-collapsed')
+    );
   }, [location.pathname]);
 
   const mainStyle = layout.mainStyle ?? { paddingTop: 18, paddingBottom: 40 };
@@ -32,7 +33,10 @@ export default function AppLayout(): React.ReactElement {
       <Sidebar />
       <div className="main-wrapper">
         <Topbar config={layout.topbar} />
-        <main className={`workspace-content settings-container${layout.mainClass ? ` ${layout.mainClass}` : ''}`} style={mainStyle}>
+        <main
+          className={`workspace-content settings-container${layout.mainClass ? ` ${layout.mainClass}` : ''}`}
+          style={mainStyle}
+        >
           <Outlet />
         </main>
       </div>

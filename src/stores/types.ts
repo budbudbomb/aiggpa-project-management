@@ -178,7 +178,7 @@ export interface FieldSurvey {
   [key: string]: any;
 }
 
-export interface MeetingLike extends Meeting {}
+export type MeetingLike = Meeting;
 
 // ── Admin Survey Studio (aiggpa_admin_surveys) ──
 
@@ -282,6 +282,26 @@ export interface AdminSurvey {
 
 // ── Complaints (aiggpa_complaints_data) ──
 
+export type ComplaintCategory =
+  | 'stipend'
+  | 'field_travel'
+  | 'workload_tasks'
+  | 'infrastructure'
+  | 'interpersonal'
+  | 'other';
+
+export type ComplaintPriority = 'urgent' | 'high' | 'medium' | 'low';
+export type ComplaintStatus = 'pending' | 'resolved' | 'rejected';
+
+export interface ComplaintEscalation {
+  forwardedBy: string;
+  forwarderRole: 'intern' | 'fellow' | 'pc' | 'spm_cpm' | string;
+  forwardedToRole: 'fellow' | 'pc' | 'spm_cpm' | 'state_committee' | string;
+  forwardedToLabel: string;
+  reason: string;
+  forwardedAt: string;
+}
+
 export interface Complaint {
   id: string;
   ticketNumber: string;
@@ -296,9 +316,12 @@ export interface Complaint {
   description?: string;
   incidentDate?: string;
   documentName?: string | null;
+  documentUrl?: string;
   voiceNoteUrl?: string;
   voiceNoteName?: string | null;
   voiceNoteDuration?: number | null;
+  videoNoteUrl?: string;
+  videoNoteName?: string | null;
   status: string;
   appliedAt: string;
   targetRole?: string;
@@ -310,5 +333,26 @@ export interface Complaint {
   forwardedBy?: string;
   forwardComment?: string;
   forwardedAt?: string;
+  escalations?: ComplaintEscalation[];
   [key: string]: any;
+}
+
+export interface CreateComplaintRequest {
+  category: string;
+  priority?: string;
+  subject: string;
+  description: string;
+  incidentDate?: string;
+  documentName?: string | null;
+  documentUrl?: string;
+  voiceNoteUrl?: string;
+  voiceNoteName?: string | null;
+  voiceNoteDuration?: number | null;
+  videoNoteUrl?: string;
+  videoNoteName?: string | null;
+}
+
+export interface ReviewComplaintRequest {
+  status: 'resolved' | 'rejected';
+  comment?: string;
 }

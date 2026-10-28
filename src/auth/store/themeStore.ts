@@ -2,12 +2,7 @@ import { create } from 'zustand';
 
 export type ThemeMode = 'light' | 'dark';
 export type PrimaryColor =
-  | 'indigo'
-  | 'violet'
-  | 'emerald'
-  | 'rose'
-  | 'amber'
-  | 'sky';
+  'indigo' | 'violet' | 'emerald' | 'rose' | 'amber' | 'sky';
 export type BorderRadiusPreset = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 export type LayoutType = 'sidebar' | 'navbar' | 'smart';
 export type LayoutStyle = 'flat' | 'detached';

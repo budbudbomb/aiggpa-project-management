@@ -16,7 +16,7 @@ const MENU_ITEMS: MenuItem[] = [
     label: 'Dashboard',
     icon: 'pi-th-large',
     tooltip: 'Dashboard',
-    isActive: (pathname) => pathname === '/dashboard',
+    isActive: pathname => pathname === '/dashboard',
   },
   {
     to: '/create-project',
@@ -24,7 +24,8 @@ const MENU_ITEMS: MenuItem[] = [
     icon: 'pi-plus-circle',
     tooltip: 'Create Project',
     isActive: (pathname, search) =>
-      pathname === '/create-project' && new URLSearchParams(search).get('view') !== 'budget',
+      pathname === '/create-project' &&
+      new URLSearchParams(search).get('view') !== 'budget',
   },
   {
     to: '/create-project?view=budget',
@@ -32,28 +33,29 @@ const MENU_ITEMS: MenuItem[] = [
     icon: 'pi-wallet',
     tooltip: 'Add Budget',
     isActive: (pathname, search) =>
-      pathname === '/create-project' && new URLSearchParams(search).get('view') === 'budget',
+      pathname === '/create-project' &&
+      new URLSearchParams(search).get('view') === 'budget',
   },
   {
     to: '/activities',
     label: 'Tasks',
     icon: 'pi-check-square',
     tooltip: 'Tasks & Activities',
-    isActive: (pathname) => pathname === '/activities',
+    isActive: pathname => pathname === '/activities',
   },
   {
     to: '/surveys',
     label: 'Surveys',
     icon: 'pi-file-edit',
     tooltip: 'Surveys',
-    isActive: (pathname) => pathname === '/surveys',
+    isActive: pathname => pathname === '/surveys',
   },
   {
     to: '/complaints',
     label: 'Complaints',
     icon: 'pi-shield',
     tooltip: 'Complaints',
-    isActive: (pathname) => pathname === '/complaints',
+    isActive: pathname => pathname === '/complaints',
   },
 ];
 
@@ -71,14 +73,20 @@ export default function Sidebar(): React.ReactElement {
             style={{ cursor: 'pointer' }}
             onClick={() => {
               if (
-                document.documentElement.classList.contains('sidebar-collapsed') ||
+                document.documentElement.classList.contains(
+                  'sidebar-collapsed'
+                ) ||
                 document.body.classList.contains('sidebar-collapsed')
               ) {
                 toggleSidebarCollapse();
               }
             }}
           >
-            <img src="assets/logo.png" alt="AIGGPA Logo" className="brand-logo-img" />
+            <img
+              src="assets/logo.png"
+              alt="AIGGPA Logo"
+              className="brand-logo-img"
+            />
           </div>
           <div className="aiggpa-brand-text">
             <span className="brand-title">AIGGPA</span>
@@ -97,7 +105,7 @@ export default function Sidebar(): React.ReactElement {
       </div>
 
       <nav className="sidebar-menu">
-        {MENU_ITEMS.map((item) => {
+        {MENU_ITEMS.map(item => {
           const active = item.isActive(location.pathname, location.search);
           return (
             <NavLink
@@ -119,7 +127,10 @@ export default function Sidebar(): React.ReactElement {
       <div className="sidebar-footer">
         <div className="user-profile-pill">
           <div className="profile-left">
-            <div className="profile-avatar-wrap" data-tooltip="AIGGPA — Center Head">
+            <div
+              className="profile-avatar-wrap"
+              data-tooltip="AIGGPA — Center Head"
+            >
               <div className="profile-avatar" id="sidebarAvatar">
                 AI
               </div>

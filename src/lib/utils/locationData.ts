@@ -34,16 +34,32 @@ export const MP_LOCATION_HIERARCHY: LocationHierarchyNode[] = [
             id: 'blk-bhopal-rural',
             name: 'Bhopal Rural',
             panchayats: [
-              { id: 'gp-kolar-03', name: 'Kolar Ward 3', villages: ['Kolar Kalan', 'Kolar Gaon', 'Mandideep Border'] },
-              { id: 'gp-fanda-01', name: 'Fanda Kalan', villages: ['Fanda Kalan', 'Fanda Khurd', 'Bairagarh Chichali'] },
+              {
+                id: 'gp-kolar-03',
+                name: 'Kolar Ward 3',
+                villages: ['Kolar Kalan', 'Kolar Gaon', 'Mandideep Border'],
+              },
+              {
+                id: 'gp-fanda-01',
+                name: 'Fanda Kalan',
+                villages: ['Fanda Kalan', 'Fanda Khurd', 'Bairagarh Chichali'],
+              },
             ],
           },
           {
             id: 'blk-berasia',
             name: 'Berasia',
             panchayats: [
-              { id: 'gp-berasia-01', name: 'Berasia Dehat', villages: ['Berasia Gaon', 'Gunga', 'Dillod'] },
-              { id: 'gp-berasia-02', name: 'Runaha', villages: ['Runaha', 'Nazirabad', 'Lalariya'] },
+              {
+                id: 'gp-berasia-01',
+                name: 'Berasia Dehat',
+                villages: ['Berasia Gaon', 'Gunga', 'Dillod'],
+              },
+              {
+                id: 'gp-berasia-02',
+                name: 'Runaha',
+                villages: ['Runaha', 'Nazirabad', 'Lalariya'],
+              },
             ],
           },
         ],
@@ -56,23 +72,43 @@ export const MP_LOCATION_HIERARCHY: LocationHierarchyNode[] = [
             id: 'blk-ashta',
             name: 'Ashta',
             panchayats: [
-              { id: 'gp-kothri', name: 'Kothri', villages: ['Kothri Kalan', 'Kothri Khurd', 'Badnagar'] },
-              { id: 'gp-metwada', name: 'Metwada', villages: ['Metwada', 'Hingoni', 'Khajuria'] },
+              {
+                id: 'gp-kothri',
+                name: 'Kothri',
+                villages: ['Kothri Kalan', 'Kothri Khurd', 'Badnagar'],
+              },
+              {
+                id: 'gp-metwada',
+                name: 'Metwada',
+                villages: ['Metwada', 'Hingoni', 'Khajuria'],
+              },
             ],
           },
           {
             id: 'blk-budhni',
             name: 'Budhni',
             panchayats: [
-              { id: 'gp-shahganj', name: 'Shahganj', villages: ['Shahganj Village', 'Bakra', 'Midghat'] },
-              { id: 'gp-bakhtra', name: 'Bakhtra', villages: ['Bakhtra', 'Joshipur', 'Kalyanpur'] },
+              {
+                id: 'gp-shahganj',
+                name: 'Shahganj',
+                villages: ['Shahganj Village', 'Bakra', 'Midghat'],
+              },
+              {
+                id: 'gp-bakhtra',
+                name: 'Bakhtra',
+                villages: ['Bakhtra', 'Joshipur', 'Kalyanpur'],
+              },
             ],
           },
           {
             id: 'blk-sehore-rural',
             name: 'Sehore Rural',
             panchayats: [
-              { id: 'gp-bilkisganj', name: 'Bilkisganj', villages: ['Bilkisganj', 'Mahuakheda', 'Shyampur'] },
+              {
+                id: 'gp-bilkisganj',
+                name: 'Bilkisganj',
+                villages: ['Bilkisganj', 'Mahuakheda', 'Shyampur'],
+              },
             ],
           },
         ],
@@ -85,7 +121,11 @@ export const MP_LOCATION_HIERARCHY: LocationHierarchyNode[] = [
             id: 'blk-sanchi',
             name: 'Sanchi',
             panchayats: [
-              { id: 'gp-sanchi-01', name: 'Sanchi Dehat', villages: ['Sanchi Gaon', 'Nagori', 'Vidisha Border'] },
+              {
+                id: 'gp-sanchi-01',
+                name: 'Sanchi Dehat',
+                villages: ['Sanchi Gaon', 'Nagori', 'Vidisha Border'],
+              },
             ],
           },
         ],
@@ -104,15 +144,27 @@ export const MP_LOCATION_HIERARCHY: LocationHierarchyNode[] = [
             id: 'blk-ujjain-urban',
             name: 'Ujjain Urban',
             panchayats: [
-              { id: 'gp-bharkhedi', name: 'Bharkhedi', villages: ['Bharkhedi Kalan', 'Bharkhedi Khurd', 'Lekoda'] },
-              { id: 'gp-tajpur', name: 'Tajpur', villages: ['Tajpur', 'Panthpiplai', 'Ghattia'] },
+              {
+                id: 'gp-bharkhedi',
+                name: 'Bharkhedi',
+                villages: ['Bharkhedi Kalan', 'Bharkhedi Khurd', 'Lekoda'],
+              },
+              {
+                id: 'gp-tajpur',
+                name: 'Tajpur',
+                villages: ['Tajpur', 'Panthpiplai', 'Ghattia'],
+              },
             ],
           },
           {
             id: 'blk-tarana',
             name: 'Tarana',
             panchayats: [
-              { id: 'gp-kayatha', name: 'Kayatha', villages: ['Kayatha', 'Rupakhedi', 'Sumrakheda'] },
+              {
+                id: 'gp-kayatha',
+                name: 'Kayatha',
+                villages: ['Kayatha', 'Rupakhedi', 'Sumrakheda'],
+              },
             ],
           },
         ],
@@ -125,7 +177,11 @@ export const MP_LOCATION_HIERARCHY: LocationHierarchyNode[] = [
             id: 'blk-sonkatch',
             name: 'Sonkatch',
             panchayats: [
-              { id: 'gp-bhaurasa', name: 'Bhaurasa', villages: ['Bhaurasa', 'Gandharvpur', 'Pipalrawan'] },
+              {
+                id: 'gp-bhaurasa',
+                name: 'Bhaurasa',
+                villages: ['Bhaurasa', 'Gandharvpur', 'Pipalrawan'],
+              },
             ],
           },
         ],
@@ -144,15 +200,27 @@ export const MP_LOCATION_HIERARCHY: LocationHierarchyNode[] = [
             id: 'blk-sanwer',
             name: 'Sanwer',
             panchayats: [
-              { id: 'gp-sanwer-kalan', name: 'Sanwer Kalan', villages: ['Sanwer Kalan', 'Dharmat', 'Ajnod'] },
-              { id: 'gp-chandrawatiganj', name: 'Chandrawatiganj', villages: ['Chandrawatiganj', 'Barlai', 'Kshipra'] },
+              {
+                id: 'gp-sanwer-kalan',
+                name: 'Sanwer Kalan',
+                villages: ['Sanwer Kalan', 'Dharmat', 'Ajnod'],
+              },
+              {
+                id: 'gp-chandrawatiganj',
+                name: 'Chandrawatiganj',
+                villages: ['Chandrawatiganj', 'Barlai', 'Kshipra'],
+              },
             ],
           },
           {
             id: 'blk-depalpur',
             name: 'Depalpur',
             panchayats: [
-              { id: 'gp-depalpur-05', name: 'Depalpur Ward 5', villages: ['Depalpur Ward 5', 'Gautampura', 'Betma'] },
+              {
+                id: 'gp-depalpur-05',
+                name: 'Depalpur Ward 5',
+                villages: ['Depalpur Ward 5', 'Gautampura', 'Betma'],
+              },
             ],
           },
         ],
@@ -165,7 +233,11 @@ export const MP_LOCATION_HIERARCHY: LocationHierarchyNode[] = [
             id: 'blk-dhar-rural',
             name: 'Dhar Rural',
             panchayats: [
-              { id: 'gp-pithampur-02', name: 'Pithampur Sector 2', villages: ['Pithampur Sector 2', 'Sagore', 'Kheda'] },
+              {
+                id: 'gp-pithampur-02',
+                name: 'Pithampur Sector 2',
+                villages: ['Pithampur Sector 2', 'Sagore', 'Kheda'],
+              },
             ],
           },
         ],
@@ -184,8 +256,16 @@ export const MP_LOCATION_HIERARCHY: LocationHierarchyNode[] = [
             id: 'blk-gwalior-a',
             name: 'Gwalior Block A',
             panchayats: [
-              { id: 'gp-bhitarwar-khurd', name: 'Bhitarwar Khurd', villages: ['Bhitarwar Khurd', 'Mohna', 'Antari'] },
-              { id: 'gp-dabra', name: 'Dabra Dehat', villages: ['Dabra Gaon', 'Chinor', 'Picchore'] },
+              {
+                id: 'gp-bhitarwar-khurd',
+                name: 'Bhitarwar Khurd',
+                villages: ['Bhitarwar Khurd', 'Mohna', 'Antari'],
+              },
+              {
+                id: 'gp-dabra',
+                name: 'Dabra Dehat',
+                villages: ['Dabra Gaon', 'Chinor', 'Picchore'],
+              },
             ],
           },
         ],
@@ -204,7 +284,11 @@ export const MP_LOCATION_HIERARCHY: LocationHierarchyNode[] = [
             id: 'blk-sihora',
             name: 'Sihora',
             panchayats: [
-              { id: 'gp-sihora-khurd', name: 'Sihora Khurd', villages: ['Sihora Khurd', 'Majholi', 'Panagar'] },
+              {
+                id: 'gp-sihora-khurd',
+                name: 'Sihora Khurd',
+                villages: ['Sihora Khurd', 'Majholi', 'Panagar'],
+              },
             ],
           },
         ],
@@ -217,7 +301,11 @@ export const MP_LOCATION_HIERARCHY: LocationHierarchyNode[] = [
             id: 'blk-gadarwara',
             name: 'Gadarwara',
             panchayats: [
-              { id: 'gp-narsinghpur-basti', name: 'Narsinghpur Basti', villages: ['Narsinghpur Basti', 'Kareli', 'Gotegaon'] },
+              {
+                id: 'gp-narsinghpur-basti',
+                name: 'Narsinghpur Basti',
+                villages: ['Narsinghpur Basti', 'Kareli', 'Gotegaon'],
+              },
             ],
           },
         ],

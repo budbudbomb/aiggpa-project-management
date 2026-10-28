@@ -16,7 +16,11 @@ export function SkeletonCard({ className, rows = 3 }: SkeletonCardProps) {
         </div>
       </div>
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="skeleton h-3 rounded" style={{ width: `${70 + (i % 3) * 10}%` }} />
+        <div
+          key={i}
+          className="skeleton h-3 rounded"
+          style={{ width: `${70 + (i % 3) * 10}%` }}
+        />
       ))}
     </div>
   );
@@ -28,12 +32,18 @@ export function SkeletonTable({ rows = 5 }: { rows?: number }) {
       {/* Header */}
       <div className="px-5 py-3 border-b border-slate-100 flex gap-4">
         {[3, 2, 2, 1.5, 1].map((w, i) => (
-          <div key={i} className={`skeleton h-3 rounded flex-${Math.round(w)}`} />
+          <div
+            key={i}
+            className={`skeleton h-3 rounded flex-${Math.round(w)}`}
+          />
         ))}
       </div>
       {/* Rows */}
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="px-5 py-4 border-b border-slate-50 flex gap-4 items-center">
+        <div
+          key={i}
+          className="px-5 py-4 border-b border-slate-50 flex gap-4 items-center"
+        >
           <div className="skeleton w-8 h-8 rounded-full shrink-0" />
           <div className="skeleton h-3 rounded flex-1 max-w-[180px]" />
           <div className="skeleton h-3 rounded w-20" />
@@ -48,7 +58,9 @@ export function SkeletonTable({ rows = 5 }: { rows?: number }) {
 
 export function SkeletonStatGrid({ count = 4 }: { count?: number }) {
   return (
-    <div className={`grid gap-2.5 sm:gap-4 grid-cols-2 lg:grid-cols-${Math.min(count, 4)}`}>
+    <div
+      className={`grid gap-2.5 sm:gap-4 grid-cols-2 lg:grid-cols-${Math.min(count, 4)}`}
+    >
       {Array.from({ length: count }).map((_, i) => (
         <SkeletonCard key={i} rows={1} />
       ))}

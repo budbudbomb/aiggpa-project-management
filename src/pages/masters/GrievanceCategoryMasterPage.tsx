@@ -283,9 +283,7 @@ export const GrievanceCategoryMasterPage: React.FC = () => {
               label="Designated Resolver Role"
               options={[
                 { value: 'Center Head', label: 'Center Head' },
-                { value: 'Project Manager', label: 'Project Manager' },
-                { value: 'Fellow', label: 'Fellow' },
-                { value: 'Admin Officer', label: 'Admin Officer' },
+                { value: 'Advisor', label: 'Advisor' },
               ]}
               value={targetRole}
               onChange={setTargetRole}

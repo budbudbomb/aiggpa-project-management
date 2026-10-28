@@ -85,18 +85,13 @@ export default function EmployeeMasterPage(): React.ReactElement {
   // Supervisors available for selected role (respecting hierarchy)
   const availableSupervisors = useMemo(() => {
     if (formRole === 'Center Head') return [];
-    if (formRole === 'Project Manager' || formRole === 'Research Analyst') {
+    if (formRole === 'Advisor') {
       return employees.filter(e => e.role === 'Center Head');
     }
-    if (formRole === 'Fellow') {
-      return employees.filter(
-        e => e.role === 'Project Manager' || e.role === 'Research Analyst'
-      );
-    }
-    if (formRole === 'Intern') {
-      return employees.filter(e => e.role === 'Fellow');
-    }
-    return [];
+    // Tier 3 (Fellow, Intern, Field Instructor, Research Analyst) report to Advisor or Center Head
+    return employees.filter(
+      e => e.role === 'Advisor' || e.role === 'Center Head'
+    );
   }, [employees, formRole]);
 
   const openCreateModal = () => {
@@ -107,8 +102,7 @@ export default function EmployeeMasterPage(): React.ReactElement {
     setFormRole('Fellow');
     setFormDesignation('Research Fellow');
     setFormCenterId(centers[0]?.id || 'CTR-01');
-    const defaultSup =
-      employees.find(e => e.role === 'Project Manager')?.id || '';
+    const defaultSup = employees.find(e => e.role === 'Advisor')?.id || '';
     setFormReportsTo(defaultSup);
     setFormError(null);
     setIsModalOpen(true);
@@ -246,8 +240,7 @@ export default function EmployeeMasterPage(): React.ReactElement {
             variant={
               emp.role === 'Center Head'
                 ? 'primary'
-                : emp.role === 'Project Manager' ||
-                    emp.role === 'Research Analyst'
+                : emp.role === 'Advisor' || emp.role === 'Research Analyst'
                   ? 'info'
                   : 'secondary'
             }
@@ -371,10 +364,11 @@ export default function EmployeeMasterPage(): React.ReactElement {
               options={[
                 { value: 'all', label: 'All Roles' },
                 { value: 'Center Head', label: 'Center Head' },
-                { value: 'Project Manager', label: 'Project Manager' },
+                { value: 'Advisor', label: 'Advisor' },
                 { value: 'Research Analyst', label: 'Research Analyst' },
                 { value: 'Fellow', label: 'Fellow' },
                 { value: 'Intern', label: 'Intern' },
+                { value: 'Field Instructor', label: 'Field Instructor' },
               ]}
               value={roleFilter}
               onChange={setRoleFilter}
@@ -470,10 +464,11 @@ export default function EmployeeMasterPage(): React.ReactElement {
               label="Organizational Hierarchy Role"
               options={[
                 { value: 'Center Head', label: 'Center Head' },
-                { value: 'Project Manager', label: 'Project Manager' },
+                { value: 'Advisor', label: 'Advisor' },
                 { value: 'Research Analyst', label: 'Research Analyst' },
                 { value: 'Fellow', label: 'Fellow' },
                 { value: 'Intern', label: 'Intern' },
+                { value: 'Field Instructor', label: 'Field Instructor' },
               ]}
               value={formRole}
               onChange={val => {

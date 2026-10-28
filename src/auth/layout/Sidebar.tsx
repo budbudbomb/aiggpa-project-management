@@ -318,7 +318,9 @@ export default function Sidebar({
                                               end
                                               className={({ isActive }) =>
                                                 `relative flex items-center gap-2.5 pl-3 pr-2 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 ${
-                                                  isFilled ? isActive ? 'bg-white text-[#2D247D] shadow-sm font-bold'
+                                                  isFilled
+                                                    ? isActive
+                                                      ? 'bg-white text-[#2D247D] shadow-sm font-bold'
                                                       : 'text-white/70 hover:bg-white/10 hover:text-white'
                                                     : isTinted
                                                       ? isActive
@@ -358,7 +360,9 @@ export default function Sidebar({
                                 end
                                 className={({ isActive }) =>
                                   `relative flex items-center gap-2.5 pl-3 pr-2.5 py-2 text-[13px] font-medium rounded-xl transition-all duration-150 ${
-                                    isFilled ? isActive ? 'bg-white text-[#2D247D] shadow-sm font-bold'
+                                    isFilled
+                                      ? isActive
+                                        ? 'bg-white text-[#2D247D] shadow-sm font-bold'
                                         : 'text-white/70 hover:bg-white/10 hover:text-white'
                                       : isTinted
                                         ? isActive
@@ -403,7 +407,9 @@ export default function Sidebar({
                           ? 'px-3.5 py-2.5 rounded-xl text-[13px] font-medium w-full gap-3'
                           : 'w-11 h-11 justify-center mx-auto rounded-xl'
                       } ${
-                        isFilled ? isActive ? 'bg-white text-[#2D247D] shadow-sm font-bold'
+                        isFilled
+                          ? isActive
+                            ? 'bg-white text-[#2D247D] shadow-sm font-bold'
                             : 'text-white/80 hover:bg-white/15 hover:text-white'
                           : isTinted
                             ? isActive

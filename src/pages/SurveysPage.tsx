@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import surveysCss from '../styles/surveys.css?inline';
 import { usePageStyles } from '../lib/usePageStyles';
 import { useStoreData } from '../lib/storeEvents';
 import SurveyStore from '../stores/surveyStore';
-import {
-  ActivityTaskStore,
-  type ActivityTask,
-} from '../stores/activityTaskStore';
+import { ActivityTaskStore } from '../stores/activityTaskStore';
 import type { AdminSurvey, SurveyQuestion } from '../stores/types';
 import { PageContainer, PageHeader, AppButton } from '../components';
-import { Plus, FileText, CheckSquare, ExternalLink } from 'lucide-react';
+import { Plus, FileText } from 'lucide-react';
+import SurveyFillModal from '../components/surveys/SurveyFillModal';
+import { useAuthStore } from '../auth/store/authStore';
 
 function formatDate(dStr?: string): string {
   if (!dStr) return '';
@@ -95,17 +94,21 @@ function getQuestionTypeLabel(type?: string): string {
 }
 
 export default function SurveysPage(): React.ReactElement {
+  const { user } = useAuthStore();
+
   usePageStyles(surveysCss);
   const version = useStoreData();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentFilter, setCurrentFilter] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [fillSurvey, setFillSurvey] = useState<AdminSurvey | null>(null);
   const [modalTab, setModalTab] = useState<'questions' | 'feedback' | 'tasks'>(
     'questions'
   );
 
   const selectedSurveyTasks = useMemo(() => {
+    void version;
     if (!selectedId) return [];
     return ActivityTaskStore.getTasksForSurvey(selectedId);
   }, [selectedId, version]);
@@ -181,6 +184,17 @@ export default function SurveysPage(): React.ReactElement {
     color: activeTab ? '#ffffff' : '#475569',
   });
 
+  const canAccessSurveys =
+    user?.role === 'Center Head' ||
+    user?.role === 'Advisor' ||
+    user?.role === 'Super Admin';
+
+  if (!canAccessSurveys) {
+    return <Navigate to="/activities" replace />;
+  }
+
+  const canCreateSurvey = canAccessSurveys;
+
   return (
     <PageContainer>
       <PageHeader
@@ -189,14 +203,16 @@ export default function SurveysPage(): React.ReactElement {
         icon={<FileText className="w-5 h-5" />}
         breadcrumbs={[{ label: 'Field Research' }, { label: 'Surveys' }]}
         actions={
-          <Link to="/create-survey">
-            <AppButton
-              variant="primary"
-              leftIcon={<Plus className="w-4 h-4" />}
-            >
-              Create Survey
-            </AppButton>
-          </Link>
+          canCreateSurvey ? (
+            <Link to="/create-survey">
+              <AppButton
+                variant="primary"
+                leftIcon={<Plus className="w-4 h-4" />}
+              >
+                Create Survey
+              </AppButton>
+            </Link>
+          ) : undefined
         }
       />
 
@@ -492,14 +508,41 @@ export default function SurveysPage(): React.ReactElement {
                   </button>
 
                   <div
-                    style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      flexWrap: 'wrap',
+                    }}
                   >
+                    <button
+                      type="button"
+                      onClick={() => setFillSurvey(survey)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        border: '1px solid #10b981',
+                        background: '#ecfdf5',
+                        color: '#047857',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <i className="pi pi-pencil" style={{ fontSize: 11 }} />
+                      <span>Collect Response</span>
+                    </button>
                     <Link
                       to={`/activities?surveyId=${survey.id}&title=${encodeURIComponent(survey.title)}`}
                       className="btn-card-allocate"
                     >
                       <span>
-                        {linkedTasks.length > 0 ? '+ Allocate Task' : 'Allocate'}
+                        {linkedTasks.length > 0
+                          ? '+ Allocate Task'
+                          : 'Allocate'}
                       </span>
                       <i
                         className="pi pi-arrow-right"
@@ -1251,7 +1294,38 @@ export default function SurveysPage(): React.ReactElement {
               Close
             </button>
             {selectedSurvey && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    const target = selectedSurvey;
+                    setModalOpen(false);
+                    setFillSurvey(target);
+                  }}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '8px 14px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#059669',
+                    color: '#ffffff',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <i className="pi pi-pencil" />
+                  <span>Collect Response / Answer</span>
+                </button>
                 <Link
                   to={`/activities?surveyId=${selectedSurvey.id}&title=${encodeURIComponent(selectedSurvey.title)}`}
                   className="btn-card-allocate"
@@ -1273,6 +1347,13 @@ export default function SurveysPage(): React.ReactElement {
           </div>
         </div>
       </div>
+
+      {/* Survey Answer / Response Modal */}
+      <SurveyFillModal
+        survey={fillSurvey}
+        onClose={() => setFillSurvey(null)}
+        onSuccess={() => setFillSurvey(null)}
+      />
     </PageContainer>
   );
 }

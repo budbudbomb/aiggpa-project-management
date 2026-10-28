@@ -84,10 +84,6 @@ export const PAGE_LAYOUTS: Record<string, LayoutPageConfig> = {
     mainStyle: {},
     topbar: { searchPlaceholder: 'Search...', bell: 'circle', user: BLUE_USER },
   },
-  '/question-bank': {
-    mainStyle: {},
-    topbar: { searchPlaceholder: 'Search questions in bank...', bell: 'none', user: BLUE_USER },
-  },
 };
 
 export const DEFAULT_LAYOUT: LayoutPageConfig = {

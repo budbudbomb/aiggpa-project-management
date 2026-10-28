@@ -1,7 +1,8 @@
-﻿import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import loginCss from '../styles/login.css?inline';
 import { usePageStyles } from '../lib/usePageStyles';
+import { useAuthStore } from '../auth/store/authStore';
 
 const CAROUSEL_ITEMS = [
   'Project Intelligence',
@@ -11,19 +12,29 @@ const CAROUSEL_ITEMS = [
 ];
 
 const DEMO_ROLES = [
-  { role: 'center_head', user: 'center_head', pass: 'Head@2026', label: 'Center Head' },
-  { role: 'finance_dept', user: 'finance_officer', pass: 'Finance@123', label: 'Finance Dept' },
-  { role: 'project_lead', user: 'aiggpa', pass: 'Admin@123', label: 'Project Lead' },
+  {
+    role: 'center_head',
+    user: 'EMP-CH-01',
+    pass: 'Admin@123',
+    label: 'Center Head',
+  },
+  { role: 'advisor', user: 'EMP-ADV-01', pass: 'Admin@123', label: 'Advisor' },
+  {
+    role: 'fellow',
+    user: 'EMP-FL-01',
+    pass: 'Admin@123',
+    label: 'Fellow / Intern / Field',
+  },
 ];
 
 export default function LoginPage(): React.ReactElement {
   usePageStyles(loginCss);
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState('aiggpa');
+  const [username, setUsername] = useState('EMP-CH-01');
   const [password, setPassword] = useState('Admin@123');
   const [showPassword, setShowPassword] = useState(false);
-  const [activeRole, setActiveRole] = useState('project_lead');
+  const [activeRole, setActiveRole] = useState('center_head');
   const [submitting, setSubmitting] = useState(false);
 
   const typewriterTextRef = useRef<HTMLDivElement>(null);
@@ -44,7 +55,10 @@ export default function LoginPage(): React.ReactElement {
       // second word highlighted (legacy logic: i === 1)
       if (typewriterTextRef.current) {
         typewriterTextRef.current.innerHTML = words
-          .map((w, i) => `<span class="${i === 1 ? 'typewriter-word-black' : ''}">${w} </span>`)
+          .map(
+            (w, i) =>
+              `<span class="${i === 1 ? 'typewriter-word-black' : ''}">${w} </span>`
+          )
           .join('');
       }
     }
@@ -74,7 +88,6 @@ export default function LoginPage(): React.ReactElement {
 
     typeStep();
     return () => window.clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleDemoRole(role: { user: string; pass: string; role: string }) {
@@ -83,34 +96,36 @@ export default function LoginPage(): React.ReactElement {
     setPassword(role.pass);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    const name = username.trim();
-    let roleTitle = 'Project Lead (Center)';
-    let roleKey = 'project_lead';
-
-    if (name.toLowerCase().includes('head')) {
-      roleTitle = 'Center Head';
-      roleKey = 'center_head';
-    } else if (name.toLowerCase().includes('finance')) {
-      roleTitle = 'Senior Finance Officer';
-      roleKey = 'finance_dept';
-    }
-
-    sessionStorage.setItem('aiggpa_user_name', name || 'AIGGPA User');
-    sessionStorage.setItem('aiggpa_user_role', roleTitle);
-    sessionStorage.setItem('aiggpa_role_key', roleKey);
-
     setSubmitting(true);
-    window.setTimeout(() => navigate('/create-project'), 500);
+
+    try {
+      const user = await useAuthStore.getState().login(username, password);
+      sessionStorage.setItem('aiggpa_user_name', user.name);
+      sessionStorage.setItem('aiggpa_user_role', user.role);
+      sessionStorage.setItem(
+        'aiggpa_role_key',
+        user.role.toLowerCase().replace(/\s+/g, '_')
+      );
+      navigate(user.defaultLandingPath || '/activities');
+    } catch {
+      navigate('/activities');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function handleQuickDashboard() {
-    sessionStorage.setItem('aiggpa_user_name', 'Center Head');
-    sessionStorage.setItem('aiggpa_user_role', 'Center Head & Director');
-    sessionStorage.setItem('aiggpa_role_key', 'center_head');
-    navigate('/create-project');
+  async function handleQuickDashboard() {
+    try {
+      const user = await useAuthStore.getState().login('EMP-CH-01');
+      sessionStorage.setItem('aiggpa_user_name', user.name);
+      sessionStorage.setItem('aiggpa_user_role', user.role);
+      sessionStorage.setItem('aiggpa_role_key', 'center_head');
+      navigate(user.defaultLandingPath || '/create-project');
+    } catch {
+      navigate('/create-project');
+    }
   }
 
   return (
@@ -147,19 +162,23 @@ export default function LoginPage(): React.ReactElement {
               </div>
               <div>
                 <div className="aiggpa-logo-text">AIGGPA</div>
-                <span className="aiggpa-logo-sub">EMPOWERING PROJECT & FIELD GOVERNANCE</span>
+                <span className="aiggpa-logo-sub">
+                  EMPOWERING PROJECT & FIELD GOVERNANCE
+                </span>
               </div>
             </div>
           </div>
 
           <div className="auth-hero-heading-block">
             <h1 className="auth-hero-title">
-              Integrating <span>Project & Field Management</span> Through Digital Excellence
+              Integrating <span>Project & Field Management</span> Through
+              Digital Excellence
             </h1>
 
             <p className="auth-hero-description">
-              A unified governance platform enabling transparent project planning, team allocations,
-              budget sanctions, on-ground field surveys, and real-time monitoring across centers.
+              A unified governance platform enabling transparent project
+              planning, team allocations, budget sanctions, on-ground field
+              surveys, and real-time monitoring across centers.
             </p>
           </div>
 
@@ -188,7 +207,9 @@ export default function LoginPage(): React.ReactElement {
                 <i className="pi pi-folder-open" />
               </div>
               <div className="auth-feature-content">
-                <h2 className="auth-feature-title">Project Planning & Creation</h2>
+                <h2 className="auth-feature-title">
+                  Project Planning & Creation
+                </h2>
                 <p className="auth-feature-description">
                   Multi-stage project initiation with auto-duration & objectives
                 </p>
@@ -214,7 +235,8 @@ export default function LoginPage(): React.ReactElement {
               <div className="auth-feature-content">
                 <h2 className="auth-feature-title">Team & Role Allocation</h2>
                 <p className="auth-feature-description">
-                  Senior Advisors, Research Associates, Fellows & Field Investigators
+                  Senior Advisors, Research Associates, Fellows & Field
+                  Investigators
                 </p>
               </div>
             </article>
@@ -226,7 +248,8 @@ export default function LoginPage(): React.ReactElement {
               <div className="auth-feature-content">
                 <h2 className="auth-feature-title">Field Task Operations</h2>
                 <p className="auth-feature-description">
-                  Standard research tasks, ground survey quotas and review meetings
+                  Standard research tasks, ground survey quotas and review
+                  meetings
                 </p>
               </div>
             </article>
@@ -248,9 +271,12 @@ export default function LoginPage(): React.ReactElement {
                 <i className="pi pi-chart-pie" />
               </div>
               <div className="auth-feature-content">
-                <h2 className="auth-feature-title">Real-time Monitoring & Reports</h2>
+                <h2 className="auth-feature-title">
+                  Real-time Monitoring & Reports
+                </h2>
                 <p className="auth-feature-description">
-                  Live respondent tracking, geographic coverage and audit compliance
+                  Live respondent tracking, geographic coverage and audit
+                  compliance
                 </p>
               </div>
             </article>
@@ -277,11 +303,14 @@ export default function LoginPage(): React.ReactElement {
               className="login-typewriter-highlight"
               id="typewriterText"
               ref={typewriterTextRef}
-              dangerouslySetInnerHTML={{ __html: '<span>Project</span> <strong class="typewriter-word-black">Intelligence</strong>' }}
+              dangerouslySetInnerHTML={{
+                __html:
+                  '<span>Project</span> <strong class="typewriter-word-black">Intelligence</strong>',
+              }}
             />
 
             <div className="demo-roles-bar">
-              {DEMO_ROLES.map((role) => (
+              {DEMO_ROLES.map(role => (
                 <button
                   key={role.role}
                   type="button"
@@ -306,7 +335,7 @@ export default function LoginPage(): React.ReactElement {
                     className="auth-input"
                     placeholder="User Name"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={e => setUsername(e.target.value)}
                     required
                   />
                 </div>
@@ -321,16 +350,19 @@ export default function LoginPage(): React.ReactElement {
                     className="auth-input"
                     placeholder="Password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={e => setPassword(e.target.value)}
                     required
                   />
                   <button
                     type="button"
                     className="password-toggle"
                     id="togglePasswordBtn"
-                    onClick={() => setShowPassword((v) => !v)}
+                    onClick={() => setShowPassword(v => !v)}
                   >
-                    <i className={showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'} id="toggleEyeIcon" />
+                    <i
+                      className={showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'}
+                      id="toggleEyeIcon"
+                    />
                   </button>
                 </div>
               </div>
@@ -345,10 +377,16 @@ export default function LoginPage(): React.ReactElement {
                 </a>
               </div>
 
-              <button type="submit" className="btn-submit-login" id="btnSubmitLogin" disabled={submitting}>
+              <button
+                type="submit"
+                className="btn-submit-login"
+                id="btnSubmitLogin"
+                disabled={submitting}
+              >
                 {submitting ? (
                   <>
-                    <span>Verifying Credentials...</span> <i className="pi pi-spin pi-spinner" />
+                    <span>Verifying Credentials...</span>{' '}
+                    <i className="pi pi-spin pi-spinner" />
                   </>
                 ) : (
                   <>
@@ -378,7 +416,7 @@ export default function LoginPage(): React.ReactElement {
             src="assets/lock.png"
             alt="Security Lock"
             className="auth-shield-lock"
-            onError={(e) => {
+            onError={e => {
               e.currentTarget.style.display = 'none';
             }}
           />

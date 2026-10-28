@@ -1,1376 +1,820 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import complaintsCss from '../styles/complaints.css?inline';
-import complaintsInlineCss from '../styles/complaints-inline.css?inline';
-import { usePageStyles } from '../lib/usePageStyles';
-import { useStoreData } from '../lib/storeEvents';
-import ComplaintStore from '../stores/complaintStore';
-import { MasterStore } from '../stores/masterStore';
-import { useAuthStore } from '../auth/store/authStore';
-import type { Complaint } from '../stores/types';
-import { PageContainer, PageHeader, AppButton } from '../components';
+import { useState, useMemo } from 'react';
 import {
   Plus,
-  LifeBuoy,
-  Inbox,
-  Clock,
-  CheckCircle2,
+  MagnifyingGlass,
+  ShieldWarning,
+  CheckCircle,
   XCircle,
-  Search,
-  Play,
-  Paperclip,
-  Calendar,
+  Clock,
   Eye,
-  Check,
-  X,
-  ArrowUpRight,
-  Shield,
-  MessageSquare,
-  Users,
-} from 'lucide-react';
-
-function formatDate(dStr?: string): string {
-  if (!dStr) return '';
-  try {
-    const d = new Date(dStr);
-    return d.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-  } catch {
-    return dStr;
-  }
-}
-
-function getCategoryName(cat?: string): string {
-  const masterCat = MasterStore.getGrievanceCategories().find(
-    c => c.code === cat || c.name === cat || c.id === cat
-  );
-  if (masterCat) return masterCat.name || masterCat.label || '';
-
-  const map: Record<string, string> = {
-    stipend: 'Stipend & Disbursal Delay',
-    field_travel: 'Field Travel & Conveyance',
-    infrastructure: 'Hardware & Infrastructure',
-    workload_tasks: 'Workload & Task Allocation',
-    interpersonal: 'Interpersonal & Behavioral',
-    other: 'General Issue',
-  };
-  return (cat && map[cat]) || cat || '';
-}
-
-function todayIso(): string {
-  return new Date().toISOString().split('T')[0];
-}
-
-interface AttachedMedia {
-  name: string;
-  duration?: number;
-}
-
-type ReviewAction = 'resolve' | 'reject' | 'forward';
+  ChatCircleDots,
+  BuildingOffice,
+  Calendar,
+  Hourglass,
+  ArrowBendUpRight,
+} from '@phosphor-icons/react';
+import { useAuthStore } from '../auth/store/authStore';
+import { useStoreData } from '../lib/storeEvents';
+import ComplaintStore from '../stores/complaintStore';
+import type { Complaint } from '../stores/types';
+import {
+  complaintCategoryLabel,
+  complaintStatusLabel,
+  complaintStatusColor,
+  roleLabel,
+  formatDate,
+  timeAgo,
+  cn,
+} from '../lib/utils/formatters';
+import {
+  AddComplaintModal,
+  ComplaintDetailsModal,
+  ReviewComplaintModal,
+} from '../components/complaints';
 
 export default function ComplaintsPage(): React.ReactElement {
-  usePageStyles(complaintsCss);
-  usePageStyles(complaintsInlineCss);
   const version = useStoreData();
+  const { user } = useAuthStore();
 
-  // ── State ──
-  const [activeTab, setActiveTab] = useState<
-    'my_complaints' | 'review_interns'
-  >('my_complaints');
-  const [currentStatusFilter, setCurrentStatusFilter] = useState('all');
+  const isCenterHead = useMemo(() => {
+    const r = user?.role || '';
+    return r === 'Center Head' || r === 'Super Admin';
+  }, [user?.role]);
+
+  const isAdvisor = useMemo(() => {
+    return user?.role === 'Advisor';
+  }, [user?.role]);
+
+  const isSenior = isCenterHead || isAdvisor;
+  const isTier3 = !isSenior;
+
+  // Tab definitions
+  type TabKey =
+    | 'my_complaints'
+    | 'pending_advisor'
+    | 'action_items'
+    | 'escalated_to_center_head'
+    | 'resolved_closed'
+    | 'all_grievances';
+
+  const defaultTab = useMemo<TabKey>(() => {
+    if (isCenterHead) return 'action_items';
+    if (isAdvisor) return 'pending_advisor';
+    return 'my_complaints';
+  }, [isCenterHead, isAdvisor]);
+
+  const [activeTab, setActiveTab] = useState<TabKey>(defaultTab);
+
+  // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'pending' | 'escalated' | 'resolved' | 'rejected'
+  >('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
-  const [addOpen, setAddOpen] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [detailsId, setDetailsId] = useState<string | null>(null);
-
-  const grievanceCategories = useMemo(() => {
-    void version;
-    return MasterStore.getGrievanceCategories();
-  }, [version]);
-
-  // Add complaint form
-  const [addCategory, setAddCategory] = useState(
-    grievanceCategories[0]?.code || 'GC-001'
-  );
-  const [addIncidentDate, setAddIncidentDate] = useState(todayIso);
-  const [addSubject, setAddSubject] = useState('');
-  const [addDesc, setAddDesc] = useState('');
-  const [attachedVoice, setAttachedVoice] = useState<AttachedMedia | null>(
+  // Modals state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
     null
   );
-  const [attachedVideo, setAttachedVideo] = useState<AttachedMedia | null>(
-    null
-  );
-  const [attachedDoc, setAttachedDoc] = useState<AttachedMedia | null>(null);
+  const [reviewActionData, setReviewActionData] = useState<{
+    complaint: Complaint | null;
+    action: 'resolve' | 'reject' | 'forward' | null;
+  }>({ complaint: null, action: null });
 
-  // Voice recording simulation
-  const [isRecording, setIsRecording] = useState(false);
-  const [recSecs, setRecSecs] = useState(0);
-  const recordingTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Review modal
-  const [reviewId, setReviewId] = useState<string | null>(null);
-  const [reviewAction, setReviewAction] = useState<ReviewAction>('resolve');
-  const [reviewComment, setReviewComment] = useState('');
-
-  // Hidden native file inputs
-  const audioInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const docInputRef = useRef<HTMLInputElement>(null);
-
-  const all: Complaint[] = useMemo(() => {
+  // All complaints from store
+  const allComplaints = useMemo<Complaint[]>(() => {
     void version;
     return ComplaintStore.getAll();
   }, [version]);
-  const detailsComplaint = detailsId ? ComplaintStore.getById(detailsId) : null;
-  const reviewComplaint = reviewId ? ComplaintStore.getById(reviewId) : null;
 
-  useEffect(() => {
-    document.title = 'AIGGPA - Complaint Management';
-    return () => {
-      if (recordingTimer.current) clearInterval(recordingTimer.current);
-    };
-  }, []);
+  // Active tab complaints
+  const tabComplaints = useMemo<Complaint[]>(() => {
+    if (isTier3 || activeTab === 'my_complaints') {
+      return allComplaints.filter(
+        c =>
+          c.applicantId === user?.id ||
+          (user?.name &&
+            c.applicantName?.toLowerCase().includes(user.name.toLowerCase())) ||
+          c.applicantRole?.toLowerCase() === user?.role?.toLowerCase()
+      );
+    }
 
-  useEffect(() => {
-    if (!addOpen && !detailsOpen && !reviewOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setAddOpen(false);
-        setDetailsOpen(false);
-        setReviewOpen(false);
+    if (activeTab === 'pending_advisor') {
+      return allComplaints.filter(c => c.status === 'pending');
+    }
+
+    if (activeTab === 'action_items') {
+      return allComplaints.filter(
+        c => c.status === 'pending' || c.status === 'escalated'
+      );
+    }
+
+    if (activeTab === 'escalated_to_center_head') {
+      return allComplaints.filter(
+        c => c.status === 'escalated' || c.isEscalated
+      );
+    }
+
+    if (activeTab === 'resolved_closed') {
+      return allComplaints.filter(
+        c => c.status === 'resolved' || c.status === 'rejected'
+      );
+    }
+
+    if (activeTab === 'all_grievances') {
+      return allComplaints;
+    }
+
+    return allComplaints;
+  }, [activeTab, allComplaints, isTier3, user?.id, user?.name, user?.role]);
+
+  // Filtered complaints
+  const filteredComplaints = useMemo<Complaint[]>(() => {
+    return tabComplaints.filter(c => {
+      if (statusFilter !== 'all' && c.status !== statusFilter) return false;
+      if (categoryFilter !== 'all' && c.category !== categoryFilter)
+        return false;
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const inTicket = c.ticketNumber.toLowerCase().includes(q);
+        const inSubject = c.subject.toLowerCase().includes(q);
+        const inApplicant = c.applicantName.toLowerCase().includes(q);
+        const inDesc = c.description?.toLowerCase().includes(q) ?? false;
+        if (!inTicket && !inSubject && !inApplicant && !inDesc) return false;
       }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [addOpen, detailsOpen, reviewOpen]);
-
-  // ── Counts & KPIs ──
-  const internList = all.filter(c => c.applicantRole === 'intern');
-  const tabCounts = {
-    my: all.filter(c => c.applicantRole === 'fellow').length,
-    interns: internList.length,
-    internPending: internList.filter(c => c.status === 'pending').length,
-  };
-
-  const sourceList: Complaint[] = useMemo(() => {
-    void all;
-    return activeTab === 'my_complaints'
-      ? ComplaintStore.getMyComplaints()
-      : ComplaintStore.getInternComplaints();
-  }, [all, activeTab]);
-
-  const kpis = {
-    total: sourceList.length,
-    pending: sourceList.filter(c => c.status === 'pending').length,
-    resolved: sourceList.filter(c => c.status === 'resolved').length,
-    rejected: sourceList.filter(c => c.status === 'rejected').length,
-  };
-
-  const filtered = sourceList.filter(c => {
-    const matchesStatus =
-      currentStatusFilter === 'all' || c.status === currentStatusFilter;
-    const q = searchQuery.toLowerCase();
-    const matchesQuery =
-      !searchQuery ||
-      c.subject.toLowerCase().includes(q) ||
-      c.ticketNumber.toLowerCase().includes(q) ||
-      (c.applicantName && c.applicantName.toLowerCase().includes(q)) ||
-      (c.description && c.description.toLowerCase().includes(q));
-    return matchesStatus && matchesQuery;
-  });
-
-  // ── Handlers ──
-  function switchTab(tab: 'my_complaints' | 'review_interns') {
-    setActiveTab(tab);
-    setCurrentStatusFilter('all');
-  }
-
-  function openAddModal() {
-    setAddCategory('infrastructure');
-    setAddIncidentDate(todayIso());
-    setAddSubject('');
-    setAddDesc('');
-    setAttachedVoice(null);
-    setAttachedVideo(null);
-    setAttachedDoc(null);
-    setAddOpen(true);
-  }
-
-  function toggleRecording() {
-    if (!isRecording) {
-      setIsRecording(true);
-      setRecSecs(0);
-      recordingTimer.current = setInterval(() => setRecSecs(s => s + 1), 1000);
-    } else {
-      setIsRecording(false);
-      if (recordingTimer.current) {
-        clearInterval(recordingTimer.current);
-        recordingTimer.current = null;
-      }
-      setAttachedVoice({
-        name: `Voice_Note_${Date.now().toString().slice(-4)}.m4a`,
-        duration: recSecs || 12,
-      });
-      setRecSecs(0);
-    }
-  }
-
-  function submitAddForm(e: React.FormEvent) {
-    e.preventDefault();
-    const subject = addSubject.trim();
-    const description = addDesc.trim();
-
-    if (!subject || subject.length < 5) {
-      alert('Subject must be at least 5 characters.');
-      return;
-    }
-    if (!description || description.length < 10) {
-      alert('Please provide sufficient description details.');
-      return;
-    }
-
-    const catItem = grievanceCategories.find(
-      c =>
-        c.code === addCategory || c.name === addCategory || c.id === addCategory
-    );
-    const applicant = useAuthStore.getState().user;
-
-    ComplaintStore.addComplaint({
-      applicantId: applicant?.id || undefined,
-      applicantName: applicant?.name || undefined,
-      applicantRole: applicant?.role || undefined,
-      category: addCategory,
-      categoryLabel: catItem?.name || getCategoryName(addCategory),
-      priority:
-        catItem?.defaultPriority ||
-        (addCategory === 'infrastructure' || addCategory === 'stipend'
-          ? 'urgent'
-          : 'high'),
-      incidentDate: addIncidentDate,
-      subject,
-      description,
-      documentName: attachedDoc?.name || null,
-      voiceNoteName: attachedVoice?.name || null,
-      voiceNoteDuration: attachedVoice?.duration || null,
+      return true;
     });
+  }, [tabComplaints, statusFilter, categoryFilter, searchQuery]);
 
-    setAddOpen(false);
-    setActiveTab('my_complaints');
-    setCurrentStatusFilter('all');
-  }
+  // Statistics
+  const stats = useMemo(() => {
+    const relevant = isTier3
+      ? allComplaints.filter(
+          c =>
+            c.applicantId === user?.id ||
+            (user?.name &&
+              c.applicantName
+                ?.toLowerCase()
+                .includes(user.name.toLowerCase())) ||
+            c.applicantRole?.toLowerCase() === user?.role?.toLowerCase()
+        )
+      : allComplaints;
 
-  function openReviewModal(id: string, action: ReviewAction) {
-    setReviewId(id);
-    setReviewAction(action);
-    setReviewComment('');
-    setReviewOpen(true);
-  }
-
-  function submitReview() {
-    const comment = reviewComment.trim();
-    if (!comment) {
-      alert('Please enter a remark or comment before proceeding.');
-      return;
-    }
-    if (reviewAction === 'resolve') {
-      ComplaintStore.updateStatus(reviewId!, 'resolved', comment);
-    } else if (reviewAction === 'reject') {
-      ComplaintStore.updateStatus(reviewId!, 'rejected', comment);
-    } else {
-      ComplaintStore.forwardComplaint(reviewId!, comment);
-    }
-    setReviewOpen(false);
-  }
-
-  const reviewMeta = (() => {
-    if (reviewAction === 'resolve') {
-      return {
-        title: `Resolve Complaint: ${reviewComplaint?.ticketNumber ?? ''}`,
-        btn: 'Confirm Resolution',
-        bg: '#059669',
-        placeholder:
-          'Provide resolution notes, instructions given to intern, or action taken...',
-      };
-    }
-    if (reviewAction === 'reject') {
-      return {
-        title: `Reject Complaint: ${reviewComplaint?.ticketNumber ?? ''}`,
-        btn: 'Confirm Rejection',
-        bg: '#e11d48',
-        placeholder:
-          'State valid grounds for rejection according to program guidelines...',
-      };
-    }
     return {
-      title: `Forward Complaint to PC: ${reviewComplaint?.ticketNumber ?? ''}`,
-      btn: 'Forward to Coordinator',
-      bg: '#4338ca',
-      placeholder:
-        'Explain why this requires Program Coordinator escalation...',
+      total: relevant.length,
+      pending: relevant.filter(c => c.status === 'pending').length,
+      escalated: relevant.filter(c => c.status === 'escalated' || c.isEscalated)
+        .length,
+      resolved: relevant.filter(c => c.status === 'resolved').length,
+      rejected: relevant.filter(c => c.status === 'rejected').length,
     };
-  })();
+  }, [allComplaints, isTier3, user?.id, user?.name, user?.role]);
 
   return (
-    <PageContainer>
-      {/* ── Title Header Strip with + Complaint button ── */}
-      <PageHeader
-        title="Complaint & Grievance Management"
-        subtitle="Manage personal grievances to Program Coordinator and review field complaints submitted by team members"
-        icon={<LifeBuoy className="w-5 h-5" />}
-        breadcrumbs={[{ label: 'Helpdesk & Support' }, { label: 'Grievances' }]}
-        actions={
-          <AppButton
-            variant="primary"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={openAddModal}
-          >
-            Lodge Complaint
-          </AppButton>
-        }
-      />
-
-      {/* ── Segmented Tab Switcher (Removed per user request) ── */}
-      <div className="cmp-tab-switcher-box" style={{ display: 'none' }}>
-        <button
-          type="button"
-          className={`cmp-tab-btn${activeTab === 'my_complaints' ? ' active' : ''}`}
-          id="tabBtnMy"
-          onClick={() => switchTab('my_complaints')}
-        >
-          <i className="pi pi-comments" style={{ fontSize: 15 }} />
-          <span>My Complaints</span>
-          <span className="cmp-tab-badge" id="countBadgeMy">
-            {tabCounts.my}
-          </span>
-        </button>
-        <button
-          type="button"
-          className={`cmp-tab-btn${activeTab === 'review_interns' ? ' active' : ''}`}
-          id="tabBtnInterns"
-          onClick={() => switchTab('review_interns')}
-        >
-          <i className="pi pi-users" style={{ fontSize: 15 }} />
-          <span>Review Intern Complaints</span>
-          <span className="cmp-tab-badge" id="countBadgeInterns">
-            {tabCounts.interns}
-          </span>
-          <span
-            className="cmp-alert-dot"
-            id="internPendingDot"
-            style={{
-              display: tabCounts.internPending > 0 ? 'inline-block' : 'none',
-            }}
-          />
-        </button>
-      </div>
-
-      {/* ── 4 KPI Metric Cards ── */}
-      <div className="cmp-kpi-grid">
-        <div className="cmp-kpi-card kpi-card-total">
-          <div className="cmp-kpi-top">
-            <span className="cmp-kpi-label">TOTAL COMPLAINTS</span>
-            <div className="cmp-kpi-icon-wrap kpi-icon-total">
-              <i className="pi pi-inbox" />
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 shadow-2xs">
+            <ShieldWarning size={26} weight="duotone" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight m-0">
+                Grievance Redressal Desk
+              </h1>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                {user?.role || 'User'}
+              </span>
             </div>
-          </div>
-          <div className="cmp-kpi-val" id="kpiTotal">
-            {kpis.total}
-          </div>
-          <p className="cmp-kpi-sub">In selected view</p>
-        </div>
-
-        <div className="cmp-kpi-card kpi-card-pending">
-          <div className="cmp-kpi-top">
-            <span className="cmp-kpi-label">PENDING</span>
-            <div className="cmp-kpi-icon-wrap kpi-icon-pending">
-              <i className="pi pi-clock" />
-            </div>
-          </div>
-          <div
-            className="cmp-kpi-val"
-            style={{ color: '#d97706' }}
-            id="kpiPending"
-          >
-            {kpis.pending}
-          </div>
-          <p className="cmp-kpi-sub">Awaiting resolution</p>
-        </div>
-
-        <div className="cmp-kpi-card kpi-card-resolved">
-          <div className="cmp-kpi-top">
-            <span className="cmp-kpi-label">RESOLVED</span>
-            <div className="cmp-kpi-icon-wrap kpi-icon-resolved">
-              <i className="pi pi-check-circle" />
-            </div>
-          </div>
-          <div
-            className="cmp-kpi-val"
-            style={{ color: '#059669' }}
-            id="kpiResolved"
-          >
-            {kpis.resolved}
-          </div>
-          <p className="cmp-kpi-sub">Successfully addressed</p>
-        </div>
-
-        <div className="cmp-kpi-card kpi-card-rejected">
-          <div className="cmp-kpi-top">
-            <span className="cmp-kpi-label">REJECTED</span>
-            <div className="cmp-kpi-icon-wrap kpi-icon-rejected">
-              <i className="pi pi-times-circle" />
-            </div>
-          </div>
-          <div
-            className="cmp-kpi-val"
-            style={{ color: '#e11d48' }}
-            id="kpiRejected"
-          >
-            {kpis.rejected}
-          </div>
-          <p className="cmp-kpi-sub">Declined after audit</p>
-        </div>
-      </div>
-
-      {/* ── Status Filter Pills & Search ── */}
-      <div className="cmp-filter-strip">
-        <div className="cmp-filter-pills">
-          {['all', 'pending', 'resolved', 'rejected'].map(status => (
-            <button
-              key={status}
-              type="button"
-              className={`cmp-pill-btn${currentStatusFilter === status ? ' active' : ''}`}
-              data-status={status}
-              onClick={() => setCurrentStatusFilter(status)}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        <div className="cmp-search-box">
-          <i className="pi pi-search" />
-          <input
-            type="text"
-            id="cmpSearchInput"
-            placeholder="Search by ticket, subject, or name..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-        </div>
-      </div>
-
-      {/* ── Complaints Cards Grid ── */}
-      <div className="cmp-cards-grid" id="cmpCardsContainer">
-        {filtered.length === 0 ? (
-          <div
-            style={{
-              gridColumn: '1 / -1',
-              background: '#ffffff',
-              border: '1px dashed #cbd5e1',
-              borderRadius: 16,
-              padding: '48px 20px',
-              textAlign: 'center',
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                background: '#f1f5f9',
-                color: '#64748b',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.4rem',
-                marginBottom: 12,
-              }}
-            >
-              <i className="pi pi-inbox" />
-            </div>
-            <h3
-              style={{
-                fontSize: '1.05rem',
-                fontWeight: 600,
-                color: '#0f172a',
-                marginBottom: 6,
-              }}
-            >
-              No complaints found
-            </h3>
-            <p
-              style={{
-                fontSize: '0.82rem',
-                color: '#64748b',
-                maxWidth: 400,
-                margin: '0 auto 16px',
-              }}
-            >
-              {searchQuery
-                ? `No complaints match your search "${searchQuery}".`
-                : 'No active grievance tickets in this view.'}
+            <p className="text-xs sm:text-sm text-slate-500 m-0 mt-0.5">
+              {isCenterHead &&
+                'Top-Level Governance: Final review & resolution on grievances and advisor escalations.'}
+              {isAdvisor &&
+                'Advisory Management: Review grievances, resolve issues, or move to Center Head.'}
+              {isTier3 &&
+                'Execution Tier: File grievances & monitor review decisions from Advisor and Center Head.'}
             </p>
-            {activeTab === 'my_complaints' && (
-              <button
-                type="button"
-                className="btn-file-complaint-main"
-                onClick={openAddModal}
-              >
-                <i className="pi pi-plus" />
-                <span>File a Complaint</span>
-              </button>
-            )}
           </div>
-        ) : (
-          filtered.map(c => {
-            let statusClass = 'status-pending';
-            let statusLabel = 'Pending';
-            let statusIcon = 'pi-clock';
+        </div>
 
-            if (c.status === 'resolved') {
-              statusClass = 'status-resolved';
-              statusLabel = 'Resolved';
-              statusIcon = 'pi-check-circle';
-            } else if (c.status === 'rejected') {
-              statusClass = 'status-rejected';
-              statusLabel = 'Rejected';
-              statusIcon = 'pi-times-circle';
-            }
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-98 rounded-xl shadow-sm shadow-blue-600/20 transition-all cursor-pointer"
+          >
+            <Plus size={16} weight="bold" />
+            <span>Lodge New Grievance</span>
+          </button>
+        </div>
+      </div>
 
-            let priorityClass = 'priority-medium';
-            if (c.priority === 'urgent') priorityClass = 'priority-urgent';
-            else if (c.priority === 'high') priorityClass = 'priority-high';
-            else if (c.priority === 'low') priorityClass = 'priority-low';
+      {isAdvisor && (
+        <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl flex items-start gap-3 text-xs text-amber-950">
+          <ShieldWarning size={18} className="text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <span className="font-bold">Advisor Action Desk:</span>
+            <p className="m-0 leading-relaxed text-amber-900">
+              You have the authority to review and resolve grievances. If an
+              issue requires institutional budget, policy approval, or cannot be
+              resolved at your level, click{' '}
+              <strong>&ldquo;Move to Center Head&rdquo;</strong> to escalate it
+              immediately.
+            </p>
+          </div>
+        </div>
+      )}
+      {/* Role-Aware Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200/90 pb-px overflow-x-auto">
+        {/* Tier 3: My Grievances */}
+        {isTier3 && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('my_complaints')}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all cursor-pointer border-b-2',
+              activeTab === 'my_complaints'
+                ? 'border-blue-600 text-blue-600 bg-white shadow-2xs'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
+            )}
+          >
+            <ChatCircleDots
+              size={18}
+              weight={activeTab === 'my_complaints' ? 'fill' : 'regular'}
+            />
+            <span>My Grievances</span>
+            <span
+              className={cn(
+                'px-2 py-0.5 rounded-full text-[11px] font-bold',
+                activeTab === 'my_complaints'
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-slate-200/70 text-slate-600'
+              )}
+            >
+              {stats.total}
+            </span>
+          </button>
+        )}
 
-            return (
-              <div className="cmp-card" key={c.id} data-id={c.id}>
-                <div>
-                  <div className="cmp-card-top">
-                    <div
-                      style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-                    >
-                      <span className="cmp-ticket-pill">{c.ticketNumber}</span>
-                      <span className={`cmp-priority-badge ${priorityClass}`}>
-                        {c.priority || 'MEDIUM'}
-                      </span>
-                    </div>
-                    <span className={`cmp-status-badge ${statusClass}`}>
-                      <i
-                        className={`pi ${statusIcon}`}
-                        style={{ fontSize: 11 }}
-                      />
-                      <span>{statusLabel}</span>
-                    </span>
-                  </div>
+        {/* Advisor Tabs */}
+        {isAdvisor && (
+          <>
+            <button
+              type="button"
+              onClick={() => setActiveTab('pending_advisor')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all cursor-pointer border-b-2',
+                activeTab === 'pending_advisor'
+                  ? 'border-blue-600 text-blue-600 bg-white shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
+              )}
+            >
+              <Hourglass
+                size={18}
+                weight={activeTab === 'pending_advisor' ? 'fill' : 'regular'}
+              />
+              <span>Pending Review</span>
+              {stats.pending > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                  {stats.pending}
+                </span>
+              )}
+            </button>
 
-                  <div className="cmp-card-applicant">
-                    <span className="cmp-applicant-name">
-                      {c.applicantName}
-                    </span>
-                    <span className="cmp-applicant-role">
-                      {c.applicantRole}
-                    </span>
-                    {c.assignedLocation && (
-                      <span className="cmp-applicant-loc">
-                        • {c.assignedLocation}
-                      </span>
-                    )}
-                  </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('escalated_to_center_head')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all cursor-pointer border-b-2',
+                activeTab === 'escalated_to_center_head'
+                  ? 'border-blue-600 text-blue-600 bg-white shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
+              )}
+            >
+              <ArrowBendUpRight
+                size={18}
+                weight={
+                  activeTab === 'escalated_to_center_head' ? 'bold' : 'regular'
+                }
+              />
+              <span>Moved to Center Head</span>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800">
+                {stats.escalated}
+              </span>
+            </button>
 
-                  <div style={{ marginTop: 8 }}>
-                    <span
-                      style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 800,
-                        color: '#4338ca',
-                        background: '#eef2ff',
-                        padding: '2px 7px',
-                        borderRadius: 4,
-                      }}
-                    >
-                      {getCategoryName(c.category)}
-                    </span>
-                    <h3 className="cmp-card-title">{c.subject}</h3>
-                    <p className="cmp-card-desc">{c.description}</p>
-                  </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('resolved_closed')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all cursor-pointer border-b-2',
+                activeTab === 'resolved_closed'
+                  ? 'border-blue-600 text-blue-600 bg-white shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
+              )}
+            >
+              <CheckCircle
+                size={18}
+                weight={activeTab === 'resolved_closed' ? 'fill' : 'regular'}
+              />
+              <span>Resolved &amp; Closed</span>
+            </button>
 
-                  {c.voiceNoteName && (
-                    <div
-                      className="cmp-audio-pill"
-                      onClick={() =>
-                        alert(`Playing voice note: ${c.voiceNoteName}`)
-                      }
-                    >
-                      <div className="cmp-audio-icon">
-                        <i className="pi pi-play" />
-                      </div>
-                      <span>{c.voiceNoteName}</span>
-                      <span style={{ color: '#64748b', fontSize: '0.7rem' }}>
-                        ({c.voiceNoteDuration || 15}s)
-                      </span>
-                    </div>
-                  )}
+            <button
+              type="button"
+              onClick={() => setActiveTab('all_grievances')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all cursor-pointer border-b-2',
+                activeTab === 'all_grievances'
+                  ? 'border-blue-600 text-blue-600 bg-white shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
+              )}
+            >
+              <BuildingOffice
+                size={18}
+                weight={activeTab === 'all_grievances' ? 'fill' : 'regular'}
+              />
+              <span>All Grievances</span>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/70 text-slate-600">
+                {allComplaints.length}
+              </span>
+            </button>
+          </>
+        )}
 
-                  {c.documentName && (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        fontSize: '0.75rem',
-                        color: '#2563eb',
-                        fontWeight: 700,
-                        marginTop: 8,
-                      }}
-                    >
-                      <i className="pi pi-paperclip" />
-                      <span>{c.documentName}</span>
-                    </div>
-                  )}
+        {/* Center Head Tabs */}
+        {isCenterHead && (
+          <>
+            <button
+              type="button"
+              onClick={() => setActiveTab('action_items')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all cursor-pointer border-b-2',
+                activeTab === 'action_items'
+                  ? 'border-blue-600 text-blue-600 bg-white shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
+              )}
+            >
+              <Hourglass
+                size={18}
+                weight={activeTab === 'action_items' ? 'fill' : 'regular'}
+              />
+              <span>Action Items</span>
+              {stats.pending + stats.escalated > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                  {stats.pending + stats.escalated}
+                </span>
+              )}
+            </button>
 
-                  <div
-                    style={{
-                      fontSize: '0.72rem',
-                      color: '#94a3b8',
-                      marginTop: 10,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                    }}
-                  >
-                    <i className="pi pi-calendar" />
-                    <span>Submitted on {formatDate(c.appliedAt)}</span>
-                  </div>
-                </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('escalated_to_center_head')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all cursor-pointer border-b-2',
+                activeTab === 'escalated_to_center_head'
+                  ? 'border-blue-600 text-blue-600 bg-white shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
+              )}
+            >
+              <ArrowBendUpRight
+                size={18}
+                weight={
+                  activeTab === 'escalated_to_center_head' ? 'bold' : 'regular'
+                }
+              />
+              <span>⚡ Escalated by Advisors</span>
+              {stats.escalated > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200 animate-pulse">
+                  {stats.escalated} Urgent
+                </span>
+              )}
+            </button>
 
-                <div className="cmp-card-footer">
-                  <button
-                    type="button"
-                    className="btn-cmp-details"
-                    data-action="details"
-                    data-id={c.id}
-                    onClick={() => {
-                      setDetailsId(c.id);
-                      setDetailsOpen(true);
-                    }}
-                  >
-                    <i className="pi pi-eye" />
-                    <span>Details</span>
-                  </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('resolved_closed')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all cursor-pointer border-b-2',
+                activeTab === 'resolved_closed'
+                  ? 'border-blue-600 text-blue-600 bg-white shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
+              )}
+            >
+              <CheckCircle
+                size={18}
+                weight={activeTab === 'resolved_closed' ? 'fill' : 'regular'}
+              />
+              <span>Resolved &amp; Closed</span>
+            </button>
 
-                  {activeTab === 'review_interns' && c.status === 'pending' && (
-                    <div className="cmp-action-group">
-                      <button
-                        type="button"
-                        className="btn-cmp-resolve"
-                        data-action="resolve"
-                        data-id={c.id}
-                        title="Resolve Complaint"
-                        onClick={() => openReviewModal(c.id, 'resolve')}
-                      >
-                        <i className="pi pi-check" />
-                        <span>Resolve</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-cmp-reject"
-                        data-action="reject"
-                        data-id={c.id}
-                        title="Reject Complaint"
-                        onClick={() => openReviewModal(c.id, 'reject')}
-                      >
-                        <i className="pi pi-times" />
-                        <span>Reject</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-cmp-forward"
-                        data-action="forward"
-                        data-id={c.id}
-                        title="Forward to PC"
-                        onClick={() => openReviewModal(c.id, 'forward')}
-                      >
-                        <i className="pi pi-arrow-up-right" />
-                        <span>Forward</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })
+            <button
+              type="button"
+              onClick={() => setActiveTab('all_grievances')}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-t-xl transition-all cursor-pointer border-b-2',
+                activeTab === 'all_grievances'
+                  ? 'border-blue-600 text-blue-600 bg-white shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100/60'
+              )}
+            >
+              <BuildingOffice
+                size={18}
+                weight={activeTab === 'all_grievances' ? 'fill' : 'regular'}
+              />
+              <span>All State Grievances</span>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-200/70 text-slate-600">
+                {allComplaints.length}
+              </span>
+            </button>
+          </>
         )}
       </div>
-
-      {/* ── MODAL 1: ADD COMPLAINT ── */}
-      <div
-        className="survey-modal-backdrop"
-        id="addComplaintModal"
-        style={{ display: addOpen ? 'flex' : 'none' }}
-        onClick={e => {
-          if (e.target === e.currentTarget) setAddOpen(false);
-        }}
-      >
-        <div className="modal-submit-complaint-box">
-          <div className="modal-sub-header">
-            <div className="modal-sub-header-left">
-              <div className="modal-shield-icon-wrap">
-                <i className="pi pi-shield" />
-              </div>
-              <div className="modal-sub-title-group">
-                <h2>Submit New Complaint</h2>
-                <p>
-                  Will be submitted for review to:{' '}
-                  <strong>Program Coordinator (PC)</strong>
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="modal-close-x-btn"
-              id="closeAddModalBtn"
-              title="Close"
-              onClick={() => setAddOpen(false)}
-            >
-              <i className="pi pi-times" />
-            </button>
+      {/* KPI Cards Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-slate-500 text-xs font-semibold">
+            <span>{isTier3 ? 'My Filed Grievances' : 'Total Grievances'}</span>
+            <Clock size={16} className="text-slate-400" />
           </div>
+          <p className="text-2xl font-bold text-slate-900 mt-2">
+            {stats.total}
+          </p>
+        </div>
 
-          <form id="addComplaintForm" onSubmit={submitAddForm}>
-            <div className="modal-form-body">
-              {/* Row 1: Category & Date of Incident */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 14,
-                  marginBottom: 14,
-                }}
-              >
-                <div>
-                  <label className="modal-form-label">
-                    Complaint Category <span className="req">*</span>
-                  </label>
-                  <select
-                    id="addCmpCategory"
-                    className="modal-input"
-                    style={{ cursor: 'pointer' }}
-                    value={addCategory}
-                    onChange={e => setAddCategory(e.target.value)}
-                  >
-                    {grievanceCategories.map(c => (
-                      <option key={c.id} value={c.code}>
-                        {c.name} ({c.slaHours}h SLA)
-                      </option>
-                    ))}
-                  </select>
-                </div>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-amber-700 text-xs font-semibold">
+            <span>Pending Review</span>
+            <Hourglass size={16} className="text-amber-500" />
+          </div>
+          <p className="text-2xl font-bold text-amber-600 mt-2">
+            {stats.pending}
+          </p>
+        </div>
 
-                <div>
-                  <label className="modal-form-label">
-                    Date of Incident / Occurrence
-                  </label>
-                  <input
-                    type="date"
-                    id="addCmpIncidentDate"
-                    className="modal-input"
-                    value={addIncidentDate}
-                    onChange={e => setAddIncidentDate(e.target.value)}
-                  />
-                </div>
-              </div>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-blue-700 text-xs font-semibold">
+            <span>Moved to Center Head</span>
+            <ArrowBendUpRight size={16} className="text-blue-500" />
+          </div>
+          <p className="text-2xl font-bold text-blue-600 mt-2">
+            {stats.escalated}
+          </p>
+        </div>
 
-              {/* Row 2: Subject */}
-              <div style={{ marginBottom: 14 }}>
-                <label className="modal-form-label">
-                  Subject / Short Title <span className="req">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="addCmpSubject"
-                  className="modal-input"
-                  placeholder="e.g., Delay in village travel expense reimbursement"
-                  value={addSubject}
-                  onChange={e => setAddSubject(e.target.value)}
-                />
-              </div>
-
-              {/* Row 3: Detailed Description */}
-              <div style={{ marginBottom: 16 }}>
-                <label className="modal-form-label">
-                  Detailed Description <span className="req">*</span>
-                </label>
-                <textarea
-                  id="addCmpDesc"
-                  className="modal-input"
-                  rows={3}
-                  style={{ resize: 'none' }}
-                  placeholder="Describe the issue in detail, including specific locations, personnel involved, and any prior communication..."
-                  value={addDesc}
-                  onChange={e => setAddDesc(e.target.value)}
-                />
-              </div>
-
-              {/* Row 4: Media Evidence */}
-              <div>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: 4,
-                  }}
-                >
-                  <span className="modal-form-label" style={{ margin: 0 }}>
-                    Media Evidence &amp; Supporting Documents
-                  </span>
-                  <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                    Optional
-                  </span>
-                </div>
-
-                <input
-                  type="file"
-                  ref={audioInputRef}
-                  accept="audio/*"
-                  style={{ display: 'none' }}
-                  onChange={() => {
-                    const file = audioInputRef.current?.files?.[0];
-                    if (file)
-                      setAttachedVoice({ name: file.name, duration: 15 });
-                  }}
-                />
-                <input
-                  type="file"
-                  ref={videoInputRef}
-                  accept="video/*"
-                  style={{ display: 'none' }}
-                  onChange={() => {
-                    const file = videoInputRef.current?.files?.[0];
-                    if (file) setAttachedVideo({ name: file.name });
-                  }}
-                />
-                <input
-                  type="file"
-                  ref={docInputRef}
-                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                  style={{ display: 'none' }}
-                  onChange={() => {
-                    const file = docInputRef.current?.files?.[0];
-                    if (file) setAttachedDoc({ name: file.name });
-                  }}
-                />
-
-                <div className="modal-media-evidence-wrap">
-                  <div className="modal-media-grid-3">
-                    {/* 1. Voice Note */}
-                    <div
-                      className="modal-media-btn-card"
-                      id="btnRecordVoiceNote"
-                      onClick={toggleRecording}
-                    >
-                      <div
-                        className="modal-media-circle circle-purple"
-                        id="voiceNoteCircle"
-                        style={
-                          isRecording
-                            ? { background: '#e11d48', color: '#ffffff' }
-                            : undefined
-                        }
-                      >
-                        <i className="pi pi-microphone" id="voiceIcon" />
-                      </div>
-                      <span className="modal-media-title">Voice Note</span>
-                      <span
-                        className="modal-media-sub"
-                        id="voiceNoteStatusText"
-                      >
-                        {isRecording ? (
-                          <span style={{ color: '#e11d48', fontWeight: 800 }}>
-                            Recording ({recSecs}s)... Click to stop
-                          </span>
-                        ) : (
-                          <>
-                            Record &bull;{' '}
-                            <a
-                              id="btnUploadAudioLink"
-                              onClick={e => {
-                                e.stopPropagation();
-                                audioInputRef.current?.click();
-                              }}
-                            >
-                              Upload
-                            </a>
-                          </>
-                        )}
-                      </span>
-                    </div>
-
-                    {/* 2. Video Note */}
-                    <div
-                      className="modal-media-btn-card"
-                      id="btnVideoNote"
-                      onClick={() => videoInputRef.current?.click()}
-                    >
-                      <div
-                        className="modal-media-circle circle-cyan"
-                        id="videoNoteCircle"
-                      >
-                        <i className="pi pi-video" />
-                      </div>
-                      <span className="modal-media-title">Video Note</span>
-                      <span
-                        className="modal-media-sub"
-                        id="videoNoteStatusText"
-                      >
-                        Camera /{' '}
-                        <a
-                          id="btnUploadVideoLink"
-                          onClick={e => {
-                            e.stopPropagation();
-                            videoInputRef.current?.click();
-                          }}
-                        >
-                          Upload
-                        </a>
-                      </span>
-                    </div>
-
-                    {/* 3. Document */}
-                    <div
-                      className="modal-media-btn-card"
-                      id="btnDocNote"
-                      onClick={() => docInputRef.current?.click()}
-                    >
-                      <div
-                        className="modal-media-circle circle-slate"
-                        id="docNoteCircle"
-                      >
-                        <i className="pi pi-paperclip" />
-                      </div>
-                      <span className="modal-media-title">Document</span>
-                      <span className="modal-media-sub" id="docNoteStatusText">
-                        PDF / Photo
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Attachment indicator tags row */}
-                  <div
-                    id="attachedMediaPillsRow"
-                    style={{
-                      display: 'flex',
-                      gap: 8,
-                      flexWrap: 'wrap',
-                      marginTop: 10,
-                    }}
-                  >
-                    {attachedVoice && (
-                      <span
-                        style={{
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          background: '#f3e8ff',
-                          color: '#7e22ce',
-                          border: '1px solid #e9d5ff',
-                          padding: '3px 8px',
-                          borderRadius: 6,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 5,
-                        }}
-                      >
-                        <i className="pi pi-microphone" />
-                        <span>
-                          {attachedVoice.name} ({attachedVoice.duration}s)
-                        </span>
-                        <i
-                          className="pi pi-times"
-                          style={{ cursor: 'pointer', fontSize: 10 }}
-                          onClick={() => setAttachedVoice(null)}
-                        />
-                      </span>
-                    )}
-                    {attachedVideo && (
-                      <span
-                        style={{
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          background: '#e0f2fe',
-                          color: '#0284c7',
-                          border: '1px solid #bae6fd',
-                          padding: '3px 8px',
-                          borderRadius: 6,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 5,
-                        }}
-                      >
-                        <i className="pi pi-video" />
-                        <span>{attachedVideo.name}</span>
-                        <i
-                          className="pi pi-times"
-                          style={{ cursor: 'pointer', fontSize: 10 }}
-                          onClick={() => setAttachedVideo(null)}
-                        />
-                      </span>
-                    )}
-                    {attachedDoc && (
-                      <span
-                        style={{
-                          fontSize: '0.74rem',
-                          fontWeight: 700,
-                          background: '#f1f5f9',
-                          color: '#334155',
-                          border: '1px solid #cbd5e1',
-                          padding: '3px 8px',
-                          borderRadius: 6,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 5,
-                        }}
-                      >
-                        <i className="pi pi-file" />
-                        <span>{attachedDoc.name}</span>
-                        <i
-                          className="pi pi-times"
-                          style={{ cursor: 'pointer', fontSize: 10 }}
-                          onClick={() => setAttachedDoc(null)}
-                        />
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="modal-sub-footer">
-              <button
-                type="button"
-                className="btn-modal-cancel"
-                id="btnCancelAddModal"
-                onClick={() => setAddOpen(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-modal-submit-main"
-                id="btnConfirmSubmitComplaint"
-              >
-                Submit Complaint
-              </button>
-            </div>
-          </form>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs">
+          <div className="flex items-center justify-between text-emerald-700 text-xs font-semibold">
+            <span>Resolved</span>
+            <CheckCircle size={16} className="text-emerald-500" />
+          </div>
+          <p className="text-2xl font-bold text-emerald-600 mt-2">
+            {stats.resolved}
+          </p>
         </div>
       </div>
-
-      {/* ── MODAL 2: COMPLAINT DETAILS ── */}
-      <div
-        className="survey-modal-backdrop"
-        id="complaintDetailsModal"
-        style={{ display: detailsOpen && detailsComplaint ? 'flex' : 'none' }}
-        onClick={e => {
-          if (e.target === e.currentTarget) setDetailsOpen(false);
-        }}
-      >
-        <div className="survey-modal-box" style={{ maxWidth: 660 }}>
-          <div
-            className="survey-modal-header"
-            style={{
-              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-            }}
-          >
-            <button
-              type="button"
-              className="survey-modal-close"
-              id="closeDetailsBtn"
-              onClick={() => setDetailsOpen(false)}
-            >
-              <i className="pi pi-times" />
-            </button>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: 6,
-              }}
-            >
-              <span
-                className="cmp-ticket-pill"
-                id="detTicketNum"
-                style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}
-              >
-                {detailsComplaint?.ticketNumber}
-              </span>
-              <span
-                className={`cmp-status-badge ${
-                  detailsComplaint?.status === 'resolved'
-                    ? 'status-resolved'
-                    : detailsComplaint?.status === 'rejected'
-                      ? 'status-rejected'
-                      : 'status-pending'
-                }`}
-                id="detStatus"
-              >
-                {(detailsComplaint?.status || 'pending').toUpperCase()}
-              </span>
-              <span
-                className={`cmp-priority-badge priority-${detailsComplaint?.priority || 'medium'}`}
-                id="detPriority"
-              >
-                {(detailsComplaint?.priority || 'MEDIUM').toUpperCase()}
-              </span>
-            </div>
-            <h2
-              id="detSubject"
-              style={{ fontSize: '1.15rem', fontWeight: 800, lineHeight: 1.3 }}
-            >
-              {detailsComplaint?.subject}
-            </h2>
-          </div>
-
-          <div className="survey-modal-body" style={{ padding: '22px 24px' }}>
-            {/* Applicant Details Grid */}
-            <div
-              style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: 12,
-                padding: '14px 16px',
-                marginBottom: 16,
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 10,
-                fontSize: '0.78rem',
-              }}
-            >
-              <div>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>
-                  Filed By:
-                </span>
-                <div
-                  style={{ fontWeight: 800, color: '#0f172a', marginTop: 2 }}
-                  id="detApplicant"
-                >
-                  {detailsComplaint?.applicantName} (
-                  {detailsComplaint?.applicantRole})
-                </div>
-              </div>
-              <div>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>
-                  Assigned Location:
-                </span>
-                <div
-                  style={{ fontWeight: 800, color: '#0f172a', marginTop: 2 }}
-                  id="detLocation"
-                >
-                  {detailsComplaint?.assignedLocation || 'N/A'}
-                </div>
-              </div>
-              <div>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>
-                  Category:
-                </span>
-                <div
-                  style={{ fontWeight: 800, color: '#0f172a', marginTop: 2 }}
-                  id="detCategory"
-                >
-                  {detailsComplaint
-                    ? getCategoryName(detailsComplaint.category)
-                    : ''}
-                </div>
-              </div>
-              <div>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>
-                  Incident Date:
-                </span>
-                <div
-                  style={{ fontWeight: 800, color: '#0f172a', marginTop: 2 }}
-                  id="detIncidentDate"
-                >
-                  {detailsComplaint
-                    ? formatDate(
-                        detailsComplaint.incidentDate ||
-                          detailsComplaint.appliedAt
-                      )
-                    : ''}
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <h4
-                style={{
-                  fontSize: '0.8rem',
-                  fontWeight: 800,
-                  color: '#475569',
-                  textTransform: 'uppercase',
-                  marginBottom: 6,
-                }}
-              >
-                Description &amp; Incident Notes
-              </h4>
-              <p
-                id="detDescription"
-                style={{
-                  fontSize: '0.85rem',
-                  color: '#1e293b',
-                  lineHeight: 1.6,
-                  background: '#ffffff',
-                  padding: '12px 14px',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: 10,
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {detailsComplaint?.description}
-              </p>
-            </div>
-
-            {/* Review Section (if resolved or rejected) */}
-            {detailsComplaint &&
-              (detailsComplaint.reviewedBy || detailsComplaint.isEscalated) && (
-                <div id="detReviewSection" style={{ marginTop: 18 }}>
-                  <h4
-                    style={{
-                      fontSize: '0.8rem',
-                      fontWeight: 800,
-                      color: '#059669',
-                      textTransform: 'uppercase',
-                      marginBottom: 6,
-                    }}
-                  >
-                    Supervisory Resolution &amp; Remarks
-                  </h4>
-                  <div
-                    style={{
-                      background: '#f0fdf4',
-                      border: '1px solid #bbf7d0',
-                      borderRadius: 10,
-                      padding: '12px 14px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: '0.74rem',
-                        color: '#166534',
-                        fontWeight: 700,
-                        marginBottom: 4,
-                      }}
-                      id="detReviewerInfo"
-                    >
-                      {detailsComplaint.reviewedBy
-                        ? `${detailsComplaint.reviewedBy} (${detailsComplaint.reviewerRole || 'Supervisor'}) • ${formatDate(detailsComplaint.reviewedAt)}`
-                        : `Forwarded to Program Coordinator (${detailsComplaint.forwardedBy || 'Supervisor'})`}
-                    </div>
-                    <p
-                      id="detReviewerComment"
-                      style={{
-                        fontSize: '0.82rem',
-                        color: '#14532d',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {detailsComplaint.reviewedBy
-                        ? detailsComplaint.reviewerComment ||
-                          'No remarks provided.'
-                        : detailsComplaint.forwardComment ||
-                          'Escalated for higher administrative intervention.'}
-                    </p>
-                  </div>
-                </div>
-              )}
-          </div>
-
-          <div className="survey-modal-footer">
-            <button
-              type="button"
-              className="btn-cs-secondary"
-              onClick={() => setDetailsOpen(false)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── MODAL 3: REVIEW ACTION (Resolve / Reject / Forward) ── */}
-      <div
-        className="survey-modal-backdrop"
-        id="reviewComplaintModal"
-        style={{ display: reviewOpen && reviewComplaint ? 'flex' : 'none' }}
-        onClick={e => {
-          if (e.target === e.currentTarget) setReviewOpen(false);
-        }}
-      >
-        <div className="survey-modal-box" style={{ maxWidth: 540 }}>
-          <div
-            className="survey-modal-header"
-            style={{ background: '#0f172a' }}
-          >
-            <button
-              type="button"
-              className="survey-modal-close"
-              id="closeReviewBtn"
-              onClick={() => setReviewOpen(false)}
-            >
-              <i className="pi pi-times" />
-            </button>
-            <h2
-              id="reviewActionTitle"
-              style={{ fontSize: '1.1rem', fontWeight: 600 }}
-            >
-              {reviewMeta.title}
-            </h2>
-          </div>
-
-          <div className="survey-modal-body" style={{ padding: '20px 24px' }}>
-            <label className="cs-form-label">
-              Review Remarks / Action Notes <span className="req">*</span>
-            </label>
-            <textarea
-              id="reviewActionComment"
-              className="cs-input"
-              rows={4}
-              placeholder={reviewMeta.placeholder}
-              value={reviewComment}
-              onChange={e => setReviewComment(e.target.value)}
+      {/* Search and Filters Bar */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[220px]">
+            <MagnifyingGlass
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search by ticket, subject, applicant or details..."
+              className="w-full pl-9 pr-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900"
             />
           </div>
 
-          <div className="survey-modal-footer">
-            <button
-              type="button"
-              className="btn-cs-secondary"
-              onClick={() => setReviewOpen(false)}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-slate-500 shrink-0 hidden sm:inline">
+              Category:
+            </label>
+            <select
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+              className="px-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="btn-file-complaint-main"
-              id="btnSubmitReview"
-              style={{
-                borderRadius: 10,
-                padding: '9px 20px',
-                background: reviewMeta.bg,
-              }}
-              onClick={submitReview}
-            >
-              {reviewMeta.btn}
-            </button>
+              <option value="all">All Categories</option>
+              <option value="field_travel">Field &amp; Travel Logistics</option>
+              <option value="infrastructure">Device, SIM &amp; Portal</option>
+              <option value="workload_tasks">Workload &amp; Assignments</option>
+              <option value="stipend">Stipend &amp; Allowances</option>
+              <option value="interpersonal">Interpersonal Grievance</option>
+              <option value="other">Other Inquiry / Issue</option>
+            </select>
           </div>
         </div>
+
+        {/* Status Filters */}
+        <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100">
+          <span className="text-xs font-semibold text-slate-500 mr-1">
+            Status:
+          </span>
+          {(
+            ['all', 'pending', 'escalated', 'resolved', 'rejected'] as const
+          ).map(st => (
+            <button
+              key={st}
+              type="button"
+              onClick={() => setStatusFilter(st)}
+              className={cn(
+                'px-3 py-1 rounded-full text-xs font-semibold capitalize transition-all cursor-pointer',
+                statusFilter === st
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+              )}
+            >
+              {st === 'escalated' ? 'Moved to Center Head' : st}
+            </button>
+          ))}
+        </div>
       </div>
-    </PageContainer>
+      {/* Grievances List */}
+      {filteredComplaints.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center shadow-xs space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 mx-auto flex items-center justify-center">
+            <ShieldWarning size={28} />
+          </div>
+          <h3 className="text-base font-bold text-slate-800 m-0">
+            No Grievances Found
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-500 max-w-md mx-auto m-0">
+            {searchQuery || statusFilter !== 'all' || categoryFilter !== 'all'
+              ? 'No grievances matched your active filters.'
+              : isTier3
+                ? 'You have not submitted any grievances yet. Click below to lodge one.'
+                : 'No grievances recorded in this view.'}
+          </p>
+          {isTier3 && (
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl cursor-pointer"
+            >
+              <Plus size={14} weight="bold" />
+              <span>Lodge New Grievance</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          {filteredComplaints.map(c => {
+            const isEsc = c.status === 'escalated' || c.isEscalated;
+            const lastEsc =
+              c.escalations && c.escalations.length > 0
+                ? c.escalations[c.escalations.length - 1]
+                : null;
+
+            return (
+              <div
+                key={c.id}
+                className="bg-white rounded-2xl border border-slate-200/80 hover:border-slate-300 p-4 sm:p-5 shadow-2xs hover:shadow-xs transition-all space-y-3"
+              >
+                {/* Header Row */}
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                      {c.ticketNumber}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${complaintStatusColor(
+                        c.status
+                      )}`}
+                    >
+                      {c.status === 'pending' && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+                      )}
+                      {complaintStatusLabel(c.status)}
+                    </span>
+                    <span className="inline-block px-2 py-0.5 rounded-md text-[11px] font-medium text-slate-600 bg-slate-50 border border-slate-200">
+                      {complaintCategoryLabel(c.category)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                    <Calendar size={13} />
+                    <span>{formatDate(c.appliedAt)}</span>
+                    <span className="text-[10px] text-slate-300">•</span>
+                    <span>{timeAgo(c.appliedAt)}</span>
+                  </div>
+                </div>
+
+                {/* Subject & Description */}
+                <div>
+                  <h3
+                    onClick={() => setSelectedComplaint(c)}
+                    className="text-sm sm:text-base font-bold text-slate-900 hover:text-blue-600 cursor-pointer transition-colors leading-snug m-0"
+                  >
+                    {c.subject}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-1 line-clamp-2 leading-relaxed m-0">
+                    {c.description}
+                  </p>
+                </div>
+
+                {/* Escalation Callout */}
+                {isEsc && (
+                  <div className="p-2.5 px-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-950 flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5">
+                      <ArrowBendUpRight
+                        size={14}
+                        weight="bold"
+                        className="text-blue-700 shrink-0"
+                      />
+                      <span className="font-semibold text-blue-900">
+                        Moved to Center Head by{' '}
+                        {lastEsc?.forwardedBy || c.forwardedBy || 'Advisor'}:
+                      </span>
+                      <span className="italic text-blue-800 truncate max-w-xs sm:max-w-md">
+                        &ldquo;
+                        {lastEsc?.reason ||
+                          c.forwardComment ||
+                          'Unable to resolve at advisor level.'}
+                        &rdquo;
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold text-blue-800 bg-blue-200/70 px-2 py-0.5 rounded-full shrink-0">
+                      Center Head Review
+                    </span>
+                  </div>
+                )}
+
+                {/* Review Feedback Response (Visible to Tier 3 and everyone) */}
+                {c.status === 'resolved' && (
+                  <div className="p-2.5 px-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 flex items-center gap-2">
+                    <CheckCircle
+                      size={15}
+                      weight="fill"
+                      className="text-emerald-600 shrink-0"
+                    />
+                    <span className="font-semibold">
+                      Resolved by {c.reviewedBy} ({c.reviewerRole}):
+                    </span>
+                    <span className="text-emerald-800 italic truncate">
+                      &ldquo;{c.reviewerComment}&rdquo;
+                    </span>
+                  </div>
+                )}
+
+                {c.status === 'rejected' && (
+                  <div className="p-2.5 px-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-950 flex items-center gap-2">
+                    <XCircle
+                      size={15}
+                      weight="fill"
+                      className="text-rose-600 shrink-0"
+                    />
+                    <span className="font-semibold">
+                      Rejected by {c.reviewedBy} ({c.reviewerRole}):
+                    </span>
+                    <span className="text-rose-800 italic truncate">
+                      &ldquo;{c.reviewerComment}&rdquo;
+                    </span>
+                  </div>
+                )}
+
+                {/* Bottom Row: Applicant & Review Actions */}
+                <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 flex-wrap">
+                  <div className="flex items-center gap-2 text-xs text-slate-700">
+                    <span className="font-semibold">{c.applicantName}</span>
+                    <span className="text-slate-400">
+                      ({roleLabel(c.applicantRole)})
+                    </span>
+                    <span className="text-slate-300">•</span>
+                    <span className="text-slate-500">
+                      Date: {c.incidentDate}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-auto">
+                    {/* Advisor Actions on Pending */}
+                    {isAdvisor && c.status === 'pending' && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReviewActionData({
+                              complaint: c,
+                              action: 'forward',
+                            })
+                          }
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer"
+                          title="Move to Center Head if unable to resolve"
+                        >
+                          <ArrowBendUpRight size={13} weight="bold" />
+                          <span>Move to Center Head</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReviewActionData({
+                              complaint: c,
+                              action: 'reject',
+                            })
+                          }
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                        >
+                          <XCircle size={13} weight="bold" />
+                          <span>Reject</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReviewActionData({
+                              complaint: c,
+                              action: 'resolve',
+                            })
+                          }
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-2xs cursor-pointer"
+                        >
+                          <CheckCircle size={13} weight="bold" />
+                          <span>Resolve</span>
+                        </button>
+                      </>
+                    )}
+
+                    {/* Center Head Actions on Pending or Escalated */}
+                    {isCenterHead &&
+                      (c.status === 'pending' || c.status === 'escalated') && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setReviewActionData({
+                                complaint: c,
+                                action: 'reject',
+                              })
+                            }
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer"
+                          >
+                            <XCircle size={13} weight="bold" />
+                            <span>Reject</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setReviewActionData({
+                                complaint: c,
+                                action: 'resolve',
+                              })
+                            }
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-2xs cursor-pointer"
+                          >
+                            <CheckCircle size={13} weight="bold" />
+                            <span>Resolve</span>
+                          </button>
+                        </>
+                      )}
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedComplaint(c)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/80 transition-colors cursor-pointer"
+                    >
+                      <Eye size={13} weight="bold" />
+                      <span>Details</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {/* Add Complaint Modal */}
+      <AddComplaintModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={() => {
+          setShowAddModal(false);
+        }}
+        recipientLabel={isAdvisor ? 'Center Head' : 'Advisor & Center Head'}
+      />
+      {/* Details Modal */}
+      <ComplaintDetailsModal
+        complaint={selectedComplaint}
+        onClose={() => setSelectedComplaint(null)}
+        canReview={isSenior}
+        onOpenReview={(c, action) => {
+          setReviewActionData({ complaint: c, action });
+        }}
+      />
+      {/* Review & Resolution Modal */}
+      <ReviewComplaintModal
+        complaint={reviewActionData.complaint}
+        action={reviewActionData.action}
+        reviewerRole={user?.role}
+        onClose={() => setReviewActionData({ complaint: null, action: null })}
+        onSuccess={() => {
+          setReviewActionData({ complaint: null, action: null });
+        }}
+      />
+    </div>
   );
 }

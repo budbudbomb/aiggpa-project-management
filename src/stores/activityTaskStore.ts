@@ -1,7 +1,7 @@
 /**
  * Central Data Store for Activities & Tasks with Organizational Reporting Hierarchy.
  * Manages:
- * - Center Head -> Project Manager / Research Analyst -> Fellows -> Interns
+ * - Center Head -> Advisor -> Fellows / Interns / Field Instructors / Research Analysts
  * - Strict permission & assignment validation
  * - 5-Stage Kanban Workflow (To Do, In Progress, In Review, Changes Requested, Completed)
  * - Review gates (preventing unapproved completion)
@@ -11,7 +11,12 @@
 import { emitStoreChange } from '../lib/storeEvents';
 
 export type OrgRole =
-  'Center Head' | 'Project Manager' | 'Research Analyst' | 'Fellow' | 'Intern';
+  | 'Center Head'
+  | 'Advisor'
+  | 'Fellow'
+  | 'Intern'
+  | 'Field Instructor'
+  | 'Research Analyst';
 
 export type TaskPriority = 'Low' | 'Medium' | 'High' | 'Critical';
 export type TaskStatus =
@@ -199,29 +204,29 @@ export const DEFAULT_EMPLOYEES: Employee[] = [
     avatarColor: '#1d4ed8', // Navy Blue
   },
 
-  // Tier 2: Project Managers (Parallel to Research Analysts)
+  // Tier 2: Advisors (Below Center Head)
   {
-    id: 'EMP-PM-01',
+    id: 'EMP-ADV-01',
     name: 'Priya Sharma',
-    role: 'Project Manager',
+    role: 'Advisor',
     email: 'priya.sharma@aiggpa.mp.gov.in',
-    designation: 'Senior Project Manager',
+    designation: 'Senior Advisor & Project Lead',
     department: 'Digital Infrastructure & Field Operations',
     reportsTo: 'EMP-CH-01',
     avatarColor: '#0284c7', // Sky Blue
   },
   {
-    id: 'EMP-PM-02',
+    id: 'EMP-ADV-02',
     name: 'Amitav Banerjee',
-    role: 'Project Manager',
+    role: 'Advisor',
     email: 'amitav.banerjee@aiggpa.mp.gov.in',
-    designation: 'Project Manager (Governance Studies)',
+    designation: 'Advisor (Governance Studies)',
     department: 'District Governance Initiatives',
     reportsTo: 'EMP-CH-01',
     avatarColor: '#0369a1',
   },
 
-  // Tier 2: Research Analysts (Parallel to Project Managers)
+  // Tier 3: Research Analysts (Same level as Fellows / Interns / Field Instructors)
   {
     id: 'EMP-RA-01',
     name: 'Dr. Vikramaditya',
@@ -382,7 +387,7 @@ export const DEFAULT_TASKS: ActivityTask[] = [
     creatorRole: 'Center Head',
     assigneeId: 'EMP-PM-01',
     assigneeName: 'Priya Sharma',
-    assigneeRole: 'Project Manager',
+    assigneeRole: 'Advisor',
     reviewerId: 'EMP-CH-01',
     reviewerName: 'Dr. Rajeshwar Rao',
     reviewerRole: 'Center Head',
@@ -429,13 +434,13 @@ export const DEFAULT_TASKS: ActivityTask[] = [
         actorName: 'Dr. Rajeshwar Rao',
         actorRole: 'Center Head',
         action: 'Task Created',
-        details: 'Assigned to Priya Sharma (Project Manager). Priority: High.',
+        details: 'Assigned to Priya Sharma (Advisor). Priority: High.',
         timestamp: '2026-10-01 09:30 AM',
       },
       {
         id: 'tm2',
         actorName: 'Priya Sharma',
-        actorRole: 'Project Manager',
+        actorRole: 'Advisor',
         action: 'Status Changed',
         details: 'Moved from To Do to In Progress.',
         timestamp: '2026-10-02 10:15 AM',
@@ -548,13 +553,13 @@ export const DEFAULT_TASKS: ActivityTask[] = [
     projectName: 'DPI-Based Open Networks for Human Capital in Viksit MP 2047',
     creatorId: 'EMP-PM-01',
     creatorName: 'Priya Sharma',
-    creatorRole: 'Project Manager',
+    creatorRole: 'Advisor',
     assigneeId: 'EMP-FL-01',
     assigneeName: 'Aakash Mehta',
     assigneeRole: 'Fellow',
     reviewerId: 'EMP-PM-01',
     reviewerName: 'Priya Sharma',
-    reviewerRole: 'Project Manager',
+    reviewerRole: 'Advisor',
     priority: 'High',
     status: 'In Review',
     startDate: '2026-10-04',
@@ -597,7 +602,7 @@ export const DEFAULT_TASKS: ActivityTask[] = [
       {
         id: 'tm1',
         actorName: 'Priya Sharma',
-        actorRole: 'Project Manager',
+        actorRole: 'Advisor',
         action: 'Task Created',
         details: 'Assigned to Aakash Mehta (Fellow).',
         timestamp: '2026-10-04 11:00 AM',
@@ -607,7 +612,7 @@ export const DEFAULT_TASKS: ActivityTask[] = [
         actorName: 'Aakash Mehta',
         actorRole: 'Fellow',
         action: 'Submitted for Review',
-        details: 'Submitted for Project Manager approval.',
+        details: 'Submitted for Advisor approval.',
         timestamp: '2026-10-08 04:30 PM',
       },
     ],
@@ -685,13 +690,13 @@ export const DEFAULT_TASKS: ActivityTask[] = [
     projectName: 'Evaluation of Rural Healthcare Infrastructure',
     creatorId: 'EMP-PM-01',
     creatorName: 'Priya Sharma',
-    creatorRole: 'Project Manager',
+    creatorRole: 'Advisor',
     assigneeId: 'EMP-FL-02',
     assigneeName: 'Sneha Patel',
     assigneeRole: 'Fellow',
     reviewerId: 'EMP-PM-01',
     reviewerName: 'Priya Sharma',
-    reviewerRole: 'Project Manager',
+    reviewerRole: 'Advisor',
     priority: 'Medium',
     status: 'Changes Requested',
     startDate: '2026-10-05',
@@ -725,7 +730,7 @@ export const DEFAULT_TASKS: ActivityTask[] = [
         id: 'cm1',
         authorId: 'EMP-PM-01',
         authorName: 'Priya Sharma',
-        authorRole: 'Project Manager',
+        authorRole: 'Advisor',
         content:
           '⚠️ Review Feedback: Please reconcile CHC bed capacities with National Health Mission (NHM) official dashboard numbers before final sign-off.',
         createdAt: '2026-10-08 02:15 PM',
@@ -735,7 +740,7 @@ export const DEFAULT_TASKS: ActivityTask[] = [
       {
         id: 'tm1',
         actorName: 'Priya Sharma',
-        actorRole: 'Project Manager',
+        actorRole: 'Advisor',
         action: 'Task Created',
         details: 'Assigned to Sneha Patel (Fellow).',
         timestamp: '2026-10-05 09:00 AM',
@@ -743,7 +748,7 @@ export const DEFAULT_TASKS: ActivityTask[] = [
       {
         id: 'tm2',
         actorName: 'Priya Sharma',
-        actorRole: 'Project Manager',
+        actorRole: 'Advisor',
         action: 'Changes Requested',
         details:
           'Returned for revisions: Reconcile with NHM dashboard numbers.',
@@ -802,7 +807,7 @@ export const DEFAULT_TASKS: ActivityTask[] = [
         decidedAt: '2026-10-08 02:15 PM',
         decidedBy: 'EMP-PM-01',
         reviewerName: 'Priya Sharma',
-        reviewerRole: 'Project Manager',
+        reviewerRole: 'Advisor',
         reviewerFeedback:
           'Please reconcile CHC bed capacities with National Health Mission (NHM) official dashboard numbers before final sign-off.',
       },
@@ -1569,7 +1574,19 @@ export const ActivityTaskStore = {
       setStored(STORAGE_KEYS.EMPLOYEES, DEFAULT_EMPLOYEES);
       return DEFAULT_EMPLOYEES;
     }
-    return list;
+    // Migration: update any legacy 'Project Manager' role to 'Advisor'
+    let changed = false;
+    const migrated = list.map(e => {
+      if ((e.role as string) === 'Project Manager') {
+        changed = true;
+        return { ...e, role: 'Advisor' as OrgRole };
+      }
+      return e;
+    });
+    if (changed) {
+      setStored(STORAGE_KEYS.EMPLOYEES, migrated);
+    }
+    return migrated;
   },
 
   saveEmployees(employees: Employee[]): void {
@@ -1638,7 +1655,7 @@ export const ActivityTaskStore = {
 
   /**
    * Hierarchy reporting chain upwards:
-   * e.g. Intern -> Fellow -> Project Manager -> Center Head
+   * e.g. Intern / Fellow -> Advisor -> Center Head
    */
   getReportingChain(employeeId: string): Employee[] {
     const chain: Employee[] = [];
@@ -1659,27 +1676,34 @@ export const ActivityTaskStore = {
    */
   /**
    * Check if user is authorized to create tasks.
-   * Core policy: Interns NEVER create tasks.
-   * Fellows can create tasks only if they have subordinate interns to delegate to.
+   * Core policy: Only Center Head and Advisor can create and allocate tasks.
+   * Fellow, Intern, Field Instructor, Research Analyst cannot create tasks.
    */
-  canCreateTasks(role: OrgRole | string, employeeId?: string): boolean {
-    if (role === 'Intern') return false;
-    if (role === 'Fellow') {
-      if (!employeeId) return true;
-      return this.getDirectReports(employeeId).some(r => r.role === 'Intern');
+  canCreateTasks(role: OrgRole | string): boolean {
+    if (
+      role === 'Center Head' ||
+      role === 'Advisor' ||
+      role === 'Super Admin'
+    ) {
+      return true;
     }
-    return true;
+    return false;
   },
 
   /**
    * Check if user is authorized to configure task evidence requirements.
    */
   canConfigureEvidenceRequirements(role: OrgRole | string): boolean {
-    return role !== 'Intern';
+    return (
+      role === 'Center Head' || role === 'Advisor' || role === 'Super Admin'
+    );
   },
 
   /**
-   * Get eligible assignees for the current user based on strict hierarchy rules
+   * Get eligible assignees for the current user based on strict hierarchy rules:
+   * - Center Head: can allocate to all employees
+   * - Advisor: can allocate to anyone EXCEPT Center Head
+   * - Fellow, Intern, Field Instructor, Research Analyst: cannot allocate (empty list)
    */
   getEligibleAssignees(currentUser: { id: string; role: string }): Employee[] {
     const all = this.getEmployees();
@@ -1687,25 +1711,21 @@ export const ActivityTaskStore = {
     switch (currentUser.role) {
       case 'Center Head':
       case 'Super Admin':
-        return all.filter(
-          e =>
-            e.id !== currentUser.id &&
-            (e.role === 'Project Manager' || e.role === 'Research Analyst')
-        );
+        // Center Head can allocate tasks to any employee (subordinates or team members)
+        return all.filter(e => e.id !== currentUser.id);
 
-      case 'Project Manager':
-      case 'Research Analyst':
+      case 'Advisor':
+        // Advisor can allocate to everyone EXCEPT Center Head
         return all.filter(
-          e => e.role === 'Fellow' && e.reportsTo === currentUser.id
+          e => e.id !== currentUser.id && e.role !== 'Center Head'
         );
 
       case 'Fellow':
-        return all.filter(
-          e => e.role === 'Intern' && e.reportsTo === currentUser.id
-        );
-
       case 'Intern':
+      case 'Field Instructor':
+      case 'Research Analyst':
       default:
+        // Tier 3 team cannot allocate tasks; they only execute tasks assigned to them
         return [];
     }
   },
@@ -1756,10 +1776,11 @@ export const ActivityTaskStore = {
     const employees = this.getEmployees();
     const rolePrefixes: Record<OrgRole, string> = {
       'Center Head': 'EMP-CH',
-      'Project Manager': 'EMP-PM',
+      Advisor: 'EMP-ADV',
       'Research Analyst': 'EMP-RA',
       Fellow: 'EMP-FL',
       Intern: 'EMP-IN',
+      'Field Instructor': 'EMP-FI',
     };
     const prefix = rolePrefixes[data.role] || 'EMP-ST';
     const roleCount = employees.filter(e => e.role === data.role).length + 1;
@@ -1806,10 +1827,16 @@ export const ActivityTaskStore = {
       return DEFAULT_TASKS;
     }
     // Backward-compatibility migration: ensure evidenceRequirements, currentEvidenceDraft, submissions, and survey fields exist
+    const fixRole = (r?: string) =>
+      (r === 'Project Manager' ? 'Advisor' : r) as OrgRole;
+
     return list.map(t => {
       const defaultTask = DEFAULT_TASKS.find(dt => dt.id === t.id);
       return {
         ...t,
+        assigneeRole: fixRole(t.assigneeRole),
+        creatorRole: fixRole(t.creatorRole),
+        reviewerRole: fixRole(t.reviewerRole),
         surveyId: t.surveyId || defaultTask?.surveyId,
         surveyTitle: t.surveyTitle || defaultTask?.surveyTitle,
         assignmentMode:
@@ -1839,15 +1866,23 @@ export const ActivityTaskStore = {
 
   /**
    * Filters visible tasks based on the current user's role and hierarchy:
+   * - Center Head: sees all tasks across the institute
+   * - Advisor: sees all tasks across projects/subordinates (except allocating to Center Head)
+   * - Fellow, Intern, Field Instructor, Research Analyst: strictly see tasks allocated to them
+   *   ("they can only see what they done what they have to done thats it")
    */
-  getVisibleTasksForUser(user: { id: string; role: string }): ActivityTask[] {
+  getVisibleTasksForUser(user: {
+    id: string;
+    role: string;
+    name?: string;
+  }): ActivityTask[] {
     const all = this.getTasks();
 
     if (user.role === 'Center Head' || user.role === 'Super Admin') {
       return all;
     }
 
-    if (user.role === 'Project Manager' || user.role === 'Research Analyst') {
+    if (user.role === 'Advisor') {
       const subordinateIds = this.getAllSubordinateIds(user.id);
       return all.filter(t => {
         return (
@@ -1855,56 +1890,39 @@ export const ActivityTaskStore = {
           t.creatorId === user.id ||
           t.reviewerId === user.id ||
           subordinateIds.includes(t.assigneeId) ||
-          subordinateIds.includes(t.creatorId)
+          subordinateIds.includes(t.creatorId) ||
+          t.assigneeRole !== 'Center Head'
         );
       });
     }
 
-    if (user.role === 'Fellow') {
-      const internIds = this.getDirectReports(user.id).map(i => i.id);
-      return all.filter(t => {
-        return (
-          t.assigneeId === user.id ||
-          t.creatorId === user.id ||
-          t.reviewerId === user.id ||
-          internIds.includes(t.assigneeId)
-        );
-      });
-    }
-
-    // Intern: strictly their assigned tasks
-    return all.filter(t => t.assigneeId === user.id);
+    // Tier 3 (Fellow, Intern, Field Instructor, Research Analyst):
+    // Strictly see tasks assigned to them by Advisor or Center Head
+    return all.filter(
+      t =>
+        t.assigneeId === user.id ||
+        (user.name &&
+          t.assigneeName?.toLowerCase().includes(user.name.toLowerCase()))
+    );
   },
 
   /**
    * Determine if a user has authorized visibility over a specific task and its evidence.
    */
   canUserViewTask(
-    user: { id: string; role: string },
+    user: { id: string; role: string; name?: string },
     task: ActivityTask
   ): boolean {
     if (user.role === 'Center Head' || user.role === 'Super Admin') return true;
-    if (user.role === 'Project Manager' || user.role === 'Research Analyst') {
-      const subordinateIds = this.getAllSubordinateIds(user.id);
-      return (
-        task.assigneeId === user.id ||
-        task.creatorId === user.id ||
-        task.reviewerId === user.id ||
-        subordinateIds.includes(task.assigneeId) ||
-        subordinateIds.includes(task.creatorId)
-      );
+    if (user.role === 'Advisor') {
+      return true;
     }
-    if (user.role === 'Fellow') {
-      const internIds = this.getDirectReports(user.id).map(i => i.id);
-      return (
-        task.assigneeId === user.id ||
-        task.creatorId === user.id ||
-        task.reviewerId === user.id ||
-        internIds.includes(task.assigneeId)
-      );
-    }
-    // Intern: strictly their assigned tasks
-    return task.assigneeId === user.id;
+    // Tier 3: strictly their assigned tasks
+    return (
+      task.assigneeId === user.id ||
+      (!!user.name &&
+        task.assigneeName?.toLowerCase().includes(user.name.toLowerCase()))
+    );
   },
 
   // ── Scoped Query Methods ──

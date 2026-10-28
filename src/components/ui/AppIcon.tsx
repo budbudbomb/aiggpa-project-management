@@ -42,7 +42,11 @@ export const AppIcon: React.FC<AppIconProps> = ({
 
   return (
     <IconComponent
-      className={clsx('shrink-0 inline-block align-middle', sizeClasses, className)}
+      className={clsx(
+        'shrink-0 inline-block align-middle',
+        sizeClasses,
+        className
+      )}
       strokeWidth={strokeWidth}
       aria-hidden={!ariaLabel && !title}
       aria-label={ariaLabel || title}
